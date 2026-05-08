@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, storage } from "@/firebase/firebase";
@@ -17,11 +18,8 @@ export default function UploadPage() {
   const [subject, setSubject] = useState("");
   const [topic, setTopic] = useState("");
   const [tags, setTags] = useState("");
-
   const [pdfFile, setPdfFile] = useState<File | null>(null);
-
   const [uploading, setUploading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   if (!loading && !user) {
     router.push("/signin");
@@ -30,25 +28,24 @@ export default function UploadPage() {
 
   async function handleUpload(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    setError(null);
 
     if (!user) {
-      setError("You must be logged in to upload notes.");
+      toast.error("You must be logged in to upload notes.");
       return;
     }
 
     if (!pdfFile) {
-      setError("Please select a PDF file.");
+      toast.error("Please select a PDF file.");
       return;
     }
 
     if (!title || !noteClass || !subject || !topic) {
-      setError("Please fill all required fields.");
+      toast.error("Please fill all required fields.");
       return;
     }
 
     if (pdfFile.type !== "application/pdf") {
-      setError("Only PDF files are allowed.");
+      toast.error("Only PDF files are allowed.");
       return;
     }
 
@@ -71,27 +68,20 @@ export default function UploadPage() {
           .split(",")
           .map((t) => t.trim())
           .filter(Boolean),
-
         pdfURL,
-
         uploaderId: user.uid,
         uploaderName: user.displayName || "Anonymous",
         uploaderEmail: user.email || "",
-
         uploadDate: serverTimestamp(),
         downloadsCount: 0,
         status: "pending",
       });
 
-      router.push("/browse");
+      toast.success("Note uploaded successfully! Waiting for admin approval.");
+      router.push("/my-notes");
     } catch (err: unknown) {
       console.error("UPLOAD ERROR:", err);
-
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError("Upload failed. Check console for details.");
-      }
+      toast.error(err instanceof Error ? err.message : "Upload failed.");
     } finally {
       setUploading(false);
     }
@@ -105,18 +95,8 @@ export default function UploadPage() {
       </p>
 
       <form onSubmit={handleUpload} className="mt-8 glass-card p-8 space-y-5">
-        {error && (
-          <div className="rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-300">
-            {error}
-          </div>
-        )}
-
-        {/* TITLE */}
         <div>
-          <label
-            htmlFor="title"
-            className="block text-sm text-white/80 mb-2"
-          >
+          <label htmlFor="title" className="block text-sm text-white/80 mb-2">
             Title <span className="text-red-400">*</span>
           </label>
           <input
@@ -130,12 +110,8 @@ export default function UploadPage() {
           />
         </div>
 
-        {/* DESCRIPTION */}
         <div>
-          <label
-            htmlFor="description"
-            className="block text-sm text-white/80 mb-2"
-          >
+          <label htmlFor="description" className="block text-sm text-white/80 mb-2">
             Description
           </label>
           <textarea
@@ -150,12 +126,8 @@ export default function UploadPage() {
         </div>
 
         <div className="grid gap-4 md:grid-cols-2">
-          {/* CLASS */}
           <div>
-            <label
-              htmlFor="class"
-              className="block text-sm text-white/80 mb-2"
-            >
+            <label htmlFor="class" className="block text-sm text-white/80 mb-2">
               Class <span className="text-red-400">*</span>
             </label>
             <input
@@ -169,12 +141,8 @@ export default function UploadPage() {
             />
           </div>
 
-          {/* SUBJECT */}
           <div>
-            <label
-              htmlFor="subject"
-              className="block text-sm text-white/80 mb-2"
-            >
+            <label htmlFor="subject" className="block text-sm text-white/80 mb-2">
               Subject <span className="text-red-400">*</span>
             </label>
             <input
@@ -188,12 +156,8 @@ export default function UploadPage() {
             />
           </div>
 
-          {/* TOPIC */}
           <div>
-            <label
-              htmlFor="topic"
-              className="block text-sm text-white/80 mb-2"
-            >
+            <label htmlFor="topic" className="block text-sm text-white/80 mb-2">
               Topic <span className="text-red-400">*</span>
             </label>
             <input
@@ -207,10 +171,9 @@ export default function UploadPage() {
             />
           </div>
 
-          {/* TAGS */}
           <div>
             <label htmlFor="tags" className="block text-sm text-white/80 mb-2">
-              Tags (comma separated)
+              Tags
             </label>
             <input
               id="tags"
@@ -223,12 +186,10 @@ export default function UploadPage() {
           </div>
         </div>
 
-        {/* PDF */}
         <div>
           <label htmlFor="pdf" className="block text-sm text-white/80 mb-2">
             PDF File <span className="text-red-400">*</span>
           </label>
-
           <input
             id="pdf"
             name="pdf"
@@ -238,15 +199,8 @@ export default function UploadPage() {
             className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-2 text-white/70 file:bg-red-600 file:border-0 file:px-4 file:py-2 file:rounded-lg file:text-white file:cursor-pointer"
             required
           />
-
-          {pdfFile && (
-            <p className="mt-2 text-xs text-white/60">
-              Selected: {pdfFile.name}
-            </p>
-          )}
         </div>
 
-        {/* BUTTON */}
         <button
           type="submit"
           disabled={uploading}

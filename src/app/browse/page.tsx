@@ -5,6 +5,7 @@ import { collection, getDocs } from "firebase/firestore";
 import { db } from "@/firebase/firebase";
 import type { Note } from "@/types/note";
 import { useAuth } from "@/contexts/AuthContext";
+import NoteCardSkeleton from "@/components/NoteCardSkeleton";
 
 export default function BrowseNotesPage() {
   const { user } = useAuth();
@@ -12,7 +13,6 @@ export default function BrowseNotesPage() {
   const [notes, setNotes] = useState<Note[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Filters
   const [classFilter, setClassFilter] = useState("");
   const [subjectFilter, setSubjectFilter] = useState("");
   const [search, setSearch] = useState("");
@@ -33,9 +33,9 @@ export default function BrowseNotesPage() {
       setNotes(data);
     } catch (err: unknown) {
       console.error("Error fetching notes:", err);
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   }
 
   useEffect(() => {
@@ -102,60 +102,69 @@ export default function BrowseNotesPage() {
         </div>
       </div>
 
-      {loading && <p className="mt-10 text-white/60">Loading notes...</p>}
+      {loading && (
+        <div className="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, index) => (
+            <NoteCardSkeleton key={index} />
+          ))}
+        </div>
+      )}
 
       {!loading && filteredNotes.length === 0 && (
         <p className="mt-10 text-white/60">No approved notes found.</p>
       )}
 
-      <div className="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {filteredNotes.map((note) => (
-          <div
-            key={note.id}
-            className="glass-card p-6 hover:bg-white/10 transition"
-          >
-            <h2 className="text-lg font-semibold">{note.title}</h2>
+      {!loading && filteredNotes.length > 0 && (
+        <div className="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {filteredNotes.map((note) => (
+            <div
+              key={note.id}
+              className="glass-card p-6 hover:bg-white/10 transition"
+            >
+              <h2 className="text-lg font-semibold">{note.title}</h2>
 
-            <p className="mt-2 text-sm text-white/60 line-clamp-2">
-              {note.description}
-            </p>
+              <p className="mt-2 text-sm text-white/60 line-clamp-2">
+                {note.description}
+              </p>
 
-            <div className="mt-4 text-xs text-white/50 space-y-1">
-              <p>
-                <span className="text-white/70">Class:</span> {note.class}
-              </p>
-              <p>
-                <span className="text-white/70">Subject:</span> {note.subject}
-              </p>
-              <p>
-                <span className="text-white/70">Topic:</span> {note.topic}
-              </p>
+              <div className="mt-4 text-xs text-white/50 space-y-1">
+                <p>
+                  <span className="text-white/70">Class:</span> {note.class}
+                </p>
+                <p>
+                  <span className="text-white/70">Subject:</span>{" "}
+                  {note.subject}
+                </p>
+                <p>
+                  <span className="text-white/70">Topic:</span> {note.topic}
+                </p>
+              </div>
+
+              <div className="mt-5 flex items-center justify-between">
+                <span className="text-xs text-white/50">
+                  Downloads: {note.downloadsCount ?? 0}
+                </span>
+
+                {user ? (
+                  <a
+                    href={`/notes/${note.id}`}
+                    className="btn-secondary text-xs px-4 py-2"
+                  >
+                    Open
+                  </a>
+                ) : (
+                  <button
+                    disabled
+                    className="text-xs px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white/40 cursor-not-allowed"
+                  >
+                    Login to Open
+                  </button>
+                )}
+              </div>
             </div>
-
-            <div className="mt-5 flex items-center justify-between">
-              <span className="text-xs text-white/50">
-                Downloads: {note.downloadsCount ?? 0}
-              </span>
-
-              {user ? (
-                <a
-                  href={`/notes/${note.id}`}
-                  className="btn-secondary text-xs px-4 py-2"
-                >
-                  Open
-                </a>
-              ) : (
-                <button
-                  disabled
-                  className="text-xs px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white/40 cursor-not-allowed"
-                >
-                  Login to Open
-                </button>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

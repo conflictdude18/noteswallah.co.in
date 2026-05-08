@@ -1,24 +1,20 @@
 "use client";
 
 import { useState } from "react";
+import { toast } from "sonner";
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 import { db } from "@/firebase/firebase";
 
 export default function FeedbackPage() {
   const [name, setName] = useState("");
   const [message, setMessage] = useState("");
-
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    setSuccess(null);
-    setError(null);
 
     if (!message.trim()) {
-      setError("Please write your feedback message.");
+      toast.error("Please write your feedback message.");
       return;
     }
 
@@ -31,14 +27,12 @@ export default function FeedbackPage() {
         createdAt: serverTimestamp(),
       });
 
-      setSuccess("✅ Feedback submitted successfully!");
+      toast.success("Feedback submitted successfully!");
       setName("");
       setMessage("");
     } catch (err: unknown) {
       console.error("FEEDBACK ERROR:", err);
-
-      if (err instanceof Error) setError(err.message);
-      else setError("Failed to send feedback.");
+      toast.error(err instanceof Error ? err.message : "Failed to send feedback.");
     } finally {
       setLoading(false);
     }
@@ -55,21 +49,9 @@ export default function FeedbackPage() {
         onSubmit={handleSubmit}
         className="mt-8 glass-card p-8 space-y-5 max-w-2xl"
       >
-        {success && (
-          <div className="rounded-xl border border-green-500/40 bg-green-500/10 px-4 py-3 text-sm text-green-300">
-            {success}
-          </div>
-        )}
-
-        {error && (
-          <div className="rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-300">
-            {error}
-          </div>
-        )}
-
         <div>
           <label htmlFor="name" className="block text-sm text-white/80 mb-2">
-            Your Name (optional)
+            Your Name
           </label>
           <input
             id="name"

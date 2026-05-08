@@ -44,15 +44,23 @@ export default function Navbar() {
       <Link href="/upload" onClick={() => setOpen(false)} className="hover:text-white transition">
         Upload
       </Link>
+
       <Link href="/my-notes" onClick={() => setOpen(false)} className="hover:text-white transition">
         My Notes
       </Link>
+
+      <Link href="/saved-notes" onClick={() => setOpen(false)} className="hover:text-white transition">
+        Saved Notes
+      </Link>
+
       <Link href="/dashboard" onClick={() => setOpen(false)} className="hover:text-white transition">
         Dashboard
       </Link>
+
       <Link href="/profile" onClick={() => setOpen(false)} className="hover:text-white transition">
         Profile
       </Link>
+
       {isAdmin && (
         <Link
           href="/admin"

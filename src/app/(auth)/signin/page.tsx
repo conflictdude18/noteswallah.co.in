@@ -2,75 +2,107 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
-  GoogleAuthProvider,
   signInWithEmailAndPassword,
+  GoogleAuthProvider,
   signInWithPopup,
 } from "firebase/auth";
 import { auth } from "@/firebase/firebase";
 
 export default function SignInPage() {
+  const router = useRouter();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  async function handleSignin(e: React.FormEvent) {
+  function getFirebaseErrorMessage(code: string) {
+    switch (code) {
+      case "auth/invalid-credential":
+        return "Invalid email or password.";
+
+      case "auth/user-not-found":
+        return "Account not found.";
+
+      case "auth/wrong-password":
+        return "Incorrect password.";
+
+      case "auth/too-many-requests":
+        return "Too many attempts. Try again later.";
+
+      case "auth/network-request-failed":
+        return "Network error. Check your internet.";
+
+      default:
+        return "Something went wrong. Please try again.";
+    }
+  }
+
+  async function handleEmailLogin(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    setError("");
+
     setLoading(true);
+    setError("");
 
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      window.location.href = "/dashboard";
+      router.push("/dashboard");
     } catch (err: unknown) {
-    if (err instanceof Error) {
-    setError(err.message);
+      if (
+        typeof err === "object" &&
+        err !== null &&
+        "code" in err &&
+        typeof err.code === "string"
+      ) {
+        setError(getFirebaseErrorMessage(err.code));
       } else {
-    setError("Something went wrong. Please try again.");
+        setError("Login failed.");
+      }
+    } finally {
+      setLoading(false);
     }
-    }
-
-    setLoading(false);
   }
 
-  async function handleGoogleSignin() {
-    setError("");
+  async function handleGoogleLogin() {
     setLoading(true);
+    setError("");
 
     try {
       const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
-      window.location.href = "/dashboard";
-    } catch (err: unknown) {
-    if (err instanceof Error) {
-    setError(err.message);
-      } else {
-    setError("Something went wrong. Please try again.");
-    }
-    }
 
-    setLoading(false);
+      await signInWithPopup(auth, provider);
+
+      router.push("/dashboard");
+    } catch {
+      setError("Google sign in failed.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4">
+    <div className="container-max flex flex-1 items-center justify-center py-14">
       <div className="glass-card w-full max-w-md p-8">
-        <h1 className="text-2xl font-bold">Welcome Back</h1>
-        <p className="mt-2 text-white/60 text-sm">
+        <h1 className="text-3xl font-bold">Welcome Back</h1>
+
+        <p className="mt-2 text-white/70">
           Sign in to access NotesWallah.
         </p>
 
         {error && (
-          <p className="mt-4 rounded-lg bg-red-500/20 p-3 text-sm text-red-300">
+          <div className="mt-5 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
             {error}
-          </p>
+          </div>
         )}
 
         <button
-          onClick={handleGoogleSignin}
+          type="button"
+          onClick={handleGoogleLogin}
           disabled={loading}
-          className="btn-secondary w-full mt-6"
+          className="btn-secondary mt-6 w-full"
         >
           Continue with Google
         </button>
@@ -81,33 +113,60 @@ export default function SignInPage() {
           <div className="h-px flex-1 bg-white/10" />
         </div>
 
-        <form onSubmit={handleSignin} className="space-y-4">
-          <input
-            className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 outline-none focus:border-red-500"
-            placeholder="Email"
-            value={email}
-            type="email"
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
+        <form onSubmit={handleEmailLogin} className="space-y-5">
+          <div>
+            <label
+              htmlFor="email"
+              className="mb-2 block text-sm text-white/80"
+            >
+              Email
+            </label>
 
-          <input
-            className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 outline-none focus:border-red-500"
-            placeholder="Password"
-            value={password}
-            type="password"
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
+            <input
+              id="email"
+              type="email"
+              placeholder="Enter your email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 outline-none focus:border-red-500"
+              required
+            />
+          </div>
 
-          <button disabled={loading} className="btn-primary w-full">
-            {loading ? "Signing in..." : "Sign In"}
+          <div>
+            <label
+              htmlFor="password"
+              className="mb-2 block text-sm text-white/80"
+            >
+              Password
+            </label>
+
+            <input
+              id="password"
+              type="password"
+              placeholder="Enter your password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 outline-none focus:border-red-500"
+              required
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="btn-primary w-full"
+          >
+            {loading ? "Signing In..." : "Sign In"}
           </button>
         </form>
 
-        <p className="mt-6 text-sm text-white/70">
-          Don’t have an account?{" "}
-          <Link href="/signup" className="text-red-400 hover:text-red-300">
+        <p className="mt-6 text-center text-sm text-white/60">
+          Don&apos;t have an account?{" "}
+          <Link
+            href="/signup"
+            className="text-red-400 hover:text-red-300"
+          >
             Sign Up
           </Link>
         </p>
