@@ -17,8 +17,31 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "NotesWallah",
-  description: "Modern educational platform for sharing and downloading notes",
+  title: {
+    default: "NotesWallah — Smart Notes Sharing Platform",
+    template: "%s | NotesWallah",
+  },
+  description:
+    "NotesWallah is a modern platform where students can upload, browse, save, and download verified educational notes.",
+  keywords: [
+    "NotesWallah",
+    "student notes",
+    "PDF notes",
+    "class 12 notes",
+    "study notes",
+    "education platform",
+    "CBSE notes",
+  ],
+  authors: [{ name: "NotesWallah Team" }],
+  creator: "NotesWallah",
+  openGraph: {
+    title: "NotesWallah — Smart Notes Sharing Platform",
+    description:
+      "Upload, browse, save, and download verified educational notes.",
+    url: "https://noteswallah.co.in",
+    siteName: "NotesWallah",
+    type: "website",
+  },
 };
 
 export default function RootLayout({
