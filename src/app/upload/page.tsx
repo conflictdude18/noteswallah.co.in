@@ -49,6 +49,14 @@ export default function UploadPage() {
       return;
     }
 
+    const maxSizeInMB = 10;
+    const maxSizeInBytes = maxSizeInMB * 1024 * 1024;
+
+    if (pdfFile.size > maxSizeInBytes) {
+      toast.error("PDF size must be less than 10 MB.");
+      return;
+    }
+
     setUploading(true);
 
     try {
