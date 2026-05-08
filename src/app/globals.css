@@ -1,0 +1,102 @@
+@import "tailwindcss";
+
+:root {
+  --background: 0 0% 6%;
+  --foreground: 0 0% 96%;
+
+  --card: 0 0% 10%;
+  --card-foreground: 0 0% 96%;
+
+  --muted: 0 0% 18%;
+  --muted-foreground: 0 0% 70%;
+
+  --border: 0 0% 18%;
+  --primary: 0 84% 55%;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+}
+
+* {
+  border-color: hsl(var(--border));
+}
+
+::selection {
+  background: hsl(var(--primary));
+  color: white;
+}
+
+/* Custom utility classes */
+.container-max {
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
+  max-width: 80rem;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+@media (min-width: 768px) {
+  .container-max {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+}
+
+.glass-card {
+  border-radius: 1rem;
+  border: 1px solid rgb(255 255 255 / 0.1);
+  background: rgb(255 255 255 / 0.05);
+  backdrop-filter: blur(18px);
+  box-shadow: 0 10px 30px rgb(0 0 0 / 0.4);
+}
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.9rem;
+  background: rgb(220 38 38);
+  padding: 0.65rem 1.25rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: white;
+  transition: 0.2s;
+}
+
+.btn-primary:hover {
+  background: rgb(185 28 28);
+}
+
+.btn-primary:active {
+  transform: scale(0.97);
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.9rem;
+  border: 1px solid rgb(255 255 255 / 0.15);
+  background: rgb(255 255 255 / 0.05);
+  padding: 0.65rem 1.25rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: white;
+  transition: 0.2s;
+}
+
+.btn-secondary:hover {
+  background: rgb(255 255 255 / 0.1);
+}
+
+.btn-secondary:active {
+  transform: scale(0.97);
+}
