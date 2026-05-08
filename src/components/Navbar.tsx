@@ -3,9 +3,10 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { signOut } from "firebase/auth";
+import { Menu, X } from "lucide-react";
+import { doc, getDoc } from "firebase/firestore";
 import { auth, db } from "@/firebase/firebase";
 import { useAuth } from "@/contexts/AuthContext";
-import { doc, getDoc } from "firebase/firestore";
 
 type UserDoc = {
   role?: string;
@@ -14,6 +15,7 @@ type UserDoc = {
 export default function Navbar() {
   const { user, loading } = useAuth();
   const [isAdmin, setIsAdmin] = useState(false);
+  const [open, setOpen] = useState(false);
 
   async function handleLogout() {
     await signOut(auth);
@@ -37,10 +39,36 @@ export default function Navbar() {
     checkRole();
   }, [user]);
 
+  const loggedInLinks = (
+    <>
+      <Link href="/upload" onClick={() => setOpen(false)} className="hover:text-white transition">
+        Upload
+      </Link>
+      <Link href="/my-notes" onClick={() => setOpen(false)} className="hover:text-white transition">
+        My Notes
+      </Link>
+      <Link href="/dashboard" onClick={() => setOpen(false)} className="hover:text-white transition">
+        Dashboard
+      </Link>
+      <Link href="/profile" onClick={() => setOpen(false)} className="hover:text-white transition">
+        Profile
+      </Link>
+      {isAdmin && (
+        <Link
+          href="/admin"
+          onClick={() => setOpen(false)}
+          className="text-red-400 hover:text-red-300 transition font-semibold"
+        >
+          Admin
+        </Link>
+      )}
+    </>
+  );
+
   return (
-    <header className="sticky top-0 z-50 border-b border-white/10 bg-black/60 backdrop-blur">
+    <header className="sticky top-0 z-50 border-b border-white/10 bg-black/70 backdrop-blur-xl">
       <div className="container-max flex items-center justify-between py-4">
-        <Link href="/" className="text-xl font-bold text-white">
+        <Link href="/" className="text-xl font-bold text-white" onClick={() => setOpen(false)}>
           Notes<span className="text-red-500">Wallah</span>
         </Link>
 
@@ -49,41 +77,14 @@ export default function Navbar() {
             Browse Notes
           </Link>
 
-          {user && (
-            <>
-              <Link href="/upload" className="hover:text-white transition">
-                Upload
-              </Link>
-
-              <Link href="/my-notes" className="hover:text-white transition">
-                My Notes
-              </Link>
-
-              <Link href="/dashboard" className="hover:text-white transition">
-                Dashboard
-              </Link>
-
-              <Link href="/profile" className="hover:text-white transition">
-                Profile
-              </Link>
-
-              {isAdmin && (
-                <Link
-                  href="/admin"
-                  className="text-red-400 hover:text-red-300 transition font-semibold"
-                >
-                  Admin
-                </Link>
-              )}
-            </>
-          )}
+          {user && loggedInLinks}
 
           <Link href="/feedback" className="hover:text-white transition">
             Feedback
           </Link>
         </nav>
 
-        <div className="flex items-center gap-3">
+        <div className="hidden md:flex items-center gap-3">
           {!loading && !user && (
             <>
               <Link href="/signin" className="btn-secondary text-sm px-4 py-2">
@@ -97,20 +98,64 @@ export default function Navbar() {
 
           {!loading && user && (
             <>
-              <span className="hidden sm:block text-xs text-white/60">
+              <span className="hidden lg:block text-xs text-white/60 max-w-40 truncate">
                 {user.email}
               </span>
 
-              <button
-                onClick={handleLogout}
-                className="btn-primary text-sm px-4 py-2"
-              >
+              <button onClick={handleLogout} className="btn-primary text-sm px-4 py-2">
                 Logout
               </button>
             </>
           )}
         </div>
+
+        <button
+          type="button"
+          aria-label="Toggle navigation menu"
+          onClick={() => setOpen((prev) => !prev)}
+          className="md:hidden rounded-xl border border-white/10 bg-white/5 p-2 text-white"
+        >
+          {open ? <X size={20} /> : <Menu size={20} />}
+        </button>
       </div>
+
+      {open && (
+        <div className="md:hidden border-t border-white/10 bg-black/95">
+          <div className="container-max flex flex-col gap-4 py-5 text-sm text-white/75">
+            <Link href="/browse" onClick={() => setOpen(false)} className="hover:text-white transition">
+              Browse Notes
+            </Link>
+
+            {user && loggedInLinks}
+
+            <Link href="/feedback" onClick={() => setOpen(false)} className="hover:text-white transition">
+              Feedback
+            </Link>
+
+            <div className="h-px bg-white/10" />
+
+            {!loading && !user && (
+              <div className="flex flex-col gap-3">
+                <Link href="/signin" onClick={() => setOpen(false)} className="btn-secondary text-sm">
+                  Sign In
+                </Link>
+                <Link href="/signup" onClick={() => setOpen(false)} className="btn-primary text-sm">
+                  Sign Up
+                </Link>
+              </div>
+            )}
+
+            {!loading && user && (
+              <div className="flex flex-col gap-3">
+                <p className="text-xs text-white/50 truncate">{user.email}</p>
+                <button onClick={handleLogout} className="btn-primary text-sm">
+                  Logout
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </header>
   );
 }
