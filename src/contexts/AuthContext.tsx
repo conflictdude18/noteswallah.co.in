@@ -1,67 +1,83 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
-import { User, onAuthStateChanged } from "firebase/auth";
-import { auth, db } from "@/firebase/firebase";
-import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
+
+import {
+  User,
+  onAuthStateChanged,
+} from "firebase/auth";
+
+import { auth } from "@/firebase/firebase";
+
+import { createUserProfile } from "@/lib/createUserProfile";
 
 type AuthContextType = {
   user: User | null;
   loading: boolean;
 };
 
-const AuthContext = createContext<AuthContextType>({
-  user: null,
-  loading: true,
-});
+const AuthContext =
+  createContext<AuthContextType>({
+    user: null,
+    loading: true,
+  });
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+export function AuthProvider({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const [user, setUser] =
+    useState<User | null>(null);
+
+  const [loading, setLoading] =
+    useState(true);
 
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
-      setUser(firebaseUser);
+    const unsubscribe =
+      onAuthStateChanged(
+        auth,
+        async (firebaseUser) => {
+          try {
+            setUser(firebaseUser);
 
-      if (firebaseUser) {
-        const userRef = doc(db, "users", firebaseUser.uid);
-        const snap = await getDoc(userRef);
+            if (firebaseUser) {
+              await createUserProfile({
+                uid: firebaseUser.uid,
 
-        // If user doc does not exist, create it
-        if (!snap.exists()) {
-          await setDoc(userRef, {
-            uid: firebaseUser.uid,
-            name: firebaseUser.displayName || "",
-            email: firebaseUser.email || "",
-            photoURL: firebaseUser.photoURL || "",
-            role: "user",
-            createdAt: serverTimestamp(),
-            updatedAt: serverTimestamp(),
-          });
-        } else {
-          // Only update safe fields (DO NOT overwrite role)
-          await setDoc(
-            userRef,
-            {
-              uid: firebaseUser.uid,
-              name: firebaseUser.displayName || "",
-              email: firebaseUser.email || "",
-              photoURL: firebaseUser.photoURL || "",
-              updatedAt: serverTimestamp(),
-            },
-            { merge: true }
-          );
+                email:
+                  firebaseUser.email,
+
+                displayName:
+                  firebaseUser.displayName,
+              });
+            }
+          } catch (err) {
+            console.error(
+              "AUTH PROFILE ERROR:",
+              err
+            );
+          } finally {
+            setLoading(false);
+          }
         }
-      }
+      );
 
-      setLoading(false);
-    });
-
-    return () => unsub();
+    return () => unsubscribe();
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, loading }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        loading,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

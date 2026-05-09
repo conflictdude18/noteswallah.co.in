@@ -13,4 +13,5 @@ export type Note = {
   uploadDate: unknown;
   downloadsCount: number;
   status: "pending" | "approved" | "rejected";
+  thumbnailUrl?: string;
 };
