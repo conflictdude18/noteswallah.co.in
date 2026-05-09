@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
@@ -21,6 +22,9 @@ import {
   Download,
   ExternalLink,
   FileText,
+  Heart,
+  MessageCircle,
+  Trash2,
   X,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -29,6 +33,16 @@ import { db } from "@/firebase/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import UserAvatar from "@/components/UserAvatar";
 import type { Note } from "@/types/note";
+
+type Comment = {
+  id: string;
+  noteId: string;
+  userId: string;
+  userName: string;
+  userAvatar?: string;
+  text: string;
+  createdAt: string;
+};
 
 export default function NoteDetailsPage() {
   const { id } = useParams<{ id: string }>();
@@ -41,10 +55,41 @@ export default function NoteDetailsPage() {
   const [bookmarkId, setBookmarkId] = useState<string | null>(null);
   const isBookmarked = Boolean(bookmarkId);
 
+  const [likeId, setLikeId] = useState<string | null>(null);
+  const [likesCount, setLikesCount] = useState(0);
+  const isLiked = Boolean(likeId);
+
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [commentText, setCommentText] = useState("");
+  const [commenting, setCommenting] = useState(false);
+
   const [reportOpen, setReportOpen] = useState(false);
   const [reportReason, setReportReason] = useState("");
   const [reportDetails, setReportDetails] = useState("");
   const [reporting, setReporting] = useState(false);
+
+  async function fetchComments() {
+    if (!id) return;
+
+    try {
+      const q = query(collection(db, "comments"), where("noteId", "==", id));
+      const snap = await getDocs(q);
+
+      const data: Comment[] = snap.docs
+        .map((commentDoc) => ({
+          id: commentDoc.id,
+          ...(commentDoc.data() as Omit<Comment, "id">),
+        }))
+        .sort(
+          (a, b) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+
+      setComments(data);
+    } catch (err) {
+      console.error("COMMENTS FETCH ERROR:", err);
+    }
+  }
 
   useEffect(() => {
     async function fetchNote() {
@@ -70,29 +115,133 @@ export default function NoteDetailsPage() {
     }
 
     fetchNote();
+    fetchComments();
   }, [id]);
 
   useEffect(() => {
-    async function checkBookmark() {
-      if (!user || !id) return;
+    async function checkBookmarkAndLikes() {
+      if (!id) return;
 
-      const q = query(
-        collection(db, "bookmarks"),
-        where("userId", "==", user.uid),
-        where("noteId", "==", id)
-      );
+      try {
+        const likesQuery = query(
+          collection(db, "likes"),
+          where("noteId", "==", id)
+        );
 
-      const snap = await getDocs(q);
+        const likesSnap = await getDocs(likesQuery);
+        setLikesCount(likesSnap.docs.length);
 
-      if (!snap.empty) {
-        setBookmarkId(snap.docs[0].id);
-      } else {
-        setBookmarkId(null);
+        if (!user) return;
+
+        const bookmarkQuery = query(
+          collection(db, "bookmarks"),
+          where("userId", "==", user.uid),
+          where("noteId", "==", id)
+        );
+
+        const bookmarkSnap = await getDocs(bookmarkQuery);
+        setBookmarkId(bookmarkSnap.empty ? null : bookmarkSnap.docs[0].id);
+
+        const userLikeQuery = query(
+          collection(db, "likes"),
+          where("userId", "==", user.uid),
+          where("noteId", "==", id)
+        );
+
+        const userLikeSnap = await getDocs(userLikeQuery);
+        setLikeId(userLikeSnap.empty ? null : userLikeSnap.docs[0].id);
+      } catch (err) {
+        console.error("NOTE SOCIAL FETCH ERROR:", err);
       }
     }
 
-    checkBookmark();
+    checkBookmarkAndLikes();
   }, [user, id]);
+
+  async function handleCommentSubmit() {
+    if (!user) {
+      router.push("/signin");
+      return;
+    }
+
+    if (!note?.id) return;
+
+    if (!commentText.trim()) {
+      toast.error("Comment cannot be empty.");
+      return;
+    }
+
+    if (commentText.trim().length > 500) {
+      toast.error("Comment must be under 500 characters.");
+      return;
+    }
+
+    try {
+      setCommenting(true);
+
+      await addDoc(collection(db, "comments"), {
+        noteId: note.id,
+        userId: user.uid,
+        userName: user.displayName || user.email || "User",
+        userAvatar: user.photoURL || "",
+        text: commentText.trim(),
+        createdAt: new Date().toISOString(),
+      });
+
+      setCommentText("");
+      toast.success("Comment added.");
+      fetchComments();
+    } catch (err) {
+      console.error("COMMENT ERROR:", err);
+      toast.error("Failed to add comment.");
+    } finally {
+      setCommenting(false);
+    }
+  }
+
+  async function deleteComment(commentId: string) {
+    const ok = confirm("Delete this comment?");
+    if (!ok) return;
+
+    try {
+      await deleteDoc(doc(db, "comments", commentId));
+      toast.success("Comment deleted.");
+      fetchComments();
+    } catch (err) {
+      console.error("DELETE COMMENT ERROR:", err);
+      toast.error("Failed to delete comment.");
+    }
+  }
+
+  async function handleLike() {
+    if (!user) {
+      router.push("/signin");
+      return;
+    }
+
+    if (!note?.id) return;
+
+    try {
+      if (likeId) {
+        await deleteDoc(doc(db, "likes", likeId));
+        setLikeId(null);
+        setLikesCount((prev) => Math.max(0, prev - 1));
+      } else {
+        const newLike = await addDoc(collection(db, "likes"), {
+          userId: user.uid,
+          noteId: note.id,
+          noteTitle: note.title,
+          createdAt: new Date().toISOString(),
+        });
+
+        setLikeId(newLike.id);
+        setLikesCount((prev) => prev + 1);
+      }
+    } catch (err) {
+      console.error("LIKE ERROR:", err);
+      toast.error("Like action failed.");
+    }
+  }
 
   async function handleBookmark() {
     if (!user) {
@@ -224,43 +373,123 @@ export default function NoteDetailsPage() {
           onClick={() => router.push("/browse")}
           className="group flex items-center gap-2 text-sm text-white/60 transition hover:text-white"
         >
-          <ArrowLeft
-            size={16}
-            className="transition group-hover:-translate-x-1"
-          />
+          <ArrowLeft size={16} className="transition group-hover:-translate-x-1" />
           Back to Browse
         </button>
 
         <div className="mt-8 grid gap-8 lg:grid-cols-[1.5fr_0.7fr]">
-          <div className="overflow-hidden rounded-3xl border border-white/10 bg-black/40 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
-              <div className="flex items-center gap-3">
-                <div className="rounded-xl bg-red-500/10 p-2 text-red-500">
-                  <FileText size={20} />
+          <div className="space-y-8">
+            <div className="overflow-hidden rounded-3xl border border-white/10 bg-black/40 shadow-2xl">
+              <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
+                <div className="flex items-center gap-3">
+                  <div className="rounded-xl bg-red-500/10 p-2 text-red-500">
+                    <FileText size={20} />
+                  </div>
+
+                  <div>
+                    <h2 className="font-semibold">PDF Preview</h2>
+                    <p className="text-xs text-white/40">Optimized Viewer</p>
+                  </div>
                 </div>
 
-                <div>
-                  <h2 className="font-semibold">PDF Preview</h2>
-                  <p className="text-xs text-white/40">Optimized Viewer</p>
-                </div>
+                <a
+                  href={note.pdfURL}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="rounded-xl border border-white/10 bg-white/5 p-2 text-white/70 transition hover:bg-white/10 hover:text-white"
+                  title="Open Original PDF"
+                >
+                  <ExternalLink size={18} />
+                </a>
               </div>
 
-              <a
-                href={note.pdfURL}
-                target="_blank"
-                rel="noreferrer"
-                className="rounded-xl border border-white/10 bg-white/5 p-2 text-white/70 transition hover:bg-white/10 hover:text-white"
-                title="Open Original PDF"
-              >
-                <ExternalLink size={18} />
-              </a>
+              <iframe
+                src={`${note.pdfURL}#toolbar=0`}
+                title={note.title}
+                className="h-[85vh] w-full bg-black"
+              />
             </div>
 
-            <iframe
-              src={`${note.pdfURL}#toolbar=0`}
-              title={note.title}
-              className="h-[85vh] w-full bg-black"
-            />
+            <section className="rounded-3xl border border-white/10 bg-white/5 p-6">
+              <div className="flex items-center gap-3">
+                <MessageCircle className="text-red-500" size={22} />
+                <h2 className="text-2xl font-black">
+                  Comments ({comments.length})
+                </h2>
+              </div>
+
+              <div className="mt-6">
+                <textarea
+                  value={commentText}
+                  onChange={(e) => setCommentText(e.target.value)}
+                  placeholder={
+                    user
+                      ? "Ask a question or share feedback..."
+                      : "Login to comment..."
+                  }
+                  rows={3}
+                  disabled={!user}
+                  className="w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-white outline-none focus:border-red-500 disabled:cursor-not-allowed disabled:opacity-50"
+                />
+
+                <button
+                  onClick={handleCommentSubmit}
+                  disabled={commenting || !user}
+                  className="mt-3 rounded-2xl bg-red-600 px-6 py-3 font-semibold text-white transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {commenting ? "Posting..." : "Post Comment"}
+                </button>
+              </div>
+
+              <div className="mt-8 space-y-4">
+                {comments.length === 0 ? (
+                  <p className="text-sm text-white/50">
+                    No comments yet. Be the first to comment.
+                  </p>
+                ) : (
+                  comments.map((comment) => (
+                    <div
+                      key={comment.id}
+                      className="rounded-2xl border border-white/10 bg-black/30 p-4"
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        <Link
+                          href={`/profile/${comment.userId}`}
+                          className="flex items-center gap-3"
+                        >
+                          <UserAvatar
+                            name={comment.userName}
+                            src={comment.userAvatar || ""}
+                            size="sm"
+                          />
+
+                          <div>
+                            <p className="font-semibold">{comment.userName}</p>
+                            <p className="text-xs text-white/40">
+                              {new Date(comment.createdAt).toLocaleString()}
+                            </p>
+                          </div>
+                        </Link>
+
+                        {user?.uid === comment.userId && (
+                          <button
+                            onClick={() => deleteComment(comment.id)}
+                            className="rounded-xl border border-red-500/20 bg-red-500/10 p-2 text-red-400 transition hover:bg-red-500/20"
+                            aria-label="Delete comment"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        )}
+                      </div>
+
+                      <p className="mt-4 whitespace-pre-wrap text-sm leading-relaxed text-white/70">
+                        {comment.text}
+                      </p>
+                    </div>
+                  ))
+                )}
+              </div>
+            </section>
           </div>
 
           <div className="space-y-6">
@@ -278,27 +507,15 @@ export default function NoteDetailsPage() {
               </p>
 
               <div className="mt-6 grid grid-cols-2 gap-3">
-                <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
-                  <p className="text-xs text-white/40">Subject</p>
-                  <p className="mt-1 font-medium">{note.subject}</p>
-                </div>
+                <InfoBox label="Subject" value={note.subject} />
+                <InfoBox label="Class" value={note.class} />
+                <InfoBox label="Topic" value={note.topic} />
+                <InfoBox label="Downloads" value={String(note.downloadsCount ?? 0)} />
+              </div>
 
-                <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
-                  <p className="text-xs text-white/40">Class</p>
-                  <p className="mt-1 font-medium">{note.class}</p>
-                </div>
-
-                <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
-                  <p className="text-xs text-white/40">Topic</p>
-                  <p className="mt-1 font-medium">{note.topic}</p>
-                </div>
-
-                <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
-                  <p className="text-xs text-white/40">Downloads</p>
-                  <p className="mt-1 font-medium">
-                    {note.downloadsCount ?? 0}
-                  </p>
-                </div>
+              <div className="mt-4 rounded-2xl border border-white/10 bg-black/30 p-4">
+                <p className="text-xs text-white/40">Likes</p>
+                <p className="mt-1 font-medium">{likesCount}</p>
               </div>
 
               {note.tags?.length > 0 && (
@@ -321,6 +538,21 @@ export default function NoteDetailsPage() {
                 >
                   <Download size={18} />
                   {user ? "Download PDF" : "Login to Download"}
+                </button>
+
+                <button
+                  onClick={handleLike}
+                  className={`flex items-center justify-center gap-2 rounded-2xl px-6 py-4 font-medium transition ${
+                    isLiked
+                      ? "border border-red-500/30 bg-red-500/10 text-red-400"
+                      : "border border-white/10 bg-white/5 text-white hover:bg-white/10"
+                  }`}
+                >
+                  <Heart
+                    size={18}
+                    className={isLiked ? "fill-red-500 text-red-500" : ""}
+                  />
+                  {isLiked ? `Liked (${likesCount})` : `Like (${likesCount})`}
                 </button>
 
                 <button
@@ -354,10 +586,7 @@ export default function NoteDetailsPage() {
               </p>
 
               <div className="mt-4 flex items-center gap-4">
-                <UserAvatar
-                  name={note.uploaderName || "User"}
-                  size="md"
-                />
+                <UserAvatar name={note.uploaderName || "User"} size="md" />
 
                 <div>
                   <h3 className="font-semibold">{note.uploaderName}</h3>
@@ -468,5 +697,20 @@ export default function NoteDetailsPage() {
         </div>
       )}
     </main>
+  );
+}
+
+function InfoBox({
+  label,
+  value,
+}: {
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
+      <p className="text-xs text-white/40">{label}</p>
+      <p className="mt-1 font-medium">{value}</p>
+    </div>
   );
 }

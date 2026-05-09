@@ -74,6 +74,13 @@ export default function Navbar() {
           </Link>
 
           <Link
+            href="/trending"
+            className="text-sm text-white/70 transition hover:text-white"
+          >
+            Trending
+          </Link>
+
+          <Link
             href="/upload"
             className="text-sm text-white/70 transition hover:text-white"
           >
@@ -243,6 +250,16 @@ export default function Navbar() {
                 <Upload size={18} />
 
                 Upload Notes
+              </Link>
+
+              <Link
+                href="/trending"
+                onClick={() => setOpen(false)}
+                className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-5 py-4 transition hover:bg-white/10"
+              >
+                <FileText size={18} />
+
+                Trending Notes
               </Link>
 
               <Link
