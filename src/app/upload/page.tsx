@@ -94,8 +94,7 @@ export default function UploadPage() {
           await page.render({
             canvasContext: context,
             viewport,
-            canvas,
-          }).promise;
+          } as Parameters<typeof page.render>[0]).promise;
 
           canvas.toBlob(
             (blob) => {
