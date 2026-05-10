@@ -2,12 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import {
-  collection,
-  getDocs,
-  query,
-  where,
-} from "firebase/firestore";
+import { collection, getDocs, query, where } from "firebase/firestore";
 import { BookOpen, FileText, Users } from "lucide-react";
 import { useRouter } from "next/navigation";
 
@@ -39,9 +34,9 @@ export default function FollowingFeedPage() {
 
         const followsSnap = await getDocs(followsQuery);
 
-        const followingIds = followsSnap.docs.map(
-          (followDoc) => followDoc.data().followingId as string
-        );
+        const followingIds = followsSnap.docs
+          .map((followDoc) => followDoc.data().followingId)
+          .filter((id): id is string => typeof id === "string");
 
         if (followingIds.length === 0) {
           setNotes([]);
@@ -68,13 +63,8 @@ export default function FollowingFeedPage() {
         }
 
         allNotes.sort((a, b) => {
-          const dateA = new Date(
-            String(a.createdAt || a.uploadDate || "")
-          ).getTime();
-
-          const dateB = new Date(
-            String(b.createdAt || b.uploadDate || "")
-          ).getTime();
+          const dateA = new Date(String(a.uploadDate || "")).getTime();
+          const dateB = new Date(String(b.uploadDate || "")).getTime();
 
           return dateB - dateA;
         });
