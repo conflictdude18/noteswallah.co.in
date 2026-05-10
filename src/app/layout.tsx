@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { Toaster } from "sonner";
 import { Analytics } from "@vercel/analytics/next";
+import { Toaster } from "sonner";
+
 import "./globals.css";
 
 import { AuthProvider } from "@/contexts/AuthContext";
-import Navbar from "@/components/Navbar";
+import LayoutClient from "@/components/LayoutClient";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -23,22 +24,24 @@ export const metadata: Metadata = {
     template: "%s | NotesWallah",
   },
   description:
-    "NotesWallah is a modern platform where students can upload, browse, save, and download verified educational notes.",
+    "NotesWallah is a modern educational platform where students upload, browse, save, and download study notes.",
   keywords: [
     "NotesWallah",
-    "student notes",
-    "PDF notes",
-    "class 12 notes",
+    "notes sharing",
     "study notes",
+    "student notes",
     "education platform",
+    "PDF notes",
     "CBSE notes",
+    "Class 12 notes",
   ],
   authors: [{ name: "NotesWallah Team" }],
   creator: "NotesWallah",
+  metadataBase: new URL("https://noteswallah.co.in"),
   openGraph: {
-    title: "NotesWallah — Smart Notes Sharing Platform",
+    title: "NotesWallah",
     description:
-      "Upload, browse, save, and download verified educational notes.",
+      "Upload, browse, save, and download educational notes easily.",
     url: "https://noteswallah.co.in",
     siteName: "NotesWallah",
     type: "website",
@@ -53,13 +56,20 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      data-scroll-behavior="smooth"
+      className={`${geistSans.variable} ${geistMono.variable} antialiased`}
     >
-      <body className="min-h-full flex flex-col">
+      <body className="min-h-screen overflow-x-hidden bg-[#050607] text-white selection:bg-red-500/30 selection:text-white">
+        <div className="fixed inset-0 -z-10 bg-[#050607]" />
+        <div className="fixed left-[-10%] top-[-10%] -z-10 h-[420px] w-[420px] rounded-full bg-red-500/10 blur-[140px]" />
+        <div className="fixed bottom-[-12%] right-[-10%] -z-10 h-[420px] w-[420px] rounded-full bg-red-700/10 blur-[150px]" />
+        <div className="fixed inset-0 -z-10 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.04),transparent_35%)]" />
+
         <AuthProvider>
-          <Navbar />
-          {children}
-          <Toaster richColors position="top-right" theme="dark" />
+          <LayoutClient>{children}</LayoutClient>
+
+          <Toaster richColors theme="dark" position="top-right" />
+
           <Analytics />
         </AuthProvider>
       </body>

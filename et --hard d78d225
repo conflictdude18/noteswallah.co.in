@@ -1,0 +1,16 @@
+[33m2d5ce67[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m UI redesign update
+[33mb25630c[m comments
+[33m21787d6[m Add social profiles follow system and report moderation
+[33m1e3413e[m Fix profile page and production build
+[33m0a1bde4[m Fix pdf thumbnail render typing
+[33mfc9d903[m Improve homepage and profile experience
+[33md78d225[m Add PDF upload size limit
+[33me9dfca6[m Add Vercel Analytics
+[33md462ec6[m Add SEO robots and sitemap
+[33m9902021[m Add NotesWallah favicon
+[33m5c23162[m Improve site metadata and branding
+[33mec9dd87[m Add saved notes, toasts, mobile navbar and UI improvements
+[33m0981159[m Added mobile responsive navbar
+[33mf4e35b9[m Merge branch 'main' of https://github.com/conflictdude18/noteswallah.co.in
+[33ma3cb3ab[m Initial commit - NotesWallah
+[33m2794837[m Initial commit
