@@ -40,17 +40,8 @@ export default function UploadPage() {
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
 
-<<<<<<< HEAD
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
-=======
-  const tagList = useMemo(() => {
-    return tags
-      .split(",")
-      .map((tag) => tag.trim())
-      .filter(Boolean);
-  }, [tags]);
->>>>>>> d0d6b77 (ANSHUL commit)
 
   if (!loading && !user) {
     router.push("/signin");
@@ -63,7 +54,6 @@ export default function UploadPage() {
     return new Promise((resolve, reject) => {
       fileReader.onload = async () => {
         try {
-<<<<<<< HEAD
           const typedArray = new Uint8Array(
             fileReader.result as ArrayBuffer
           );
@@ -75,13 +65,6 @@ export default function UploadPage() {
             scale: 1.5,
           });
 
-=======
-          const typedArray = new Uint8Array(fileReader.result as ArrayBuffer);
-          const pdf = await pdfjsLib.getDocument({ data: typedArray }).promise;
-          const page = await pdf.getPage(1);
-
-          const viewport = page.getViewport({ scale: 1.5 });
->>>>>>> d0d6b77 (ANSHUL commit)
           const canvas = document.createElement("canvas");
           const context = canvas.getContext("2d");
 
@@ -96,7 +79,6 @@ export default function UploadPage() {
           await page.render({
             canvasContext: context,
             viewport,
-<<<<<<< HEAD
           } as Parameters<typeof page.render>[0]).promise;
 
           canvas.toBlob(
@@ -106,14 +88,6 @@ export default function UploadPage() {
               } else {
                 reject("Thumbnail generation failed");
               }
-=======
-          }).promise;
-
-          canvas.toBlob(
-            (blob) => {
-              if (blob) resolve(blob);
-              else reject(new Error("Thumbnail generation failed"));
->>>>>>> d0d6b77 (ANSHUL commit)
             },
             "image/jpeg",
             0.9
@@ -123,11 +97,7 @@ export default function UploadPage() {
         }
       };
 
-<<<<<<< HEAD
       fileReader.onerror = reject;
-=======
-      fileReader.onerror = () => reject(new Error("Could not read PDF file."));
->>>>>>> d0d6b77 (ANSHUL commit)
       fileReader.readAsArrayBuffer(file);
     });
   }
@@ -166,14 +136,9 @@ export default function UploadPage() {
     setUploading(true);
 
     try {
-<<<<<<< HEAD
       const createdAt = Date.now();
 
       const pdfPath = `notes/${user.uid}/${createdAt}-${pdfFile.name}`;
-=======
-      const safeFileName = pdfFile.name.replaceAll("/", "-");
-      const pdfPath = `notes/${user.uid}/${Date.now()}-${safeFileName}`;
->>>>>>> d0d6b77 (ANSHUL commit)
       const pdfRef = ref(storage, pdfPath);
 
       await uploadBytes(pdfRef, pdfFile);
@@ -181,23 +146,15 @@ export default function UploadPage() {
       const pdfURL = await getDownloadURL(pdfRef);
 
       const thumbnailBlob = await generateThumbnail(pdfFile);
-<<<<<<< HEAD
 
       const thumbPath = `thumbnails/${user.uid}/${createdAt}.jpg`;
-=======
-      const thumbPath = `thumbnails/${user.uid}/${Date.now()}.jpg`;
->>>>>>> d0d6b77 (ANSHUL commit)
       const thumbRef = ref(storage, thumbPath);
 
       await uploadBytes(thumbRef, thumbnailBlob);
 
       const thumbnailUrl = await getDownloadURL(thumbRef);
 
-<<<<<<< HEAD
       const newNote = await addDoc(collection(db, "notes"), {
-=======
-      await addDoc(collection(db, "notes"), {
->>>>>>> d0d6b77 (ANSHUL commit)
         title: title.trim(),
         description: description.trim(),
         class: noteClass.trim(),
@@ -210,7 +167,6 @@ export default function UploadPage() {
         uploaderName: user.displayName || "Anonymous",
         uploaderEmail: user.email || "",
         uploadDate: serverTimestamp(),
-<<<<<<< HEAD
         createdAt: new Date().toISOString(),
 
         downloadsCount: 0,
@@ -233,20 +189,6 @@ export default function UploadPage() {
       toast.error(
         err instanceof Error ? err.message : "Upload failed."
       );
-=======
-        createdAt: serverTimestamp(),
-        downloadsCount: 0,
-        likesCount: 0,
-        viewsCount: 0,
-        status: "pending",
-      });
-
-      toast.success("Note uploaded successfully!");
-      router.push("/my-notes");
-    } catch (err: unknown) {
-      console.error("UPLOAD ERROR:", err);
-      toast.error(err instanceof Error ? err.message : "Upload failed.");
->>>>>>> d0d6b77 (ANSHUL commit)
     } finally {
       setUploading(false);
     }
@@ -268,15 +210,9 @@ export default function UploadPage() {
             <span className="block text-[#ff2d3d]">Learn Faster</span>
           </h1>
 
-<<<<<<< HEAD
           <p className="mt-5 text-lg text-white/60">
             Upload PDFs, assignments, handwritten notes and revision
             sheets to help students learn.
-=======
-          <p className="mt-5 max-w-2xl text-base leading-relaxed text-white/60 md:text-lg">
-            Upload your notes, assignments, handwritten PDFs and study material
-            to help students on NotesWallah.
->>>>>>> d0d6b77 (ANSHUL commit)
           </p>
 
           <div className="mt-8 flex flex-wrap gap-3">
@@ -292,7 +228,6 @@ export default function UploadPage() {
           onSubmit={handleUpload}
           className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-6 shadow-card backdrop-blur-xl md:p-8"
         >
-<<<<<<< HEAD
           <div className="grid gap-6">
             <div>
               <label className="mb-2 block text-sm text-white/70">
@@ -306,11 +241,6 @@ export default function UploadPage() {
                 className="w-full rounded-2xl border border-white/10 bg-black/30 px-5 py-3 outline-none transition focus:border-red-500"
                 required
               />
-=======
-          <div className="mb-8 flex items-start gap-4">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-red-500/10 text-red-300">
-              <Sparkles size={26} />
->>>>>>> d0d6b77 (ANSHUL commit)
             </div>
 
             <div>
@@ -339,15 +269,9 @@ export default function UploadPage() {
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-<<<<<<< HEAD
                 rows={4}
                 placeholder="Short description..."
                 className="w-full rounded-2xl border border-white/10 bg-black/30 px-5 py-3 outline-none transition focus:border-red-500"
-=======
-                rows={5}
-                placeholder="Describe your notes..."
-                className="nw-input min-h-[140px] resize-none"
->>>>>>> d0d6b77 (ANSHUL commit)
               />
             </div>
 
@@ -360,7 +284,6 @@ export default function UploadPage() {
                 placeholder="12th"
               />
 
-<<<<<<< HEAD
                 <input
                   value={noteClass}
                   onChange={(e) => setNoteClass(e.target.value)}
@@ -369,15 +292,6 @@ export default function UploadPage() {
                   required
                 />
               </div>
-=======
-              <InputField
-                label="Subject *"
-                icon={<Hash size={18} />}
-                value={subject}
-                onChange={setSubject}
-                placeholder="Mathematics"
-              />
->>>>>>> d0d6b77 (ANSHUL commit)
 
               <InputField
                 label="Topic *"
@@ -387,7 +301,6 @@ export default function UploadPage() {
                 placeholder="Matrices"
               />
 
-<<<<<<< HEAD
                 <input
                   value={subject}
                   onChange={(e) => setSubject(e.target.value)}
@@ -440,14 +353,6 @@ export default function UploadPage() {
                 }
                 className="w-full rounded-2xl border border-white/10 bg-black/30 px-5 py-3 text-white/70 file:mr-4 file:rounded-xl file:border-0 file:bg-red-600 file:px-4 file:py-2 file:text-white"
                 required
-=======
-              <InputField
-                label="Tags"
-                icon={<Tag size={18} />}
-                value={tags}
-                onChange={setTags}
-                placeholder="cbse, boards, jee"
->>>>>>> d0d6b77 (ANSHUL commit)
               />
             </div>
 
@@ -526,15 +431,6 @@ export default function UploadPage() {
               disabled={uploading}
               className="btn-primary mt-2 w-full py-4 disabled:cursor-not-allowed disabled:opacity-50"
             >
-<<<<<<< HEAD
-=======
-              {uploading ? (
-                <Loader2 size={18} className="animate-spin" />
-              ) : (
-                <UploadCloud size={18} />
-              )}
-
->>>>>>> d0d6b77 (ANSHUL commit)
               {uploading ? "Uploading..." : "Upload Note"}
             </button>
           </div>
