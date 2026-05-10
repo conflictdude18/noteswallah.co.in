@@ -1,25 +1,24 @@
 "use client";
 
+import type React from "react";
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-
-import {
-  addDoc,
-  collection,
-  serverTimestamp,
-} from "firebase/firestore";
-
-import {
-  getDownloadURL,
-  ref,
-  uploadBytes,
-} from "firebase/storage";
-
+import { addDoc, collection, serverTimestamp } from "firebase/firestore";
+import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import * as pdfjsLib from "pdfjs-dist";
+import {
+  BookOpen,
+  CheckCircle2,
+  FileText,
+  Layers,
+  ShieldCheck,
+  UploadCloud,
+  X,
+} from "lucide-react";
 
-import { db, storage } from "@/firebase/firebase";
 import { useAuth } from "@/contexts/AuthContext";
+import { db, storage } from "@/firebase/firebase";
 import { sendFollowerUploadNotifications } from "@/lib/sendFollowerUploadNotifications";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
@@ -40,8 +39,14 @@ export default function UploadPage() {
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
 
-  const [pdfFile, setPdfFile] = useState<File | null>(null);
-  const [uploading, setUploading] = useState(false);
+  const tagList = useMemo(
+    () =>
+      tags
+        .split(",")
+        .map((tag) => tag.trim())
+        .filter(Boolean),
+    [tags]
+  );
 
   if (!loading && !user) {
     router.push("/signin");
@@ -54,16 +59,10 @@ export default function UploadPage() {
     return new Promise((resolve, reject) => {
       fileReader.onload = async () => {
         try {
-          const typedArray = new Uint8Array(
-            fileReader.result as ArrayBuffer
-          );
-
+          const typedArray = new Uint8Array(fileReader.result as ArrayBuffer);
           const pdf = await pdfjsLib.getDocument(typedArray).promise;
           const page = await pdf.getPage(1);
-
-          const viewport = page.getViewport({
-            scale: 1.5,
-          });
+          const viewport = page.getViewport({ scale: 1.5 });
 
           const canvas = document.createElement("canvas");
           const context = canvas.getContext("2d");
@@ -83,11 +82,8 @@ export default function UploadPage() {
 
           canvas.toBlob(
             (blob) => {
-              if (blob) {
-                resolve(blob);
-              } else {
-                reject("Thumbnail generation failed");
-              }
+              if (blob) resolve(blob);
+              else reject(new Error("Thumbnail generation failed"));
             },
             "image/jpeg",
             0.9
@@ -115,7 +111,7 @@ export default function UploadPage() {
       return;
     }
 
-    if (!title || !noteClass || !subject || !topic) {
+    if (!title.trim() || !noteClass.trim() || !subject.trim() || !topic.trim()) {
       toast.error("Fill all required fields.");
       return;
     }
@@ -125,10 +121,7 @@ export default function UploadPage() {
       return;
     }
 
-    const maxSizeInMB = 10;
-    const maxSizeInBytes = maxSizeInMB * 1024 * 1024;
-
-    if (pdfFile.size > maxSizeInBytes) {
+    if (pdfFile.size > 10 * 1024 * 1024) {
       toast.error("PDF must be under 10MB.");
       return;
     }
@@ -142,16 +135,13 @@ export default function UploadPage() {
       const pdfRef = ref(storage, pdfPath);
 
       await uploadBytes(pdfRef, pdfFile);
-
       const pdfURL = await getDownloadURL(pdfRef);
 
       const thumbnailBlob = await generateThumbnail(pdfFile);
-
       const thumbPath = `thumbnails/${user.uid}/${createdAt}.jpg`;
       const thumbRef = ref(storage, thumbPath);
 
       await uploadBytes(thumbRef, thumbnailBlob);
-
       const thumbnailUrl = await getDownloadURL(thumbRef);
 
       const newNote = await addDoc(collection(db, "notes"), {
@@ -168,7 +158,6 @@ export default function UploadPage() {
         uploaderEmail: user.email || "",
         uploadDate: serverTimestamp(),
         createdAt: new Date().toISOString(),
-
         downloadsCount: 0,
         status: "pending",
       });
@@ -181,14 +170,10 @@ export default function UploadPage() {
       });
 
       toast.success("Note uploaded successfully!");
-
       router.push("/my-notes");
     } catch (err: unknown) {
       console.error("UPLOAD ERROR:", err);
-
-      toast.error(
-        err instanceof Error ? err.message : "Upload failed."
-      );
+      toast.error(err instanceof Error ? err.message : "Upload failed.");
     } finally {
       setUploading(false);
     }
@@ -211,8 +196,8 @@ export default function UploadPage() {
           </h1>
 
           <p className="mt-5 text-lg text-white/60">
-            Upload PDFs, assignments, handwritten notes and revision
-            sheets to help students learn.
+            Upload PDFs, assignments, handwritten notes and revision sheets to
+            help students learn.
           </p>
 
           <div className="mt-8 flex flex-wrap gap-3">
@@ -228,28 +213,11 @@ export default function UploadPage() {
           onSubmit={handleUpload}
           className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-6 shadow-card backdrop-blur-xl md:p-8"
         >
-          <div className="grid gap-6">
-            <div>
-              <label className="mb-2 block text-sm text-white/70">
-                Title *
-              </label>
-
-              <input
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="Electrostatics Complete Notes"
-                className="w-full rounded-2xl border border-white/10 bg-black/30 px-5 py-3 outline-none transition focus:border-red-500"
-                required
-              />
-            </div>
-
-            <div>
-              <h2 className="text-2xl font-black text-white">Note Details</h2>
-
-              <p className="mt-1 text-sm text-white/50">
-                Add accurate information so students can discover your notes.
-              </p>
-            </div>
+          <div className="mb-8">
+            <h2 className="text-2xl font-black text-white">Note Details</h2>
+            <p className="mt-1 text-sm text-white/50">
+              Add accurate information so students can discover your notes.
+            </p>
           </div>
 
           <div className="grid gap-6">
@@ -271,7 +239,7 @@ export default function UploadPage() {
                 onChange={(e) => setDescription(e.target.value)}
                 rows={4}
                 placeholder="Short description..."
-                className="w-full rounded-2xl border border-white/10 bg-black/30 px-5 py-3 outline-none transition focus:border-red-500"
+                className="w-full rounded-2xl border border-white/10 bg-black/30 px-5 py-3 text-white outline-none transition placeholder:text-white/30 focus:border-red-500"
               />
             </div>
 
@@ -284,77 +252,43 @@ export default function UploadPage() {
                 placeholder="12th"
               />
 
-                <input
-                  value={noteClass}
-                  onChange={(e) => setNoteClass(e.target.value)}
-                  placeholder="12th"
-                  className="w-full rounded-2xl border border-white/10 bg-black/30 px-5 py-3 outline-none transition focus:border-red-500"
-                  required
-                />
-              </div>
+              <InputField
+                label="Subject *"
+                icon={<BookOpen size={18} />}
+                value={subject}
+                onChange={setSubject}
+                placeholder="Physics"
+              />
 
               <InputField
                 label="Topic *"
-                icon={<BookOpen size={18} />}
+                icon={<FileText size={18} />}
                 value={topic}
                 onChange={setTopic}
-                placeholder="Matrices"
+                placeholder="Current Electricity"
               />
 
-                <input
-                  value={subject}
-                  onChange={(e) => setSubject(e.target.value)}
-                  placeholder="Physics"
-                  className="w-full rounded-2xl border border-white/10 bg-black/30 px-5 py-3 outline-none transition focus:border-red-500"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="mb-2 block text-sm text-white/70">
-                  Topic *
-                </label>
-
-                <input
-                  value={topic}
-                  onChange={(e) => setTopic(e.target.value)}
-                  placeholder="Current Electricity"
-                  className="w-full rounded-2xl border border-white/10 bg-black/30 px-5 py-3 outline-none transition focus:border-red-500"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="mb-2 block text-sm text-white/70">
-                  Tags
-                </label>
-
-                <input
-                  value={tags}
-                  onChange={(e) => setTags(e.target.value)}
-                  placeholder="cbse, boards, jee"
-                  className="w-full rounded-2xl border border-white/10 bg-black/30 px-5 py-3 outline-none transition focus:border-red-500"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="mb-2 block text-sm text-white/70">
-                PDF File *
-              </label>
-
-              <input
-                title="Upload PDF File"
-                aria-label="Upload PDF File"
-                type="file"
-                accept="application/pdf"
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                  setPdfFile(e.target.files?.[0] || null)
-                }
-                className="w-full rounded-2xl border border-white/10 bg-black/30 px-5 py-3 text-white/70 file:mr-4 file:rounded-xl file:border-0 file:bg-red-600 file:px-4 file:py-2 file:text-white"
-                required
+              <InputField
+                label="Tags"
+                icon={<Layers size={18} />}
+                value={tags}
+                onChange={setTags}
+                placeholder="cbse, boards, jee"
               />
             </div>
+
+            {tagList.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {tagList.map((tag) => (
+                  <span
+                    key={tag}
+                    className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-1 text-xs font-medium text-white/70"
+                  >
+                    #{tag}
+                  </span>
+                ))}
+              </div>
+            )}
 
             <div className="rounded-[1.8rem] border border-dashed border-white/15 bg-black/20 p-6 transition hover:border-red-500/40">
               <div className="flex flex-col items-center justify-center text-center">
@@ -373,9 +307,13 @@ export default function UploadPage() {
                 <label className="mt-5 cursor-pointer rounded-2xl border border-white/10 bg-white/[0.05] px-5 py-3 text-sm font-medium text-white transition hover:bg-white/[0.08]">
                   Choose PDF
                   <input
+                    title="Upload PDF File"
+                    aria-label="Upload PDF File"
                     type="file"
                     accept="application/pdf"
-                    onChange={(e) => setPdfFile(e.target.files?.[0] || null)}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setPdfFile(e.target.files?.[0] || null)
+                    }
                     className="hidden"
                     required
                   />
@@ -399,32 +337,19 @@ export default function UploadPage() {
                       </div>
                     </div>
 
-                  <button
-                    type="button"
-                    title="Remove selected PDF"
-                    aria-label="Remove selected PDF"
-                    onClick={() => setPdfFile(null)}
-                    className="rounded-xl p-2 text-white/45 transition hover:bg-white/10 hover:text-white"
-                  >
-                    <X size={16} />
-                  </button>
+                    <button
+                      type="button"
+                      title="Remove selected PDF"
+                      aria-label="Remove selected PDF"
+                      onClick={() => setPdfFile(null)}
+                      className="rounded-xl p-2 text-white/45 transition hover:bg-white/10 hover:text-white"
+                    >
+                      <X size={16} />
+                    </button>
                   </div>
                 )}
               </div>
             </div>
-
-            {tagList.length > 0 && (
-              <div className="flex flex-wrap gap-2">
-                {tagList.map((tag) => (
-                  <span
-                    key={tag}
-                    className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-1 text-xs font-medium text-white/70"
-                  >
-                    #{tag}
-                  </span>
-                ))}
-              </div>
-            )}
 
             <button
               type="submit"
@@ -504,7 +429,7 @@ function InputField({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
-          className="nw-input input-icon-left"
+          className="w-full rounded-2xl border border-white/10 bg-black/30 px-5 py-3 pl-12 text-white outline-none transition placeholder:text-white/30 focus:border-red-500"
           required={label.includes("*")}
         />
       </div>
