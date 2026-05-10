@@ -1,5 +1,6 @@
 "use client";
 
+import { sendNotification } from "@/lib/sendNotification";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
@@ -188,6 +189,16 @@ export default function NoteDetailsPage() {
         createdAt: new Date().toISOString(),
       });
 
+      if (note.uploaderId && note.uploaderId !== user.uid) {
+        await sendNotification({
+          userId: note.uploaderId,
+          title: "New Comment 💬",
+          message: `${user.displayName || user.email || "Someone"} commented on your note "${note.title}".`,
+          type: "comment",
+          noteId: note.id,
+        });
+      }
+
       setCommentText("");
       toast.success("Comment added.");
       fetchComments();
@@ -234,6 +245,16 @@ export default function NoteDetailsPage() {
           createdAt: new Date().toISOString(),
         });
 
+        if (note.uploaderId && note.uploaderId !== user.uid) {
+          await sendNotification({
+            userId: note.uploaderId,
+            title: "New Like ❤️",
+            message: `${user.displayName || user.email || "Someone"} liked your note "${note.title}".`,
+            type: "like",
+            noteId: note.id,
+          });
+        }
+
         setLikeId(newLike.id);
         setLikesCount((prev) => prev + 1);
       }
@@ -268,6 +289,16 @@ export default function NoteDetailsPage() {
           thumbnailUrl: note.thumbnailUrl || "",
           createdAt: new Date().toISOString(),
         });
+
+        if (note.uploaderId && note.uploaderId !== user.uid) {
+          await sendNotification({
+            userId: note.uploaderId,
+            title: "New Save 🔖",
+            message: `${user.displayName || user.email || "Someone"} saved your note "${note.title}".`,
+            type: "bookmark",
+            noteId: note.id,
+          });
+        }
 
         setBookmarkId(newBookmark.id);
         toast.success("Saved note.");

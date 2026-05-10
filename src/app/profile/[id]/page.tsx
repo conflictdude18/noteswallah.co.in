@@ -12,7 +12,7 @@ import {
   query,
   where,
 } from "firebase/firestore";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import {
   BadgeCheck,
   BookOpen,
@@ -21,11 +21,13 @@ import {
   GraduationCap,
   UserRound,
 } from "lucide-react";
+import { toast } from "sonner";
 
 import { db } from "@/firebase/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import UserAvatar from "@/components/UserAvatar";
 import type { Note } from "@/types/note";
+import { sendNotification } from "@/lib/sendNotification";
 
 type UserProfile = {
   uid: string;
@@ -40,6 +42,7 @@ type UserProfile = {
 
 export default function PublicProfilePage() {
   const { id } = useParams<{ id: string }>();
+  const router = useRouter();
   const { user } = useAuth();
 
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -47,16 +50,27 @@ export default function PublicProfilePage() {
   const [loading, setLoading] = useState(true);
 
   const [followersCount, setFollowersCount] = useState(0);
+  const [followingCount, setFollowingCount] = useState(0);
   const [isFollowing, setIsFollowing] = useState(false);
   const [followDocId, setFollowDocId] = useState("");
+  const [followLoading, setFollowLoading] = useState(false);
 
   useEffect(() => {
     async function fetchProfile() {
+      if (!id) return;
+
       try {
+        setLoading(true);
+
         const userSnap = await getDoc(doc(db, "users", id));
 
         if (userSnap.exists()) {
-          setProfile(userSnap.data() as UserProfile);
+          setProfile({
+            uid: id,
+            ...(userSnap.data() as Omit<UserProfile, "uid">),
+          });
+        } else {
+          setProfile(null);
         }
 
         const notesQuery = query(
@@ -82,6 +96,14 @@ export default function PublicProfilePage() {
         const followersSnap = await getDocs(followersQuery);
         setFollowersCount(followersSnap.docs.length);
 
+        const followingQuery = query(
+          collection(db, "follows"),
+          where("followerId", "==", id)
+        );
+
+        const followingSnap = await getDocs(followingQuery);
+        setFollowingCount(followingSnap.docs.length);
+
         if (user) {
           const currentFollowQuery = query(
             collection(db, "follows"),
@@ -101,6 +123,7 @@ export default function PublicProfilePage() {
         }
       } catch (err) {
         console.error("PROFILE ERROR:", err);
+        toast.error("Failed to load profile.");
       } finally {
         setLoading(false);
       }
@@ -119,27 +142,52 @@ export default function PublicProfilePage() {
   }, [notes]);
 
   async function handleFollow() {
-    if (!user || user.uid === id) return;
+    if (!user) {
+      router.push("/signin");
+      return;
+    }
+
+    if (!id || user.uid === id) return;
 
     try {
+      setFollowLoading(true);
+
       if (isFollowing && followDocId) {
         await deleteDoc(doc(db, "follows", followDocId));
+
         setIsFollowing(false);
         setFollowDocId("");
         setFollowersCount((prev) => Math.max(0, prev - 1));
+        toast.success("Unfollowed.");
       } else {
         const newFollow = await addDoc(collection(db, "follows"), {
           followerId: user.uid,
+          followerName: user.displayName || user.email || "NotesWallah User",
+          followerAvatar: user.photoURL || "",
           followingId: id,
-          createdAt: Date.now(),
+          followingName: displayName,
+          createdAt: new Date().toISOString(),
+        });
+
+        await sendNotification({
+          userId: id,
+          title: "New Follower 👋",
+          message: `${
+            user.displayName || user.email || "Someone"
+          } started following you.`,
+          type: "system",
         });
 
         setFollowDocId(newFollow.id);
         setIsFollowing(true);
         setFollowersCount((prev) => prev + 1);
+        toast.success("Following.");
       }
     } catch (err) {
       console.error("FOLLOW ERROR:", err);
+      toast.error("Follow action failed.");
+    } finally {
+      setFollowLoading(false);
     }
   }
 
@@ -198,21 +246,42 @@ export default function PublicProfilePage() {
 
                 <Link
                   href={`/profile/${id}/followers`}
-                  className="rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/70"
+                  className="rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/70 transition hover:bg-white/10 hover:text-white"
                 >
                   {followersCount} followers
+                </Link>
+
+                <Link
+                  href={`/profile/${id}/following`}
+                  className="rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/70 transition hover:bg-white/10 hover:text-white"
+                >
+                  {followingCount} following
                 </Link>
 
                 {user && user.uid !== id && (
                   <button
                     onClick={handleFollow}
-                    className={`rounded-2xl px-5 py-2 text-sm font-medium ${
+                    disabled={followLoading}
+                    className={`rounded-2xl px-5 py-2 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-60 ${
                       isFollowing
-                        ? "border border-white/10 bg-white/10"
+                        ? "border border-white/10 bg-white/10 hover:bg-white/15"
                         : "bg-red-600 hover:bg-red-500"
                     }`}
                   >
-                    {isFollowing ? "Following" : "Follow"}
+                    {followLoading
+                      ? "Please wait..."
+                      : isFollowing
+                        ? "Following"
+                        : "Follow"}
+                  </button>
+                )}
+
+                {!user && (
+                  <button
+                    onClick={handleFollow}
+                    className="rounded-2xl bg-red-600 px-5 py-2 text-sm font-medium transition hover:bg-red-500"
+                  >
+                    Follow
                   </button>
                 )}
               </div>

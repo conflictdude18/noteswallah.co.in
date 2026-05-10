@@ -10,26 +10,24 @@ import {
   query,
   where,
 } from "firebase/firestore";
-import { useParams } from "next/navigation";
-import { UserRound } from "lucide-react";
+import { ArrowLeft, UserRoundCheck } from "lucide-react";
+import { useParams, useRouter } from "next/navigation";
 
 import { db } from "@/firebase/firebase";
-import LoadingSpinner from "@/components/LoadingSpinner";
 import UserAvatar from "@/components/UserAvatar";
 
-type UserProfile = {
-  uid: string;
-  displayName?: string;
-  name?: string;
-  occupation?: string;
-  avatarUrl?: string;
-  photoURL?: string;
+type FollowingUser = {
+  id: string;
+  followingId: string;
+  followingName: string;
+  followingAvatar?: string;
 };
 
 export default function FollowingPage() {
   const { id } = useParams<{ id: string }>();
+  const router = useRouter();
 
-  const [users, setUsers] = useState<UserProfile[]>([]);
+  const [following, setFollowing] = useState<FollowingUser[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -41,18 +39,43 @@ export default function FollowingPage() {
         );
 
         const snap = await getDocs(q);
-        const profiles: UserProfile[] = [];
 
-        for (const followDoc of snap.docs) {
-          const followingId = followDoc.data().followingId;
-          const userSnap = await getDoc(doc(db, "users", followingId));
+        const data: FollowingUser[] = await Promise.all(
+          snap.docs.map(async (followDoc) => {
+            const followData = followDoc.data();
+            const followingId = followData.followingId;
 
-          if (userSnap.exists()) {
-            profiles.push(userSnap.data() as UserProfile);
-          }
-        }
+            const userSnap = await getDoc(doc(db, "users", followingId));
 
-        setUsers(profiles);
+            if (userSnap.exists()) {
+              const userData = userSnap.data();
+
+              return {
+                id: followDoc.id,
+                followingId,
+                followingName:
+                  userData.displayName ||
+                  userData.name ||
+                  followData.followingName ||
+                  "NotesWallah User",
+                followingAvatar:
+                  userData.avatarUrl ||
+                  userData.photoURL ||
+                  "",
+              };
+            }
+
+            return {
+              id: followDoc.id,
+              followingId,
+              followingName:
+                followData.followingName || "NotesWallah User",
+              followingAvatar: "",
+            };
+          })
+        );
+
+        setFollowing(data);
       } catch (err) {
         console.error("FOLLOWING ERROR:", err);
       } finally {
@@ -63,49 +86,65 @@ export default function FollowingPage() {
     fetchFollowing();
   }, [id]);
 
-  if (loading) return <LoadingSpinner />;
+  if (loading) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-black text-white">
+        Loading following...
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-black text-white">
-      <div className="container-max py-10">
-        <h1 className="text-4xl font-black">Following</h1>
-        <p className="mt-2 text-white/50">
-          Contributors this user follows.
-        </p>
+      <section className="container-max py-10">
+        <button
+          onClick={() => router.back()}
+          className="mb-8 flex items-center gap-2 text-sm text-white/60 transition hover:text-white"
+        >
+          <ArrowLeft size={16} />
+          Back
+        </button>
 
-        {users.length === 0 ? (
-          <div className="glass-card mt-10 p-10 text-center">
-            <UserRound className="mx-auto text-white/30" size={52} />
-            <p className="mt-4 text-white/60">Not following anyone yet.</p>
+        <div className="mb-8 flex items-center gap-3">
+          <div className="rounded-2xl bg-red-500/10 p-3 text-red-500">
+            <UserRoundCheck size={24} />
+          </div>
+
+          <div>
+            <h1 className="text-3xl font-black">Following</h1>
+            <p className="text-sm text-white/50">
+              Contributors this user follows.
+            </p>
+          </div>
+        </div>
+
+        {following.length === 0 ? (
+          <div className="rounded-3xl border border-white/10 bg-white/5 p-10 text-center text-white/50">
+            Not following anyone yet.
           </div>
         ) : (
-          <div className="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-            {users.map((profile) => {
-              const displayName =
-                profile.displayName || profile.name || "NotesWallah User";
+          <div className="grid gap-4 md:grid-cols-2">
+            {following.map((item) => (
+              <Link
+                key={item.id}
+                href={`/profile/${item.followingId}`}
+                className="flex items-center gap-4 rounded-3xl border border-white/10 bg-white/5 p-5 transition hover:border-red-500/30 hover:bg-white/10"
+              >
+                <UserAvatar
+                  name={item.followingName}
+                  src={item.followingAvatar || ""}
+                  size="md"
+                />
 
-              const avatarUrl = profile.avatarUrl || profile.photoURL || "";
-
-              return (
-                <Link
-                  key={profile.uid}
-                  href={`/profile/${profile.uid}`}
-                  className="glass-card flex items-center gap-4 p-5 transition hover:border-red-500/30"
-                >
-                  <UserAvatar name={displayName} src={avatarUrl} size="md" />
-
-                  <div>
-                    <h2 className="font-bold">{displayName}</h2>
-                    <p className="text-sm text-white/50">
-                      {profile.occupation || "Student"}
-                    </p>
-                  </div>
-                </Link>
-              );
-            })}
+                <div>
+                  <h2 className="font-bold">{item.followingName}</h2>
+                  <p className="text-sm text-white/50">View profile</p>
+                </div>
+              </Link>
+            ))}
           </div>
         )}
-      </div>
+      </section>
     </main>
   );
 }

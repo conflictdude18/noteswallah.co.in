@@ -11,21 +11,16 @@ import {
 } from "firebase/firestore";
 
 import {
+  getDownloadURL,
   ref,
   uploadBytes,
-  getDownloadURL,
 } from "firebase/storage";
 
 import * as pdfjsLib from "pdfjs-dist";
 
-pdfjsLib.GlobalWorkerOptions.workerSrc =
-  new URL(
-    "pdfjs-dist/build/pdf.worker.min.mjs",
-    import.meta.url
-  ).toString();
-
 import { db, storage } from "@/firebase/firebase";
 import { useAuth } from "@/contexts/AuthContext";
+import { sendFollowerUploadNotifications } from "@/lib/sendFollowerUploadNotifications";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc =
   new URL(
@@ -35,7 +30,6 @@ pdfjsLib.GlobalWorkerOptions.workerSrc =
 
 export default function UploadPage() {
   const router = useRouter();
-
   const { user, loading } = useAuth();
 
   const [title, setTitle] = useState("");
@@ -45,20 +39,15 @@ export default function UploadPage() {
   const [topic, setTopic] = useState("");
   const [tags, setTags] = useState("");
 
-  const [pdfFile, setPdfFile] =
-    useState<File | null>(null);
-
-  const [uploading, setUploading] =
-    useState(false);
+  const [pdfFile, setPdfFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
 
   if (!loading && !user) {
     router.push("/signin");
     return null;
   }
 
-  async function generateThumbnail(
-    file: File
-  ): Promise<Blob> {
+  async function generateThumbnail(file: File): Promise<Blob> {
     const fileReader = new FileReader();
 
     return new Promise((resolve, reject) => {
@@ -68,19 +57,14 @@ export default function UploadPage() {
             fileReader.result as ArrayBuffer
           );
 
-          const pdf = await pdfjsLib
-            .getDocument(typedArray)
-            .promise;
-
+          const pdf = await pdfjsLib.getDocument(typedArray).promise;
           const page = await pdf.getPage(1);
 
           const viewport = page.getViewport({
             scale: 1.5,
           });
 
-          const canvas =
-            document.createElement("canvas");
-
+          const canvas = document.createElement("canvas");
           const context = canvas.getContext("2d");
 
           if (!context) {
@@ -101,9 +85,7 @@ export default function UploadPage() {
               if (blob) {
                 resolve(blob);
               } else {
-                reject(
-                  "Thumbnail generation failed"
-                );
+                reject("Thumbnail generation failed");
               }
             },
             "image/jpeg",
@@ -115,7 +97,6 @@ export default function UploadPage() {
       };
 
       fileReader.onerror = reject;
-
       fileReader.readAsArrayBuffer(file);
     });
   }
@@ -135,12 +116,7 @@ export default function UploadPage() {
       return;
     }
 
-    if (
-      !title ||
-      !noteClass ||
-      !subject ||
-      !topic
-    ) {
+    if (!title || !noteClass || !subject || !topic) {
       toast.error("Fill all required fields.");
       return;
     }
@@ -151,9 +127,7 @@ export default function UploadPage() {
     }
 
     const maxSizeInMB = 10;
-
-    const maxSizeInBytes =
-      maxSizeInMB * 1024 * 1024;
+    const maxSizeInBytes = maxSizeInMB * 1024 * 1024;
 
     if (pdfFile.size > maxSizeInBytes) {
       toast.error("PDF must be under 10MB.");
@@ -163,41 +137,29 @@ export default function UploadPage() {
     setUploading(true);
 
     try {
-      /* PDF UPLOAD */
+      const createdAt = Date.now();
 
-      const pdfPath = `notes/${user.uid}/${Date.now()}-${pdfFile.name}`;
-
+      const pdfPath = `notes/${user.uid}/${createdAt}-${pdfFile.name}`;
       const pdfRef = ref(storage, pdfPath);
 
       await uploadBytes(pdfRef, pdfFile);
 
       const pdfURL = await getDownloadURL(pdfRef);
 
-      /* THUMBNAIL */
+      const thumbnailBlob = await generateThumbnail(pdfFile);
 
-      const thumbnailBlob =
-        await generateThumbnail(pdfFile);
-
-      const thumbPath = `thumbnails/${user.uid}/${Date.now()}.jpg`;
-
+      const thumbPath = `thumbnails/${user.uid}/${createdAt}.jpg`;
       const thumbRef = ref(storage, thumbPath);
 
       await uploadBytes(thumbRef, thumbnailBlob);
 
-      const thumbnailUrl =
-        await getDownloadURL(thumbRef);
+      const thumbnailUrl = await getDownloadURL(thumbRef);
 
-      /* SAVE FIRESTORE */
-
-      await addDoc(collection(db, "notes"), {
+      const newNote = await addDoc(collection(db, "notes"), {
         title: title.trim(),
-
         description: description.trim(),
-
         class: noteClass.trim(),
-
         subject: subject.trim(),
-
         topic: topic.trim(),
 
         tags: tags
@@ -206,35 +168,34 @@ export default function UploadPage() {
           .filter(Boolean),
 
         pdfURL,
-
         thumbnailUrl,
 
         uploaderId: user.uid,
-
-        uploaderName:
-          user.displayName || "Anonymous",
-
+        uploaderName: user.displayName || "Anonymous",
         uploaderEmail: user.email || "",
 
         uploadDate: serverTimestamp(),
+        createdAt: new Date().toISOString(),
 
         downloadsCount: 0,
-
         status: "pending",
       });
 
-      toast.success(
-        "Note uploaded successfully!"
-      );
+      await sendFollowerUploadNotifications({
+        uploaderId: user.uid,
+        uploaderName: user.displayName || user.email || "Someone you follow",
+        noteId: newNote.id,
+        noteTitle: title.trim(),
+      });
+
+      toast.success("Note uploaded successfully!");
 
       router.push("/my-notes");
     } catch (err: unknown) {
       console.error("UPLOAD ERROR:", err);
 
       toast.error(
-        err instanceof Error
-          ? err.message
-          : "Upload failed."
+        err instanceof Error ? err.message : "Upload failed."
       );
     } finally {
       setUploading(false);
@@ -257,8 +218,7 @@ export default function UploadPage() {
           </h1>
 
           <p className="mt-5 text-lg text-white/60">
-            Upload PDFs, assignments,
-            handwritten notes and revision
+            Upload PDFs, assignments, handwritten notes and revision
             sheets to help students learn.
           </p>
         </div>
@@ -275,9 +235,7 @@ export default function UploadPage() {
 
               <input
                 value={title}
-                onChange={(e) =>
-                  setTitle(e.target.value)
-                }
+                onChange={(e) => setTitle(e.target.value)}
                 placeholder="Electrostatics Complete Notes"
                 className="w-full rounded-2xl border border-white/10 bg-black/30 px-5 py-3 outline-none transition focus:border-red-500"
                 required
@@ -291,9 +249,7 @@ export default function UploadPage() {
 
               <textarea
                 value={description}
-                onChange={(e) =>
-                  setDescription(e.target.value)
-                }
+                onChange={(e) => setDescription(e.target.value)}
                 rows={4}
                 placeholder="Short description..."
                 className="w-full rounded-2xl border border-white/10 bg-black/30 px-5 py-3 outline-none transition focus:border-red-500"
@@ -308,9 +264,7 @@ export default function UploadPage() {
 
                 <input
                   value={noteClass}
-                  onChange={(e) =>
-                    setNoteClass(e.target.value)
-                  }
+                  onChange={(e) => setNoteClass(e.target.value)}
                   placeholder="12th"
                   className="w-full rounded-2xl border border-white/10 bg-black/30 px-5 py-3 outline-none transition focus:border-red-500"
                   required
@@ -324,9 +278,7 @@ export default function UploadPage() {
 
                 <input
                   value={subject}
-                  onChange={(e) =>
-                    setSubject(e.target.value)
-                  }
+                  onChange={(e) => setSubject(e.target.value)}
                   placeholder="Physics"
                   className="w-full rounded-2xl border border-white/10 bg-black/30 px-5 py-3 outline-none transition focus:border-red-500"
                   required
@@ -340,9 +292,7 @@ export default function UploadPage() {
 
                 <input
                   value={topic}
-                  onChange={(e) =>
-                    setTopic(e.target.value)
-                  }
+                  onChange={(e) => setTopic(e.target.value)}
                   placeholder="Current Electricity"
                   className="w-full rounded-2xl border border-white/10 bg-black/30 px-5 py-3 outline-none transition focus:border-red-500"
                   required
@@ -356,9 +306,7 @@ export default function UploadPage() {
 
                 <input
                   value={tags}
-                  onChange={(e) =>
-                    setTags(e.target.value)
-                  }
+                  onChange={(e) => setTags(e.target.value)}
                   placeholder="cbse, boards, jee"
                   className="w-full rounded-2xl border border-white/10 bg-black/30 px-5 py-3 outline-none transition focus:border-red-500"
                 />
@@ -375,12 +323,8 @@ export default function UploadPage() {
                 aria-label="Upload PDF File"
                 type="file"
                 accept="application/pdf"
-                onChange={(
-                  e: React.ChangeEvent<HTMLInputElement>
-                ) =>
-                  setPdfFile(
-                    e.target.files?.[0] || null
-                  )
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  setPdfFile(e.target.files?.[0] || null)
                 }
                 className="w-full rounded-2xl border border-white/10 bg-black/30 px-5 py-3 text-white/70 file:mr-4 file:rounded-xl file:border-0 file:bg-red-600 file:px-4 file:py-2 file:text-white"
                 required
@@ -392,9 +336,7 @@ export default function UploadPage() {
               disabled={uploading}
               className="mt-4 rounded-2xl bg-red-600 px-6 py-4 font-semibold text-white transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {uploading
-                ? "Uploading..."
-                : "Upload Note"}
+              {uploading ? "Uploading..." : "Upload Note"}
             </button>
           </div>
         </form>
