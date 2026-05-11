@@ -59,8 +59,7 @@ export default function RootLayout({
       data-scroll-behavior="smooth"
       className={`${geistSans.variable} ${geistMono.variable} antialiased`}
     >
-      <body className="min-h-screen overflow-x-hidden bg-[#050607] text-white selection:bg-red-500/30 selection:text-white">
-        <div className="fixed inset-0 -z-10 bg-[#050607]" />
+      <body className="min-h-screen overflow-x-hidden bg-[#050607] pb-24 text-white selection:bg-red-500/30 selection:text-white lg:pb-0">        <div className="fixed inset-0 -z-10 bg-[#050607]" />
         <div className="fixed left-[-10%] top-[-10%] -z-10 h-[420px] w-[420px] rounded-full bg-red-500/10 blur-[140px]" />
         <div className="fixed bottom-[-12%] right-[-10%] -z-10 h-[420px] w-[420px] rounded-full bg-red-700/10 blur-[150px]" />
         <div className="fixed inset-0 -z-10 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.04),transparent_35%)]" />

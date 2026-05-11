@@ -441,6 +441,39 @@ export default function NoteDetailsPage() {
               />
             </div>
 
+            <section className="rounded-3xl border border-yellow-500/20 bg-yellow-500/5 p-5">
+              <div className="flex items-start gap-3">
+                <div className="rounded-2xl bg-yellow-500/10 p-2 text-yellow-400">
+                  <AlertTriangle size={20} />
+                </div>
+
+                <div>
+                  <h2 className="font-black text-yellow-300">
+                    Educational Content Disclaimer
+                  </h2>
+
+                  <p className="mt-2 text-sm leading-relaxed text-white/60">
+                    NotesWallah is a student-driven platform where students
+                    share notes to help each other learn. Some uploaded files
+                    may contain watermarks, logos, or references to schools,
+                    coaching institutes, websites, or educational organizations.
+                    Such materials are shared by users for educational and
+                    non-commercial purposes only. NotesWallah does not claim
+                    ownership of third-party content, trademarks, or branding.
+                    If you are the rightful owner of any material and want it
+                    reviewed or removed, contact us at{" "}
+                    <a
+                      href="mailto:legal@noteswallah.co.in"
+                      className="font-semibold text-yellow-300 underline-offset-4 hover:underline"
+                    >
+                      legal@noteswallah.co.in
+                    </a>
+                    .
+                  </p>
+                </div>
+              </div>
+            </section>
+
             <section className="rounded-3xl border border-white/10 bg-white/5 p-6">
               <div className="flex items-center gap-3">
                 <MessageCircle className="text-red-500" size={22} />
@@ -541,7 +574,10 @@ export default function NoteDetailsPage() {
                 <InfoBox label="Subject" value={note.subject} />
                 <InfoBox label="Class" value={note.class} />
                 <InfoBox label="Topic" value={note.topic} />
-                <InfoBox label="Downloads" value={String(note.downloadsCount ?? 0)} />
+                <InfoBox
+                  label="Downloads"
+                  value={String(note.downloadsCount ?? 0)}
+                />
               </div>
 
               <div className="mt-4 rounded-2xl border border-white/10 bg-black/30 p-4">
@@ -731,13 +767,7 @@ export default function NoteDetailsPage() {
   );
 }
 
-function InfoBox({
-  label,
-  value,
-}: {
-  label: string;
-  value: string;
-}) {
+function InfoBox({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
       <p className="text-xs text-white/40">{label}</p>

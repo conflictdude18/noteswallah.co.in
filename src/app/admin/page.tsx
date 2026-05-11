@@ -9,28 +9,22 @@ import {
   doc,
   getDoc,
   getDocs,
-  query,
   updateDoc,
-  where,
 } from "firebase/firestore";
 import {
-  Activity,
   AlertTriangle,
-  Bot,
+  BarChart3,
+  Bell,
   CheckCircle2,
   Clock3,
   ExternalLink,
-  FileCheck2,
   FileText,
-  Gauge,
-  Layers3,
   RefreshCw,
+  Search,
   Shield,
-  Sparkles,
   Trash2,
-  UploadCloud,
+  Users,
   XCircle,
-  Zap,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -39,27 +33,40 @@ import { db } from "@/firebase/firebase";
 import type { Note } from "@/types/note";
 
 type UserDoc = {
-  role: string;
-  email: string;
-  name: string;
+  role?: string;
+  email?: string;
+  name?: string;
 };
 
-type AIModerationResult = {
-  score: number;
-  risk: "Low" | "Medium" | "High";
-  suggestion: "Approve" | "Review Carefully" | "Reject";
-  issues: string[];
+type Report = {
+  id: string;
+  noteId?: string;
+  noteTitle?: string;
+  noteUploaderId?: string;
+  reporterId?: string;
+  reporterEmail?: string;
+  reason?: string;
+  details?: string;
+  status?: "pending" | "resolved";
+  createdAt?: string;
 };
+
+type AdminTab = "pending" | "approved" | "rejected" | "reported";
 
 export default function AdminPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
 
-  const [isAdmin, setIsAdmin] = useState(false);
   const [checking, setChecking] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
+
   const [notes, setNotes] = useState<Note[]>([]);
+  const [reports, setReports] = useState<Report[]>([]);
   const [fetching, setFetching] = useState(true);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
+
+  const [activeTab, setActiveTab] = useState<AdminTab>("pending");
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
     async function checkAdmin() {
@@ -69,12 +76,9 @@ export default function AdminPage() {
 
       try {
         const snap = await getDoc(doc(db, "users", user.uid));
-
-        if (snap.exists()) {
-          const data = snap.data() as UserDoc;
-          setIsAdmin(data.role === "admin");
-        }
-      } catch (err: unknown) {
+        const data = snap.exists() ? (snap.data() as UserDoc) : null;
+        setIsAdmin(data?.role === "admin");
+      } catch (err) {
         console.error("ADMIN CHECK ERROR:", err);
         toast.error("Failed to verify admin access.");
       } finally {
@@ -87,36 +91,38 @@ export default function AdminPage() {
       return;
     }
 
-    if (user) {
-      checkAdmin();
-    }
+    if (user) checkAdmin();
   }, [user, loading, router]);
 
-  async function fetchPendingNotes() {
+  async function fetchAdminData() {
     setFetching(true);
 
     try {
-      const q = query(collection(db, "notes"), where("status", "==", "pending"));
-      const snap = await getDocs(q);
+      const notesSnap = await getDocs(collection(db, "notes"));
+      const reportsSnap = await getDocs(collection(db, "reports"));
 
-      const data: Note[] = snap.docs.map((document) => ({
-        id: document.id,
-        ...(document.data() as Omit<Note, "id">),
+      const notesData: Note[] = notesSnap.docs.map((item) => ({
+        id: item.id,
+        ...(item.data() as Omit<Note, "id">),
       }));
 
-      setNotes(data);
-    } catch (err: unknown) {
-      console.error("PENDING NOTES FETCH ERROR:", err);
-      toast.error("Failed to load pending notes.");
+      const reportsData: Report[] = reportsSnap.docs.map((item) => ({
+        id: item.id,
+        ...(item.data() as Omit<Report, "id">),
+      }));
+
+      setNotes(notesData);
+      setReports(reportsData);
+    } catch (err) {
+      console.error("ADMIN DATA FETCH ERROR:", err);
+      toast.error("Failed to load admin data.");
     } finally {
       setFetching(false);
     }
   }
 
   useEffect(() => {
-    if (isAdmin) {
-      fetchPendingNotes();
-    }
+    if (isAdmin) fetchAdminData();
   }, [isAdmin]);
 
   async function approveNote(noteId?: string) {
@@ -130,8 +136,8 @@ export default function AdminPage() {
       });
 
       toast.success("Note approved.");
-      await fetchPendingNotes();
-    } catch (err: unknown) {
+      await fetchAdminData();
+    } catch (err) {
       console.error("APPROVE NOTE ERROR:", err);
       toast.error("Failed to approve note.");
     } finally {
@@ -150,8 +156,8 @@ export default function AdminPage() {
       });
 
       toast.success("Note rejected.");
-      await fetchPendingNotes();
-    } catch (err: unknown) {
+      await fetchAdminData();
+    } catch (err) {
       console.error("REJECT NOTE ERROR:", err);
       toast.error("Failed to reject note.");
     } finally {
@@ -170,9 +176,9 @@ export default function AdminPage() {
     try {
       await deleteDoc(doc(db, "notes", noteId));
 
-      toast.success("Note deleted permanently.");
-      await fetchPendingNotes();
-    } catch (err: unknown) {
+      toast.success("Note deleted.");
+      await fetchAdminData();
+    } catch (err) {
       console.error("DELETE NOTE ERROR:", err);
       toast.error("Failed to delete note.");
     } finally {
@@ -180,70 +186,81 @@ export default function AdminPage() {
     }
   }
 
-  const analytics = useMemo(() => {
-    const subjects = new Set(notes.map((note) => note.subject).filter(Boolean));
-    const classes = new Set(notes.map((note) => note.class).filter(Boolean));
-    const uploaders = new Set(
-      notes.map((note) => note.uploaderEmail).filter(Boolean)
-    );
+  async function resolveReport(reportId?: string) {
+    if (!reportId) return;
 
-    const aiResults = notes.map((note) => analyzeNote(note));
-    const highRisk = aiResults.filter((item) => item.risk === "High").length;
+    setActionLoadingId(reportId);
 
+    try {
+      await updateDoc(doc(db, "reports", reportId), {
+        status: "resolved",
+      });
+
+      toast.success("Report marked as resolved.");
+      await fetchAdminData();
+    } catch (err) {
+      console.error("RESOLVE REPORT ERROR:", err);
+      toast.error("Failed to resolve report.");
+    } finally {
+      setActionLoadingId(null);
+    }
+  }
+
+  const stats = useMemo(() => {
     return {
-      pending: notes.length,
-      subjects: subjects.size,
-      classes: classes.size,
-      uploaders: uploaders.size,
-      highRisk,
+      total: notes.length,
+      pending: notes.filter((note) => note.status === "pending").length,
+      approved: notes.filter((note) => note.status === "approved").length,
+      rejected: notes.filter((note) => note.status === "rejected").length,
+      reports: reports.filter((report) => report.status !== "resolved").length,
+      users: new Set(notes.map((note) => note.uploaderId).filter(Boolean)).size,
     };
-  }, [notes]);
+  }, [notes, reports]);
+
+  const filteredNotes = useMemo(() => {
+    const queryText = search.toLowerCase().trim();
+
+    return notes
+      .filter((note) => note.status === activeTab)
+      .filter((note) => {
+        if (!queryText) return true;
+
+        return `${note.title} ${note.subject} ${note.class} ${note.topic} ${note.uploaderEmail} ${note.uploaderName}`
+          .toLowerCase()
+          .includes(queryText);
+      });
+  }, [notes, activeTab, search]);
+
+  const filteredReports = useMemo(() => {
+    const queryText = search.toLowerCase().trim();
+
+    return reports
+      .filter((report) => report.status !== "resolved")
+      .filter((report) => {
+        if (!queryText) return true;
+
+        return `${report.noteTitle} ${report.reason} ${report.details} ${report.reporterEmail}`
+          .toLowerCase()
+          .includes(queryText);
+      });
+  }, [reports, search]);
 
   if (loading || checking) {
-    return (
-      <main className="flex min-h-[70vh] items-center justify-center px-4">
-        <section className="relative w-full max-w-md overflow-hidden rounded-[2rem] border border-white/10 bg-[#07090d] p-8 text-center shadow-card">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(239,68,68,0.18),transparent_55%)]" />
-
-          <div className="relative z-10">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border border-red-500/20 bg-red-500/10 text-red-300">
-              <Shield size={34} />
-            </div>
-
-            <h1 className="mt-6 text-2xl font-black text-white">
-              Checking Admin Access
-            </h1>
-
-            <p className="mt-3 text-sm leading-6 text-white/55">
-              Verifying your permission before opening the moderation dashboard.
-            </p>
-          </div>
-        </section>
-      </main>
-    );
+    return <AdminLoading />;
   }
 
   if (!isAdmin) {
     return (
       <main className="flex min-h-[70vh] items-center justify-center px-4">
         <section className="glass-card w-full max-w-md rounded-[2rem] p-8 text-center">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border border-red-500/20 bg-red-500/10 text-red-300">
-            <Shield size={34} />
-          </div>
-
+          <Shield className="mx-auto text-red-300" size={48} />
           <h1 className="mt-6 text-3xl font-black text-red-300">
             Access Denied
           </h1>
-
-          <p className="mt-3 text-sm leading-6 text-white/55">
+          <p className="mt-3 text-sm text-white/55">
             You do not have admin permission for this page.
           </p>
-
-          <button
-            type="button"
-            onClick={() => router.push("/")}
-            className="btn-primary mt-7 w-full"
-          >
+          <button onClick={() => router.push("/")} className="btn-primary mt-7 w-full">
             Go Home
           </button>
         </section>
@@ -254,365 +271,174 @@ export default function AdminPage() {
   return (
     <main className="space-y-8 pb-24 md:pb-8">
       <section className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-[#06070b] p-6 shadow-card md:p-10">
-        <div className="absolute right-[-120px] top-[-120px] h-[340px] w-[340px] rounded-full bg-red-500/25 blur-[130px]" />
-        <div className="absolute bottom-[-140px] left-[-140px] h-[320px] w-[320px] rounded-full bg-red-800/20 blur-[130px]" />
-        <div className="absolute inset-0 bg-[linear-gradient(120deg,rgba(255,255,255,0.08),transparent_35%,rgba(239,68,68,0.08))]" />
+        <div className="absolute right-[-120px] top-[-120px] h-[340px] w-[340px] rounded-full bg-red-500/20 blur-[130px]" />
 
-        <div className="relative z-10 grid gap-8 xl:grid-cols-[1.2fr_0.8fr] xl:items-end">
-          <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-red-500/20 bg-red-500/10 px-4 py-2 text-sm font-black text-red-300">
-              <Bot size={16} />
-              AI-Assisted Admin Moderation
-            </div>
+<div className="relative z-10 flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
+  <div>
+    <div className="inline-flex items-center gap-2 rounded-full border border-red-500/20 bg-red-500/10 px-4 py-2 text-sm font-black text-red-300">
+      <Shield size={16} />
+      Admin V2
+    </div>
 
-            <h1 className="mt-6 max-w-3xl text-4xl font-black tracking-tight text-white md:text-6xl">
-              Moderation Command Center
-            </h1>
+    <h1 className="mt-6 text-4xl font-black tracking-tight text-white md:text-6xl">
+      Moderation Dashboard
+    </h1>
 
-            <p className="mt-5 max-w-2xl text-sm leading-7 text-white/60 md:text-base">
-              Review pending uploads with AI-style quality checks, risk scoring,
-              spam detection, and suggested moderation actions.
-            </p>
+    <p className="mt-4 max-w-2xl text-sm leading-7 text-white/60">
+      Review notes, approve uploads, manage rejected content, and handle user reports from one clean dashboard.
+    </p>
+  </div>
+      <div className="flex flex-col gap-3 xl:w-[240px]">
+        <button
+          type="button"
+          onClick={() => router.push("/admin/users")}
+          className="flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/[0.06] px-5 py-3 text-sm font-black text-white transition hover:border-red-500/30 hover:bg-red-500/10"
+        >
+          <Users size={17} />
+          Manage Users
+        </button>
 
-            <div className="mt-7 flex flex-wrap gap-3">
-              <Pill icon={<Activity size={15} />} text="Live Firebase Data" />
-              <Pill icon={<Bot size={15} />} text="AI Quality Scanner" />
-              <Pill icon={<Sparkles size={15} />} text="Risk Detection" />
-            </div>
+        <button
+          type="button"
+          onClick={fetchAdminData}
+          disabled={fetching}
+          className="flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/[0.06] px-5 py-3 text-sm font-black text-white transition hover:border-red-500/30 hover:bg-red-500/10 disabled:opacity-60"
+        >
+          <RefreshCw
+            size={17}
+            className={fetching ? "animate-spin" : ""}
+          />
+          Refresh Data
+        </button>
+      </div>
+    </div>
+  </section>
+
+      <button
+        type="button"
+        onClick={() => router.push("/admin/users")}
+        className="flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/[0.06] px-5 py-3 text-sm font-black text-white transition hover:border-red-500/30 hover:bg-red-500/10"
+      >
+        <Users size={17} />
+        Manage Users
+      </button>
+
+      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-6">
+        <StatCard label="Total Notes" value={stats.total} icon={<FileText size={22} />} />
+        <StatCard label="Pending" value={stats.pending} icon={<Clock3 size={22} />} />
+        <StatCard label="Approved" value={stats.approved} icon={<CheckCircle2 size={22} />} />
+        <StatCard label="Rejected" value={stats.rejected} icon={<XCircle size={22} />} />
+        <StatCard label="Reports" value={stats.reports} icon={<AlertTriangle size={22} />} />
+        <StatCard label="Uploaders" value={stats.users} icon={<Users size={22} />} />
+      </section>
+
+      <section className="rounded-[2rem] border border-white/10 bg-white/[0.035] p-4 shadow-card">
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+          <div className="flex flex-wrap gap-2">
+            <TabButton active={activeTab === "pending"} onClick={() => setActiveTab("pending")}>
+              Pending
+            </TabButton>
+            <TabButton active={activeTab === "approved"} onClick={() => setActiveTab("approved")}>
+              Approved
+            </TabButton>
+            <TabButton active={activeTab === "rejected"} onClick={() => setActiveTab("rejected")}>
+              Rejected
+            </TabButton>
+            <TabButton active={activeTab === "reported"} onClick={() => setActiveTab("reported")}>
+              Reported
+            </TabButton>
           </div>
 
-          <div className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-5 backdrop-blur-xl">
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <p className="text-xs font-black uppercase tracking-[0.25em] text-white/35">
-                  AI Queue Status
-                </p>
-                <h2 className="mt-2 text-4xl font-black text-white">
-                  {analytics.pending}
-                </h2>
-              </div>
-
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-red-500/25 bg-red-500/10 text-red-300">
-                <Zap size={28} />
-              </div>
-            </div>
-
-            <button
-              type="button"
-              onClick={fetchPendingNotes}
-              disabled={fetching}
-              className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/[0.06] px-5 py-3 text-sm font-black text-white transition hover:border-red-500/30 hover:bg-red-500/10 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              <RefreshCw
-                size={17}
-                className={fetching ? "animate-spin text-red-300" : ""}
-              />
-              Refresh AI Queue
-            </button>
+          <div className="relative w-full xl:max-w-sm">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/35" size={18} />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search title, subject, uploader..."
+              className="w-full rounded-2xl border border-white/10 bg-black/30 py-3 pl-11 pr-4 text-sm text-white outline-none transition placeholder:text-white/35 focus:border-red-500/40"
+            />
           </div>
         </div>
       </section>
 
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-        <AdminStatCard
-          label="Pending"
-          value={analytics.pending}
-          caption="Uploads waiting"
-          icon={<AlertTriangle size={22} />}
-        />
-
-        <AdminStatCard
-          label="High Risk"
-          value={analytics.highRisk}
-          caption="Need careful review"
-          icon={<Bot size={22} />}
-        />
-
-        <AdminStatCard
-          label="Subjects"
-          value={analytics.subjects}
-          caption="Unique subjects"
-          icon={<Layers3 size={22} />}
-        />
-
-        <AdminStatCard
-          label="Classes"
-          value={analytics.classes}
-          caption="Groups detected"
-          icon={<FileCheck2 size={22} />}
-        />
-
-        <AdminStatCard
-          label="Uploaders"
-          value={analytics.uploaders}
-          caption="Students waiting"
-          icon={<Shield size={22} />}
-        />
-      </section>
-
-      {fetching && (
+      {fetching ? (
         <section className="glass-card rounded-[2rem] p-8">
           <div className="flex items-center gap-3 text-sm font-semibold text-white/60">
             <RefreshCw size={18} className="animate-spin text-red-300" />
-            Loading pending notes...
+            Loading admin data...
           </div>
         </section>
-      )}
-
-      {!fetching && notes.length === 0 && (
-        <section className="glass-card rounded-[2rem] p-8 text-center md:p-12">
-          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-[1.5rem] border border-green-500/20 bg-green-500/10 text-green-300">
-            <CheckCircle2 size={38} />
-          </div>
-
-          <h2 className="mt-7 text-2xl font-black text-white">
-            Queue Cleared
-          </h2>
-
-          <p className="mx-auto mt-3 max-w-md text-sm leading-7 text-white/55 md:text-base">
-            No pending notes right now. New student uploads will appear here
-            automatically after refresh.
-          </p>
-        </section>
-      )}
-
-      {!fetching && notes.length > 0 && (
+      ) : activeTab === "reported" ? (
         <section className="space-y-5">
-          {notes.map((note, index) => {
-            const isBusy = actionLoadingId === note.id;
-            const ai = analyzeNote(note);
-
-            return (
-              <article
+          {filteredReports.length === 0 ? (
+            <EmptyState title="No pending reports" text="All reports are resolved or no report matches your search." />
+          ) : (
+            filteredReports.map((report) => (
+              <ReportCard
+                key={report.id}
+                report={report}
+                busy={actionLoadingId === report.id}
+                onResolve={() => resolveReport(report.id)}
+              />
+            ))
+          )}
+        </section>
+      ) : (
+        <section className="space-y-5">
+          {filteredNotes.length === 0 ? (
+            <EmptyState title="No notes found" text="No notes match this tab or search filter." />
+          ) : (
+            filteredNotes.map((note) => (
+              <NoteCard
                 key={note.id}
-                className="group relative overflow-hidden rounded-[2rem] border border-white/10 bg-[#07090d] p-5 shadow-card backdrop-blur-xl transition hover:border-red-500/30 md:p-6"
-              >
-                <div className="absolute right-[-110px] top-[-110px] h-64 w-64 rounded-full bg-red-500/10 blur-[100px] transition group-hover:bg-red-500/20" />
-
-                <div className="relative z-10 grid gap-6 xl:grid-cols-[1fr_360px] xl:items-start">
-                  <div>
-                    <div className="mb-5 flex flex-wrap items-center gap-3">
-                      <span className="inline-flex items-center gap-2 rounded-full border border-yellow-500/20 bg-yellow-500/10 px-3 py-1.5 text-xs font-black text-yellow-200">
-                        <Clock3 size={13} />
-                        Pending Review
-                      </span>
-
-                      <span className="inline-flex rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs font-bold text-white/45">
-                        Queue #{index + 1}
-                      </span>
-
-                      <RiskBadge risk={ai.risk} />
-                    </div>
-
-                    <div className="flex gap-4">
-                      <div className="hidden h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] text-red-300 sm:flex">
-                        <FileText size={26} />
-                      </div>
-
-                      <div className="min-w-0">
-                        <h2 className="line-clamp-2 text-2xl font-black leading-tight text-white">
-                          {note.title || "Untitled Note"}
-                        </h2>
-
-                        <p className="mt-3 line-clamp-3 text-sm leading-7 text-white/55">
-                          {note.description || "No description provided."}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="mt-6 grid gap-3 sm:grid-cols-2">
-                      <InfoRow label="Class" value={note.class} />
-                      <InfoRow label="Subject" value={note.subject} />
-                      <InfoRow label="Topic" value={note.topic} />
-                      <InfoRow
-                        label="Uploader"
-                        value={note.uploaderEmail || "Unknown"}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-4">
-                    <AIPanel ai={ai} />
-
-                    <div className="rounded-[1.7rem] border border-white/10 bg-white/[0.035] p-4">
-                      <p className="mb-4 text-xs font-black uppercase tracking-[0.22em] text-white/35">
-                        Moderation Controls
-                      </p>
-
-                      <div className="grid gap-3">
-                        <a
-                          href={note.pdfURL}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="flex min-h-[2.9rem] items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/[0.06] px-4 py-3 text-sm font-black text-white transition hover:border-red-500/30 hover:bg-red-500/10"
-                        >
-                          <ExternalLink size={16} />
-                          Open PDF
-                        </a>
-
-                        <button
-                          type="button"
-                          disabled={isBusy}
-                          onClick={() => approveNote(note.id)}
-                          className="flex min-h-[2.9rem] items-center justify-center gap-2 rounded-2xl border border-green-500/25 bg-green-500/10 px-4 py-3 text-sm font-black text-green-200 transition hover:bg-green-500 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                          <CheckCircle2 size={16} />
-                          Approve Note
-                        </button>
-
-                        <button
-                          type="button"
-                          disabled={isBusy}
-                          onClick={() => rejectNote(note.id)}
-                          className="flex min-h-[2.9rem] items-center justify-center gap-2 rounded-2xl border border-yellow-500/25 bg-yellow-500/10 px-4 py-3 text-sm font-black text-yellow-200 transition hover:bg-yellow-500 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                          <XCircle size={16} />
-                          Reject Note
-                        </button>
-
-                        <button
-                          type="button"
-                          disabled={isBusy}
-                          onClick={() => deleteNote(note.id)}
-                          className="flex min-h-[2.9rem] items-center justify-center gap-2 rounded-2xl border border-red-500/25 bg-red-500/10 px-4 py-3 text-sm font-black text-red-200 transition hover:bg-red-500 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                          <Trash2 size={16} />
-                          Delete Permanently
-                        </button>
-                      </div>
-
-                      {isBusy && (
-                        <div className="mt-4 flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-xs font-bold text-white/50">
-                          <RefreshCw size={14} className="animate-spin" />
-                          Processing action...
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </article>
-            );
-          })}
+                note={note}
+                busy={actionLoadingId === note.id}
+                onApprove={() => approveNote(note.id)}
+                onReject={() => rejectNote(note.id)}
+                onDelete={() => deleteNote(note.id)}
+              />
+            ))
+          )}
         </section>
       )}
     </main>
   );
 }
 
-function analyzeNote(note: Note): AIModerationResult {
-  let score = 100;
-  const issues: string[] = [];
-
-  const title = note.title?.trim() || "";
-  const description = note.description?.trim() || "";
-  const subject = note.subject?.trim() || "";
-  const className = note.class?.trim() || "";
-  const topic = note.topic?.trim() || "";
-
-  const combinedText = `${title} ${description} ${subject} ${topic}`.toLowerCase();
-
-  const spamWords = [
-    "free money",
-    "earn money",
-    "click here",
-    "telegram",
-    "whatsapp group",
-    "hack",
-    "cheat",
-    "adult",
-    "betting",
-    "casino",
-    "crypto profit",
-  ];
-
-  if (title.length < 6) {
-    score -= 18;
-    issues.push("Title is too short.");
-  }
-
-  if (description.length < 20) {
-    score -= 20;
-    issues.push("Description is missing or too short.");
-  }
-
-  if (!className) {
-    score -= 12;
-    issues.push("Class is missing.");
-  }
-
-  if (!subject) {
-    score -= 12;
-    issues.push("Subject is missing.");
-  }
-
-  if (!topic) {
-    score -= 10;
-    issues.push("Topic is missing.");
-  }
-
-  const detectedSpam = spamWords.filter((word) => combinedText.includes(word));
-
-  if (detectedSpam.length > 0) {
-    score -= 35;
-    issues.push("Suspicious spam-like words detected.");
-  }
-
-  if (!note.pdfURL) {
-    score -= 30;
-    issues.push("PDF link is missing.");
-  }
-
-  const cleanScore = Math.max(0, Math.min(100, score));
-
-  if (cleanScore >= 75) {
-    return {
-      score: cleanScore,
-      risk: "Low",
-      suggestion: "Approve",
-      issues: issues.length ? issues : ["No major quality issues detected."],
-    };
-  }
-
-  if (cleanScore >= 45) {
-    return {
-      score: cleanScore,
-      risk: "Medium",
-      suggestion: "Review Carefully",
-      issues,
-    };
-  }
-
-  return {
-    score: cleanScore,
-    risk: "High",
-    suggestion: "Reject",
-    issues,
-  };
+function AdminLoading() {
+  return (
+    <main className="flex min-h-[70vh] items-center justify-center px-4">
+      <section className="w-full max-w-md rounded-[2rem] border border-white/10 bg-[#07090d] p-8 text-center shadow-card">
+        <Shield className="mx-auto text-red-300" size={48} />
+        <h1 className="mt-6 text-2xl font-black text-white">
+          Checking Admin Access
+        </h1>
+        <p className="mt-3 text-sm text-white/55">
+          Verifying your permission before opening the dashboard.
+        </p>
+      </section>
+    </main>
+  );
 }
 
-function AdminStatCard({
+function StatCard({
   label,
   value,
-  caption,
   icon,
 }: {
   label: string;
-  value: string | number;
-  caption: string;
+  value: number;
   icon: React.ReactNode;
 }) {
   return (
-    <div className="group relative overflow-hidden rounded-[2rem] border border-white/10 bg-white/[0.035] p-5 shadow-card backdrop-blur-xl transition hover:-translate-y-1 hover:border-red-500/25 hover:bg-white/[0.055]">
-      <div className="absolute right-[-70px] top-[-70px] h-36 w-36 rounded-full bg-red-500/10 blur-[75px] transition group-hover:bg-red-500/20" />
-
-      <div className="relative z-10 flex items-start justify-between gap-4">
+    <div className="rounded-[2rem] border border-white/10 bg-white/[0.035] p-5 shadow-card">
+      <div className="flex items-start justify-between gap-4">
         <div>
           <p className="text-sm font-semibold text-white/50">{label}</p>
           <h2 className="mt-2 text-4xl font-black text-white">{value}</h2>
-          <p className="mt-2 text-xs font-medium text-white/35">{caption}</p>
         </div>
 
-        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-red-500/20 bg-red-500/10 text-red-300">
+        <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-red-500/20 bg-red-500/10 text-red-300">
           {icon}
         </div>
       </div>
@@ -620,13 +446,186 @@ function AdminStatCard({
   );
 }
 
+function TabButton({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`rounded-2xl px-5 py-3 text-sm font-black transition ${
+        active
+          ? "border border-red-500/25 bg-red-500/10 text-red-200"
+          : "border border-white/10 bg-white/[0.04] text-white/55 hover:bg-white/[0.07] hover:text-white"
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
+function NoteCard({
+  note,
+  busy,
+  onApprove,
+  onReject,
+  onDelete,
+}: {
+  note: Note;
+  busy: boolean;
+  onApprove: () => void;
+  onReject: () => void;
+  onDelete: () => void;
+}) {
+  return (
+    <article className="rounded-[2rem] border border-white/10 bg-[#07090d] p-5 shadow-card md:p-6">
+      <div className="grid gap-6 xl:grid-cols-[1fr_320px]">
+        <div>
+          <StatusBadge status={note.status || "pending"} />
+
+          <h2 className="mt-4 text-2xl font-black text-white">
+            {note.title || "Untitled Note"}
+          </h2>
+
+          <p className="mt-3 line-clamp-3 text-sm leading-7 text-white/55">
+            {note.description || "No description provided."}
+          </p>
+
+          <div className="mt-6 grid gap-3 sm:grid-cols-2">
+            <InfoRow label="Class" value={note.class} />
+            <InfoRow label="Subject" value={note.subject} />
+            <InfoRow label="Topic" value={note.topic} />
+            <InfoRow label="Uploader" value={note.uploaderEmail || note.uploaderName || "Unknown"} />
+          </div>
+        </div>
+
+        <div className="rounded-[1.7rem] border border-white/10 bg-white/[0.035] p-4">
+          <p className="mb-4 text-xs font-black uppercase tracking-[0.22em] text-white/35">
+            Actions
+          </p>
+
+          <div className="grid gap-3">
+            <a
+              href={note.pdfURL}
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/[0.06] px-4 py-3 text-sm font-black text-white transition hover:bg-white/[0.1]"
+            >
+              <ExternalLink size={16} />
+              Open PDF
+            </a>
+
+            {note.status !== "approved" && (
+              <button disabled={busy} onClick={onApprove} className="admin-green-btn">
+                <CheckCircle2 size={16} />
+                Approve
+              </button>
+            )}
+
+            {note.status !== "rejected" && (
+              <button disabled={busy} onClick={onReject} className="admin-yellow-btn">
+                <XCircle size={16} />
+                Reject
+              </button>
+            )}
+
+            <button disabled={busy} onClick={onDelete} className="admin-red-btn">
+              <Trash2 size={16} />
+              Delete
+            </button>
+          </div>
+        </div>
+      </div>
+    </article>
+  );
+}
+
+function ReportCard({
+  report,
+  busy,
+  onResolve,
+}: {
+  report: Report;
+  busy: boolean;
+  onResolve: () => void;
+}) {
+  return (
+    <article className="rounded-[2rem] border border-yellow-500/20 bg-yellow-500/[0.04] p-5 shadow-card md:p-6">
+      <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
+        <div>
+          <div className="inline-flex items-center gap-2 rounded-full border border-yellow-500/20 bg-yellow-500/10 px-3 py-1.5 text-xs font-black text-yellow-200">
+            <Bell size={13} />
+            Pending Report
+          </div>
+
+          <h2 className="mt-4 text-2xl font-black text-white">
+            {report.noteTitle || "Reported Note"}
+          </h2>
+
+          <p className="mt-3 text-sm text-white/60">
+            <strong>Reason:</strong> {report.reason || "Not provided"}
+          </p>
+
+          <p className="mt-2 max-w-3xl text-sm leading-7 text-white/55">
+            {report.details || "No extra details provided."}
+          </p>
+
+          <p className="mt-3 text-xs text-white/35">
+            Reporter: {report.reporterEmail || "Unknown"}
+          </p>
+        </div>
+
+        <div className="grid gap-3 xl:w-64">
+          {report.noteId && (
+            <a
+              href={`/notes/${report.noteId}`}
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/[0.06] px-4 py-3 text-sm font-black text-white transition hover:bg-white/[0.1]"
+            >
+              <ExternalLink size={16} />
+              View Note
+            </a>
+          )}
+
+          <button disabled={busy} onClick={onResolve} className="admin-green-btn">
+            <CheckCircle2 size={16} />
+            Mark Resolved
+          </button>
+        </div>
+      </div>
+    </article>
+  );
+}
+
+function StatusBadge({ status }: { status: string }) {
+  const classes =
+    status === "approved"
+      ? "border-green-500/20 bg-green-500/10 text-green-200"
+      : status === "rejected"
+        ? "border-red-500/20 bg-red-500/10 text-red-200"
+        : "border-yellow-500/20 bg-yellow-500/10 text-yellow-200";
+
+  return (
+    <span className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-black ${classes}`}>
+      <BarChart3 size={13} />
+      {status.toUpperCase()}
+    </span>
+  );
+}
+
 function InfoRow({ label, value }: { label: string; value?: string }) {
   return (
     <div className="flex items-center justify-between gap-4 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3">
-      <span className="shrink-0 text-xs font-black uppercase tracking-wide text-white/35">
+      <span className="text-xs font-black uppercase tracking-wide text-white/35">
         {label}
       </span>
-
       <span className="line-clamp-1 break-all text-right text-sm font-bold text-white/75">
         {value || "Not set"}
       </span>
@@ -634,81 +633,14 @@ function InfoRow({ label, value }: { label: string; value?: string }) {
   );
 }
 
-function Pill({ icon, text }: { icon: React.ReactNode; text: string }) {
+function EmptyState({ title, text }: { title: string; text: string }) {
   return (
-    <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-4 py-2 text-xs font-black text-white/60">
-      <span className="text-red-300">{icon}</span>
-      {text}
-    </div>
-  );
-}
-
-function RiskBadge({ risk }: { risk: AIModerationResult["risk"] }) {
-  const classes =
-    risk === "Low"
-      ? "border-green-500/20 bg-green-500/10 text-green-200"
-      : risk === "Medium"
-        ? "border-yellow-500/20 bg-yellow-500/10 text-yellow-200"
-        : "border-red-500/20 bg-red-500/10 text-red-200";
-
-  return (
-    <span
-      className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-black ${classes}`}
-    >
-      <Bot size={13} />
-      {risk} Risk
-    </span>
-  );
-}
-
-function AIPanel({ ai }: { ai: AIModerationResult }) {
-  const barClass =
-    ai.risk === "Low"
-      ? "bg-green-400"
-      : ai.risk === "Medium"
-        ? "bg-yellow-400"
-        : "bg-red-400";
-
-  return (
-    <div className="rounded-[1.7rem] border border-red-500/20 bg-red-500/[0.055] p-4">
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <p className="text-xs font-black uppercase tracking-[0.22em] text-red-200/70">
-            AI Scan
-          </p>
-          <h3 className="mt-1 text-lg font-black text-white">
-            {ai.score}/100 Quality
-          </h3>
-        </div>
-
-        <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-red-500/20 bg-red-500/10 text-red-300">
-          <Bot size={22} />
-        </div>
-      </div>
-
-      <div className="mt-4 h-2 overflow-hidden rounded-full bg-white/10">
-        <div
-          className={`h-full rounded-full ${barClass}`}
-          style={{ width: `${ai.score}%` }}
-        />
-      </div>
-
-      <div className="mt-4 rounded-2xl border border-white/10 bg-black/20 p-3">
-        <p className="text-xs font-bold text-white/35">Suggested Action</p>
-        <p className="mt-1 text-sm font-black text-white">{ai.suggestion}</p>
-      </div>
-
-      <div className="mt-4 space-y-2">
-        {ai.issues.slice(0, 3).map((issue) => (
-          <div
-            key={issue}
-            className="flex gap-2 rounded-2xl border border-white/10 bg-white/[0.035] p-3"
-          >
-            <AlertTriangle size={14} className="mt-0.5 shrink-0 text-red-300" />
-            <p className="text-xs leading-5 text-white/55">{issue}</p>
-          </div>
-        ))}
-      </div>
-    </div>
+    <section className="rounded-[2rem] border border-white/10 bg-white/[0.035] p-10 text-center shadow-card">
+      <CheckCircle2 className="mx-auto text-green-300" size={48} />
+      <h2 className="mt-5 text-2xl font-black text-white">{title}</h2>
+      <p className="mx-auto mt-3 max-w-md text-sm leading-7 text-white/55">
+        {text}
+      </p>
+    </section>
   );
 }

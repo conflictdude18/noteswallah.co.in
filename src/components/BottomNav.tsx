@@ -47,13 +47,10 @@ export default function BottomNav() {
       try {
         const snap = await getDoc(doc(db, "users", user.uid));
 
-        if (snap.exists()) {
-          const data = snap.data() as UserDoc;
-          setIsAdmin(data.role === "admin");
-        } else {
-          setIsAdmin(false);
-        }
-      } catch (err: unknown) {
+        setIsAdmin(
+          snap.exists() && (snap.data() as UserDoc).role === "admin"
+        );
+      } catch (err) {
         console.error("ADMIN CHECK ERROR:", err);
         setIsAdmin(false);
       }
@@ -75,8 +72,16 @@ export default function BottomNav() {
   const mainLinks = [
     { href: "/", label: "Home", icon: Home },
     { href: "/browse", label: "Browse", icon: BookOpen },
-    { href: user ? "/upload" : "/signin", label: "Upload", icon: PlusSquare },
-    { href: user ? "/saved-notes" : "/signin", label: "Saved", icon: Heart },
+    {
+      href: user ? "/upload" : "/signin",
+      label: "Upload",
+      icon: PlusSquare,
+    },
+    {
+      href: user ? "/saved-notes" : "/signin",
+      label: "Saved",
+      icon: Heart,
+    },
   ];
 
   const moreLinks = user
@@ -89,7 +94,9 @@ export default function BottomNav() {
         { href: "/feedback", label: "Feedback", icon: MessageSquare },
         { href: "/premium", label: "Premium", icon: Sparkles },
         { href: "/profile", label: "Profile", icon: User },
-        ...(isAdmin ? [{ href: "/admin", label: "Admin", icon: Shield }] : []),
+        ...(isAdmin
+          ? [{ href: "/admin", label: "Admin", icon: Shield }]
+          : []),
       ]
     : [
         { href: "/signin", label: "Sign In", icon: User },
@@ -103,20 +110,18 @@ export default function BottomNav() {
           type="button"
           aria-label="Close menu overlay"
           onClick={() => setOpen(false)}
-          className="fixed inset-0 z-40 bg-black/75 backdrop-blur-sm lg:hidden"
+          className="fixed inset-0 z-[9998] bg-black/70 backdrop-blur-sm lg:hidden"
         />
       )}
 
       <div
-        className={`fixed bottom-[92px] left-3 right-3 z-50 overflow-hidden rounded-[2rem] border border-white/10 bg-[#080b10]/95 p-5 shadow-[0_25px_90px_rgba(0,0,0,0.75)] backdrop-blur-2xl transition-all duration-300 lg:hidden ${
+        className={`fixed left-0 right-0 bottom-[72px] z-[9999] max-h-[65vh] overflow-hidden rounded-t-[2rem] border-t border-white/10 bg-[#080b10] p-5 shadow-[0_-25px_90px_rgba(0,0,0,0.75)] transition-all duration-300 lg:hidden ${
           open
-            ? "translate-y-0 scale-100 opacity-100"
-            : "pointer-events-none translate-y-8 scale-[0.97] opacity-0"
+            ? "translate-y-0 opacity-100"
+            : "pointer-events-none translate-y-full opacity-0"
         }`}
       >
-        <div className="absolute right-[-80px] top-[-80px] h-56 w-56 rounded-full bg-red-500/15 blur-[90px]" />
-
-        <div className="relative z-10 mb-5 flex items-center justify-between">
+        <div className="mb-5 flex items-center justify-between">
           <div>
             <h2 className="text-xl font-black text-white">More Tools</h2>
 
@@ -135,10 +140,12 @@ export default function BottomNav() {
           </button>
         </div>
 
-        <div className="no-scrollbar relative z-10 grid max-h-[55vh] gap-3 overflow-y-auto pb-2">
+        <div className="no-scrollbar grid max-h-[48vh] gap-3 overflow-y-auto pb-2">
           {moreLinks.map((item) => {
             const Icon = item.icon;
+
             const active = isActive(item.href);
+
             const admin = item.href === "/admin";
 
             return (
@@ -148,37 +155,21 @@ export default function BottomNav() {
                 onClick={() => setOpen(false)}
                 className={
                   admin
-                    ? "group relative flex items-center gap-3 overflow-hidden rounded-2xl border border-red-400/40 bg-gradient-to-r from-red-600 via-red-500 to-red-700 px-4 py-3 text-white shadow-[0_0_35px_rgba(239,68,68,0.35)] transition hover:scale-[1.01]"
+                    ? "flex items-center gap-3 rounded-2xl border border-red-400/40 bg-gradient-to-r from-red-600 via-red-500 to-red-700 px-4 py-3 text-white shadow-[0_0_35px_rgba(239,68,68,0.35)] transition hover:scale-[1.01]"
                     : `flex items-center gap-3 rounded-2xl border px-4 py-3 transition ${
                         active
-                          ? "border-red-500/25 bg-red-500/10 text-red-200"
+                          ? "border border-white/10 bg-white/[0.08] text-white shadow-[0_0_18px_rgba(255,255,255,0.06)]"
                           : "border-white/10 bg-white/[0.04] text-white/75 hover:bg-white/[0.07] hover:text-white"
                       }`
                 }
               >
-                {admin && (
-                  <div className="absolute inset-0 translate-x-[-120%] bg-gradient-to-r from-transparent via-white/25 to-transparent transition duration-1000 group-hover:translate-x-[120%]" />
-                )}
-
-                <div
-                  className={
-                    admin
-                      ? "relative flex h-10 w-10 items-center justify-center rounded-xl bg-white/15 shadow-inner"
-                      : "flex h-10 w-10 items-center justify-center rounded-xl bg-white/[0.05]"
-                  }
-                >
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/[0.05]">
                   <Icon size={19} />
                 </div>
 
-                <span className="relative text-sm font-black">
+                <span className="text-sm font-black">
                   {item.label}
                 </span>
-
-                {admin && (
-                  <span className="relative ml-auto rounded-full bg-black/25 px-2 py-1 text-[10px] font-black uppercase tracking-wide text-red-100">
-                    Power
-                  </span>
-                )}
               </Link>
             );
           })}
@@ -197,22 +188,25 @@ export default function BottomNav() {
         </div>
       </div>
 
-      <div className="fixed bottom-3 left-3 right-3 z-50 rounded-[2rem] border border-white/10 bg-[#07090d]/90 px-2 py-2 shadow-[0_20px_70px_rgba(0,0,0,0.75)] backdrop-blur-2xl lg:hidden">
-        <div className="grid grid-cols-5 gap-1">
+      <nav className="fixed bottom-0 left-0 right-0 z-[10000] border-t border-white/10 bg-[#07090d]/95 px-2 pt-2 pb-3 text-white shadow-[0_-18px_50px_rgba(0,0,0,0.65)] backdrop-blur-xl lg:hidden">
+        <div className="grid grid-cols-5 items-center gap-1">
           {mainLinks.map((item) => {
             const Icon = item.icon;
+
             const active = !open && isActive(item.href);
+
             const upload = item.label === "Upload";
 
             return (
               <Link
                 key={`${item.href}-${item.label}`}
                 href={item.href}
-                className={`relative flex flex-col items-center justify-center gap-1 rounded-[1.4rem] py-2.5 transition ${
+                onClick={() => setOpen(false)}
+                className={`flex flex-col items-center justify-center gap-1 rounded-2xl py-2 transition ${
                   active
-                    ? "bg-red-500/10 text-red-300"
-                    : "text-white/45 hover:bg-white/[0.04] hover:text-white"
-                } ${upload ? "" : ""}`}
+                    ? "border border-white/10 bg-white/[0.08] text-white shadow-[0_0_18px_rgba(255,255,255,0.06)]"
+                    : "text-white/55 hover:bg-white/[0.04] hover:text-white"
+                }`}
               >
                 <div
                   className={
@@ -235,18 +229,20 @@ export default function BottomNav() {
             type="button"
             aria-label="Open menu"
             onClick={() => setOpen((prev) => !prev)}
-            className={`flex flex-col items-center justify-center gap-1 rounded-[1.4rem] py-2.5 transition ${
+            className={`flex flex-col items-center justify-center gap-1 rounded-2xl py-2 transition ${
               open
-                ? "bg-red-500/10 text-red-300"
-                : "text-white/45 hover:bg-white/[0.04] hover:text-white"
+                ? "border border-white/10 bg-white/[0.08] text-white shadow-[0_0_18px_rgba(255,255,255,0.06)]"
+                : "text-white/55 hover:bg-white/[0.04] hover:text-white"
             }`}
           >
             <Menu size={21} />
 
-            <span className="text-[10px] font-black">More</span>
+            <span className="text-[10px] font-black">
+              More
+            </span>
           </button>
         </div>
-      </div>
+      </nav>
     </>
   );
 }

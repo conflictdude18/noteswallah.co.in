@@ -29,7 +29,7 @@ export default function AppShell({ children }: Props) {
           </div>
         </div>
       </main>
-
+      
       <BottomNav />
     </div>
   );
