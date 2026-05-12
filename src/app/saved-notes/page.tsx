@@ -99,6 +99,7 @@ export default function SavedNotesPage() {
 
   useEffect(() => {
     if (user) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       fetchBookmarks();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
