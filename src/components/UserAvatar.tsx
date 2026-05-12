@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 type UserAvatarProps = {
   name?: string;
-  src?: string;
+  src?: string | null;
   size?: "sm" | "md" | "lg" | "xl";
 };
 
@@ -22,17 +22,25 @@ export default function UserAvatar({
 }: UserAvatarProps) {
   const [failed, setFailed] = useState(false);
 
+  useEffect(() => {
+    setFailed(false);
+  }, [src]);
+
+  const cleanSrc =
+    typeof src === "string" && src.trim().length > 0 ? src.trim() : "";
+
   const initial = name.trim().charAt(0).toUpperCase() || "U";
 
   return (
     <div
       className={`flex shrink-0 items-center justify-center overflow-hidden bg-red-600 font-black text-white ${sizeClasses[size]}`}
     >
-      {src && !failed ? (
+      {cleanSrc && !failed ? (
         <img
-          src={src}
-          alt={name}
+          src={cleanSrc}
+          alt={`${name} profile picture`}
           className="h-full w-full object-cover"
+          referrerPolicy="no-referrer"
           onError={() => setFailed(true)}
         />
       ) : (

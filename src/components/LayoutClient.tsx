@@ -3,6 +3,7 @@
 import { ReactNode } from "react";
 
 import AppShell from "@/components/AppShell";
+import Footer from "@/components/Footer";
 
 type Props = {
   children: ReactNode;
@@ -24,10 +25,12 @@ export default function LayoutClient({ children }: Props) {
           <div className="absolute inset-0 opacity-[0.03] [background-image:linear-gradient(rgba(255,255,255,0.7)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.7)_1px,transparent_1px)] [background-size:80px_80px]" />
         </div>
 
-        <div className="relative z-10">
-          <div className="mx-auto w-full max-w-[1700px]">
+        <div className="relative z-10 flex min-h-screen flex-col">
+          <div className="mx-auto w-full max-w-[1700px] flex-1">
             {children}
           </div>
+
+          <Footer />
         </div>
       </div>
     </AppShell>

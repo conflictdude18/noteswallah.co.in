@@ -348,3 +348,13 @@ input.nw-input:-webkit-autofill:focus {
   background: rgb(239 68 68);
   color: white;
 }
+
+html,
+body {
+  overflow-x: hidden;
+  background: #050505;
+}
+
+* {
+  box-sizing: border-box;
+}

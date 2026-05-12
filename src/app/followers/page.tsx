@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   collection,
@@ -13,15 +13,17 @@ import {
 } from "firebase/firestore";
 import {
   ArrowRight,
+  RefreshCw,
   Search,
   Sparkles,
   UserPlus,
   Users,
+  X,
 } from "lucide-react";
+import { toast } from "sonner";
 
 import { db } from "@/firebase/firebase";
 import { useAuth } from "@/contexts/AuthContext";
-import LoadingSpinner from "@/components/LoadingSpinner";
 
 type FollowDoc = {
   id: string;
@@ -99,8 +101,9 @@ export default function FollowersPage() {
         }
 
         setFollowers(allFollowers);
-      } catch (err: unknown) {
+      } catch (err) {
         console.error("FOLLOWERS ERROR:", err);
+        toast.error("Failed to load followers.");
       } finally {
         setFetching(false);
       }
@@ -109,121 +112,127 @@ export default function FollowersPage() {
     fetchFollowers();
   }, [user]);
 
-  const filteredFollowers = followers.filter((person) => {
-    const displayName = getDisplayName(person);
-    const value = `${displayName} ${person.email || ""} ${
-      person.occupation || ""
-    }`;
+  const filteredFollowers = useMemo(() => {
+    const term = search.toLowerCase().trim();
 
-    return value.toLowerCase().includes(search.toLowerCase());
-  });
+    return followers.filter((person) => {
+      const displayName = getDisplayName(person);
+      const value = `${displayName} ${person.email || ""} ${
+        person.occupation || ""
+      }`;
+
+      return value.toLowerCase().includes(term);
+    });
+  }, [followers, search]);
 
   if (loading || fetching) {
-    return <LoadingSpinner />;
+    return (
+      <main className="min-h-screen bg-[#050505] px-4 py-8 text-white">
+        <div className="mx-auto flex min-h-[70vh] max-w-5xl items-center justify-center">
+          <div className="text-center">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl border border-white/10 bg-white/5">
+              <RefreshCw className="animate-spin text-red-500" size={30} />
+            </div>
+
+            <h1 className="mt-5 text-xl font-black">Loading followers</h1>
+
+            <p className="mt-2 text-sm text-white/50">
+              Checking your student network...
+            </p>
+          </div>
+        </div>
+      </main>
+    );
   }
 
   return (
-    <main className="space-y-8 pb-24 md:pb-8">
-      <section className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-[#07090d] p-6 shadow-card md:p-10">
-        <div className="absolute right-[-90px] top-[-90px] h-[280px] w-[280px] rounded-full bg-red-500/20 blur-[120px]" />
-        <div className="absolute bottom-[-130px] left-[-130px] h-[280px] w-[280px] rounded-full bg-red-700/10 blur-[120px]" />
+    <main className="min-h-screen bg-[#050505] px-4 py-6 text-white sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-6xl">
+        <section className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-gradient-to-br from-white/10 via-white/[0.04] to-red-500/10 p-5 shadow-2xl shadow-black/30 sm:p-7 lg:p-9">
+          <div className="absolute -right-16 -top-16 h-44 w-44 rounded-full bg-red-500/20 blur-3xl" />
 
-        <div className="relative z-10 flex flex-col gap-7 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-red-500/20 bg-red-500/10 px-4 py-2 text-sm font-bold text-red-300">
-              <Users size={16} />
-              Student Network
+          <div className="relative flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <div className="inline-flex items-center gap-2 rounded-full border border-red-500/20 bg-red-500/10 px-4 py-2 text-xs font-black text-red-300">
+                <Users size={16} />
+                Student Network
+              </div>
+
+              <h1 className="mt-5 text-3xl font-black tracking-tight sm:text-5xl">
+                Followers
+              </h1>
+
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-white/55 sm:text-base">
+                Students who follow your profile and want updates from your
+                notes, uploads and study material.
+              </p>
             </div>
 
-            <h1 className="mt-6 text-4xl font-black tracking-tight text-white md:text-6xl">
-              Followers
-            </h1>
-
-            <p className="mt-4 max-w-2xl text-sm leading-7 text-white/60 md:text-base">
-              Students who follow your NotesWallah profile and want to stay
-              connected with your notes, uploads and study material.
-            </p>
-          </div>
-
-          <div className="glass-card rounded-[1.5rem] p-5">
-            <p className="text-sm font-semibold text-white/50">
-              Followers
-            </p>
-
-            <h2 className="mt-2 text-4xl font-black text-white">
-              {followers.length}
-            </h2>
-          </div>
-        </div>
-      </section>
-
-      {followers.length > 0 && (
-        <section className="glass-card rounded-[2rem] p-4 md:p-5">
-          <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3">
-            <Search size={18} className="text-white/40" />
-
-            <input
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="Search followers by name, email, or role..."
-              className="w-full bg-transparent text-sm font-semibold text-white outline-none placeholder:text-white/35"
-            />
+            <div className="rounded-2xl border border-white/10 bg-black/25 p-4 text-center sm:min-w-36">
+              <p className="text-3xl font-black">{followers.length}</p>
+              <p className="mt-1 text-xs font-bold text-white/45">
+                Total Followers
+              </p>
+            </div>
           </div>
         </section>
-      )}
 
-      {followers.length === 0 ? (
-        <section className="glass-card rounded-[2rem] p-8 text-center md:p-12">
-          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-[1.5rem] border border-red-500/20 bg-red-500/10 text-red-300">
-            <UserPlus size={38} />
-          </div>
+        {followers.length > 0 && (
+          <section className="sticky top-0 z-30 -mx-4 mt-4 border-b border-white/10 bg-[#050505]/90 px-4 py-3 backdrop-blur-xl sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:px-0 sm:py-0">
+            <div className="rounded-[1.5rem] border border-white/10 bg-white/[0.045] p-3 sm:mt-5">
+              <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-black/30 px-4 py-3.5">
+                <Search size={18} className="shrink-0 text-white/40" />
 
-          <h2 className="mt-7 text-2xl font-black text-white">
-            No Followers Yet
-          </h2>
+                <input
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                  placeholder="Search followers..."
+                  className="w-full bg-transparent text-sm font-semibold text-white outline-none placeholder:text-white/35"
+                />
 
-          <p className="mx-auto mt-3 max-w-md text-sm leading-7 text-white/55 md:text-base">
-            Upload helpful notes and complete your profile so students can
-            discover and follow you.
-          </p>
+                {search && (
+                  <button
+                    type="button"
+                    onClick={() => setSearch("")}
+                    className="rounded-full bg-white/10 p-1 text-white/50"
+                  >
+                    <X size={15} />
+                  </button>
+                )}
+              </div>
+            </div>
+          </section>
+        )}
 
-          <Link href="/upload" className="btn-primary mt-8">
-            <Sparkles size={18} />
-            Upload Notes
-          </Link>
-        </section>
-      ) : filteredFollowers.length === 0 ? (
-        <section className="glass-card rounded-[2rem] p-8 text-center md:p-12">
-          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-[1.5rem] border border-white/10 bg-white/5 text-white/60">
-            <Search size={36} />
-          </div>
+        {followers.length === 0 ? (
+          <EmptyState
+            icon={<UserPlus size={38} />}
+            title="No followers yet"
+            text="Upload helpful notes and complete your profile so students can discover and follow you."
+            href="/upload"
+            buttonText="Upload Notes"
+          />
+        ) : filteredFollowers.length === 0 ? (
+          <EmptyState
+            icon={<Search size={36} />}
+            title="No matching followers"
+            text="Try searching with another name, email, or role."
+          />
+        ) : (
+          <section className="mt-5 grid gap-4 pb-24 md:grid-cols-2 xl:grid-cols-3">
+            {filteredFollowers.map((person) => {
+              const displayName = getDisplayName(person);
+              const photoURL = person.photoURL || person.avatarUrl || "";
 
-          <h2 className="mt-7 text-2xl font-black text-white">
-            No Matching Followers
-          </h2>
-
-          <p className="mx-auto mt-3 max-w-md text-sm leading-7 text-white/55 md:text-base">
-            Try searching with another name, email, or role.
-          </p>
-        </section>
-      ) : (
-        <section className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-          {filteredFollowers.map((person) => {
-            const displayName = getDisplayName(person);
-            const photoURL = person.photoURL || person.avatarUrl || "";
-
-            return (
-              <Link
-                key={person.id}
-                href={`/profile/${person.id}`}
-                className="group relative overflow-hidden rounded-[2rem] border border-white/10 bg-white/[0.035] p-6 shadow-card backdrop-blur-xl transition hover:-translate-y-1 hover:border-red-500/30 hover:bg-white/[0.055]"
-              >
-                <div className="absolute right-[-80px] top-[-80px] h-44 w-44 rounded-full bg-red-500/10 blur-[90px] transition group-hover:bg-red-500/20" />
-
-                <div className="relative z-10">
+              return (
+                <Link
+                  key={person.id}
+                  href={`/profile/${person.id}`}
+                  className="group overflow-hidden rounded-[1.6rem] border border-white/10 bg-white/[0.04] p-4 shadow-2xl shadow-black/20 transition hover:border-red-500/30 hover:bg-white/[0.06] sm:p-5"
+                >
                   <div className="flex items-center gap-4">
                     {photoURL ? (
-                      <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-[1.35rem] border border-white/10 bg-white/5">
+                      <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-2xl border border-white/10 bg-white/5">
                         <Image
                           src={photoURL}
                           alt={displayName}
@@ -233,13 +242,13 @@ export default function FollowersPage() {
                         />
                       </div>
                     ) : (
-                      <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-[1.35rem] border border-red-500/20 bg-red-500/10 text-xl font-black text-red-300">
+                      <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border border-red-500/20 bg-red-500/10 text-xl font-black text-red-300">
                         {displayName.charAt(0).toUpperCase()}
                       </div>
                     )}
 
                     <div className="min-w-0 flex-1">
-                      <h2 className="truncate text-lg font-black text-white">
+                      <h2 className="truncate text-base font-black sm:text-lg">
                         {displayName}
                       </h2>
 
@@ -249,24 +258,62 @@ export default function FollowersPage() {
                     </div>
                   </div>
 
-                  <div className="mt-6 flex items-center justify-between border-t border-white/10 pt-5">
-                    <div className="inline-flex items-center gap-2 rounded-full border border-red-500/20 bg-red-500/10 px-3 py-1 text-xs font-bold text-red-200">
+                  <div className="mt-5 flex items-center justify-between gap-3 border-t border-white/10 pt-4">
+                    <span className="inline-flex items-center gap-2 rounded-full border border-red-500/20 bg-red-500/10 px-3 py-1 text-xs font-bold text-red-200">
                       <Users size={13} />
                       Follower
-                    </div>
+                    </span>
 
-                    <div className="inline-flex items-center gap-2 text-sm font-black text-white/50 transition group-hover:text-red-300">
-                      View Profile
-                      <ArrowRight size={16} />
-                    </div>
+                    <span className="inline-flex items-center gap-1 text-xs font-black text-white/50 transition group-hover:text-red-300">
+                      Profile
+                      <ArrowRight size={15} />
+                    </span>
                   </div>
-                </div>
-              </Link>
-            );
-          })}
-        </section>
-      )}
+                </Link>
+              );
+            })}
+          </section>
+        )}
+      </div>
     </main>
+  );
+}
+
+function EmptyState({
+  icon,
+  title,
+  text,
+  href,
+  buttonText,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  text: string;
+  href?: string;
+  buttonText?: string;
+}) {
+  return (
+    <section className="mt-5 rounded-[2rem] border border-white/10 bg-white/[0.04] p-8 text-center shadow-2xl shadow-black/20 sm:p-12">
+      <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-[1.5rem] border border-red-500/20 bg-red-500/10 text-red-300">
+        {icon}
+      </div>
+
+      <h2 className="mt-7 text-2xl font-black">{title}</h2>
+
+      <p className="mx-auto mt-3 max-w-md text-sm leading-7 text-white/55">
+        {text}
+      </p>
+
+      {href && buttonText && (
+        <Link
+          href={href}
+          className="mt-8 inline-flex items-center justify-center gap-2 rounded-2xl bg-red-600 px-5 py-3 text-sm font-black text-white transition hover:bg-red-500"
+        >
+          <Sparkles size={18} />
+          {buttonText}
+        </Link>
+      )}
+    </section>
   );
 }
 

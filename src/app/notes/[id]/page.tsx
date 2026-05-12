@@ -24,7 +24,9 @@ import {
   ExternalLink,
   FileText,
   Heart,
+  Loader2,
   MessageCircle,
+  RefreshCw,
   Trash2,
   X,
 } from "lucide-react";
@@ -94,6 +96,8 @@ export default function NoteDetailsPage() {
 
   useEffect(() => {
     async function fetchNote() {
+      if (!id) return;
+
       setLoading(true);
 
       try {
@@ -117,46 +121,46 @@ export default function NoteDetailsPage() {
 
     fetchNote();
     fetchComments();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   useEffect(() => {
-    async function checkBookmarkAndLikes() {
-      if (!id) return;
+    async function fetchUserActions() {
+      if (!user || !id) return;
 
       try {
         const likesQuery = query(
           collection(db, "likes"),
+          where("userId", "==", user.uid),
           where("noteId", "==", id)
         );
 
-        const likesSnap = await getDocs(likesQuery);
-        setLikesCount(likesSnap.docs.length);
-
-        if (!user) return;
-
-        const bookmarkQuery = query(
+        const bookmarksQuery = query(
           collection(db, "bookmarks"),
           where("userId", "==", user.uid),
           where("noteId", "==", id)
         );
 
-        const bookmarkSnap = await getDocs(bookmarkQuery);
-        setBookmarkId(bookmarkSnap.empty ? null : bookmarkSnap.docs[0].id);
-
-        const userLikeQuery = query(
+        const allLikesQuery = query(
           collection(db, "likes"),
-          where("userId", "==", user.uid),
           where("noteId", "==", id)
         );
 
-        const userLikeSnap = await getDocs(userLikeQuery);
-        setLikeId(userLikeSnap.empty ? null : userLikeSnap.docs[0].id);
+        const [likesSnap, bookmarksSnap, allLikesSnap] = await Promise.all([
+          getDocs(likesQuery),
+          getDocs(bookmarksQuery),
+          getDocs(allLikesQuery),
+        ]);
+
+        setLikeId(likesSnap.docs[0]?.id || null);
+        setBookmarkId(bookmarksSnap.docs[0]?.id || null);
+        setLikesCount(allLikesSnap.docs.length);
       } catch (err) {
-        console.error("NOTE SOCIAL FETCH ERROR:", err);
+        console.error("USER ACTIONS ERROR:", err);
       }
     }
 
-    checkBookmarkAndLikes();
+    fetchUserActions();
   }, [user, id]);
 
   async function handleCommentSubmit() {
@@ -168,12 +172,7 @@ export default function NoteDetailsPage() {
     if (!note?.id) return;
 
     if (!commentText.trim()) {
-      toast.error("Comment cannot be empty.");
-      return;
-    }
-
-    if (commentText.trim().length > 500) {
-      toast.error("Comment must be under 500 characters.");
+      toast.error("Please write a comment.");
       return;
     }
 
@@ -371,55 +370,72 @@ export default function NoteDetailsPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#050505] text-white">
-        <div className="text-center">
-          <div className="mx-auto h-14 w-14 animate-spin rounded-full border-4 border-red-500 border-t-transparent" />
-          <p className="mt-5 text-white/60">Loading note...</p>
+      <main className="min-h-screen bg-[#050505] px-4 py-8 text-white">
+        <div className="mx-auto flex min-h-[70vh] max-w-6xl items-center justify-center">
+          <div className="text-center">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl border border-white/10 bg-white/5">
+              <RefreshCw className="animate-spin text-red-500" size={30} />
+            </div>
+
+            <h1 className="mt-5 text-xl font-black">Loading note</h1>
+
+            <p className="mt-2 text-sm text-white/50">
+              Opening PDF and note details...
+            </p>
+          </div>
         </div>
-      </div>
+      </main>
     );
   }
 
   if (!note) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#050505] text-white">
-        <div className="text-center">
-          <h1 className="text-4xl font-black">Note Not Found</h1>
+      <main className="flex min-h-screen items-center justify-center bg-[#050505] px-4 text-white">
+        <div className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-8 text-center">
+          <FileText size={42} className="mx-auto text-red-400" />
+          <h1 className="mt-5 text-3xl font-black">Note Not Found</h1>
 
           <button
             onClick={() => router.push("/browse")}
-            className="mt-8 rounded-2xl bg-red-600 px-6 py-3 font-medium text-white transition hover:bg-red-500"
+            className="mt-8 rounded-2xl bg-red-600 px-6 py-3 font-black text-white transition hover:bg-red-500"
           >
             Back to Browse
           </button>
         </div>
-      </div>
+      </main>
     );
   }
 
   return (
-    <main className="min-h-screen bg-[#050505] text-white">
-      <div className="container-max py-8">
+    <main className="min-h-screen overflow-x-hidden bg-[#050505] px-4 py-6 text-white sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-7xl pb-32 lg:pb-10">
         <button
           onClick={() => router.push("/browse")}
-          className="group flex items-center gap-2 text-sm text-white/60 transition hover:text-white"
+          className="group inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-2.5 text-sm font-bold text-white/60 transition hover:text-white"
         >
-          <ArrowLeft size={16} className="transition group-hover:-translate-x-1" />
-          Back to Browse
+          <ArrowLeft
+            size={16}
+            className="transition group-hover:-translate-x-1"
+          />
+          Back
         </button>
 
-        <div className="mt-8 grid gap-8 lg:grid-cols-[1.5fr_0.7fr]">
-          <div className="space-y-8">
-            <div className="overflow-hidden rounded-3xl border border-white/10 bg-black/40 shadow-2xl">
-              <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
-                <div className="flex items-center gap-3">
-                  <div className="rounded-xl bg-red-500/10 p-2 text-red-500">
-                    <FileText size={20} />
+        <div className="mt-5 grid gap-5 lg:grid-cols-[1.5fr_0.75fr] lg:gap-8">
+          <div className="space-y-5 lg:space-y-6">
+            <div className="overflow-hidden rounded-[2rem] border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/30">
+              <div className="flex items-center justify-between gap-3 border-b border-white/10 bg-black/30 px-4 py-3">
+                <div className="flex min-w-0 items-center gap-3">
+                  <div className="rounded-2xl bg-red-500/10 p-2 text-red-300">
+                    <FileText size={18} />
                   </div>
 
-                  <div>
-                    <h2 className="font-semibold">PDF Preview</h2>
-                    <p className="text-xs text-white/40">Optimized Viewer</p>
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-black">
+                      PDF Preview
+                    </p>
+                    <p className="text-xs text-white/40">
+                      Open original if preview does not load.
+                    </p>
                   </div>
                 </div>
 
@@ -427,7 +443,7 @@ export default function NoteDetailsPage() {
                   href={note.pdfURL}
                   target="_blank"
                   rel="noreferrer"
-                  className="rounded-xl border border-white/10 bg-white/5 p-2 text-white/70 transition hover:bg-white/10 hover:text-white"
+                  className="shrink-0 rounded-xl border border-white/10 bg-white/5 p-2 text-white/70 transition hover:bg-white/10 hover:text-white"
                   title="Open Original PDF"
                 >
                   <ExternalLink size={18} />
@@ -437,11 +453,11 @@ export default function NoteDetailsPage() {
               <iframe
                 src={`${note.pdfURL}#toolbar=0`}
                 title={note.title}
-                className="h-[85vh] w-full bg-black"
+                className="h-[62vh] w-full bg-black md:h-[82vh]"
               />
             </div>
 
-            <section className="rounded-3xl border border-yellow-500/20 bg-yellow-500/5 p-5">
+            <section className="rounded-[2rem] border border-yellow-500/20 bg-yellow-500/5 p-5">
               <div className="flex items-start gap-3">
                 <div className="rounded-2xl bg-yellow-500/10 p-2 text-yellow-400">
                   <AlertTriangle size={20} />
@@ -454,13 +470,13 @@ export default function NoteDetailsPage() {
 
                   <p className="mt-2 text-sm leading-relaxed text-white/60">
                     NotesWallah is a student-driven platform where students
-                    share notes to help each other learn. Some uploaded files
-                    may contain watermarks, logos, or references to schools,
+                    share notes to help each other learn. Some uploaded files may
+                    contain watermarks, logos, or references to schools,
                     coaching institutes, websites, or educational organizations.
                     Such materials are shared by users for educational and
                     non-commercial purposes only. NotesWallah does not claim
-                    ownership of third-party content, trademarks, or branding.
-                    If you are the rightful owner of any material and want it
+                    ownership of third-party content, trademarks, or branding. If
+                    you are the rightful owner of any material and want it
                     reviewed or removed, contact us at{" "}
                     <a
                       href="mailto:legal@noteswallah.co.in"
@@ -474,7 +490,7 @@ export default function NoteDetailsPage() {
               </div>
             </section>
 
-            <section className="rounded-3xl border border-white/10 bg-white/5 p-6">
+            <section className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-5 shadow-2xl shadow-black/20 sm:p-6">
               <div className="flex items-center gap-3">
                 <MessageCircle className="text-red-500" size={22} />
                 <h2 className="text-2xl font-black">
@@ -493,21 +509,22 @@ export default function NoteDetailsPage() {
                   }
                   rows={3}
                   disabled={!user}
-                  className="w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-white outline-none focus:border-red-500 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-white outline-none focus:border-red-500 disabled:cursor-not-allowed disabled:opacity-50"
                 />
 
                 <button
                   onClick={handleCommentSubmit}
                   disabled={commenting || !user}
-                  className="mt-3 rounded-2xl bg-red-600 px-6 py-3 font-semibold text-white transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="mt-3 inline-flex items-center justify-center gap-2 rounded-2xl bg-red-600 px-6 py-3 text-sm font-black text-white transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50"
                 >
+                  {commenting && <Loader2 size={16} className="animate-spin" />}
                   {commenting ? "Posting..." : "Post Comment"}
                 </button>
               </div>
 
               <div className="mt-8 space-y-4">
                 {comments.length === 0 ? (
-                  <p className="text-sm text-white/50">
+                  <p className="rounded-2xl border border-white/10 bg-black/25 p-4 text-sm text-white/50">
                     No comments yet. Be the first to comment.
                   </p>
                 ) : (
@@ -519,7 +536,7 @@ export default function NoteDetailsPage() {
                       <div className="flex items-start justify-between gap-4">
                         <Link
                           href={`/profile/${comment.userId}`}
-                          className="flex items-center gap-3"
+                          className="flex min-w-0 items-center gap-3"
                         >
                           <UserAvatar
                             name={comment.userName}
@@ -527,10 +544,12 @@ export default function NoteDetailsPage() {
                             size="sm"
                           />
 
-                          <div>
-                            <p className="font-semibold">{comment.userName}</p>
+                          <div className="min-w-0">
+                            <p className="truncate font-semibold">
+                              {comment.userName}
+                            </p>
                             <p className="text-xs text-white/40">
-                              {new Date(comment.createdAt).toLocaleString()}
+                              {formatDate(comment.createdAt)}
                             </p>
                           </div>
                         </Link>
@@ -538,7 +557,7 @@ export default function NoteDetailsPage() {
                         {user?.uid === comment.userId && (
                           <button
                             onClick={() => deleteComment(comment.id)}
-                            className="rounded-xl border border-red-500/20 bg-red-500/10 p-2 text-red-400 transition hover:bg-red-500/20"
+                            className="shrink-0 rounded-xl border border-red-500/20 bg-red-500/10 p-2 text-red-400 transition hover:bg-red-500/20"
                             aria-label="Delete comment"
                           >
                             <Trash2 size={16} />
@@ -546,7 +565,7 @@ export default function NoteDetailsPage() {
                         )}
                       </div>
 
-                      <p className="mt-4 whitespace-pre-wrap text-sm leading-relaxed text-white/70">
+                      <p className="mt-4 whitespace-pre-wrap break-words text-sm leading-relaxed text-white/70">
                         {comment.text}
                       </p>
                     </div>
@@ -556,13 +575,13 @@ export default function NoteDetailsPage() {
             </section>
           </div>
 
-          <div className="space-y-6">
-            <div className="rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur-xl">
-              <div className="mb-4 inline-flex rounded-full border border-red-500/20 bg-red-500/10 px-4 py-2 text-xs text-red-400">
+          <div className="order-first space-y-5 lg:order-last lg:space-y-6">
+            <div className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-5 shadow-2xl shadow-black/20 backdrop-blur-xl sm:p-6">
+              <div className="mb-4 inline-flex rounded-full border border-red-500/20 bg-red-500/10 px-4 py-2 text-xs font-black text-red-400">
                 Verified Study Material
               </div>
 
-              <h1 className="text-3xl font-black leading-tight">
+              <h1 className="break-words text-2xl font-black leading-tight sm:text-3xl">
                 {note.title}
               </h1>
 
@@ -571,9 +590,9 @@ export default function NoteDetailsPage() {
               </p>
 
               <div className="mt-6 grid grid-cols-2 gap-3">
-                <InfoBox label="Subject" value={note.subject} />
-                <InfoBox label="Class" value={note.class} />
-                <InfoBox label="Topic" value={note.topic} />
+                <InfoBox label="Subject" value={note.subject || "N/A"} />
+                <InfoBox label="Class" value={note.class || "N/A"} />
+                <InfoBox label="Topic" value={note.topic || "N/A"} />
                 <InfoBox
                   label="Downloads"
                   value={String(note.downloadsCount ?? 0)}
@@ -590,7 +609,7 @@ export default function NoteDetailsPage() {
                   {note.tags.map((tag, index) => (
                     <span
                       key={index}
-                      className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/70"
+                      className="max-w-full truncate rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/70"
                     >
                       #{tag}
                     </span>
@@ -598,10 +617,10 @@ export default function NoteDetailsPage() {
                 </div>
               )}
 
-              <div className="mt-8 flex flex-col gap-3">
+              <div className="mt-6 hidden flex-col gap-3 lg:flex">
                 <button
                   onClick={handleDownload}
-                  className="flex items-center justify-center gap-2 rounded-2xl bg-red-600 px-6 py-4 font-semibold text-white transition hover:bg-red-500"
+                  className="flex items-center justify-center gap-2 rounded-2xl bg-red-600 px-6 py-4 font-black text-white transition hover:bg-red-500"
                 >
                   <Download size={18} />
                   {user ? "Download PDF" : "Login to Download"}
@@ -609,7 +628,7 @@ export default function NoteDetailsPage() {
 
                 <button
                   onClick={handleLike}
-                  className={`flex items-center justify-center gap-2 rounded-2xl px-6 py-4 font-medium transition ${
+                  className={`flex items-center justify-center gap-2 rounded-2xl px-6 py-4 font-black transition ${
                     isLiked
                       ? "border border-red-500/30 bg-red-500/10 text-red-400"
                       : "border border-white/10 bg-white/5 text-white hover:bg-white/10"
@@ -624,7 +643,7 @@ export default function NoteDetailsPage() {
 
                 <button
                   onClick={handleBookmark}
-                  className="flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-6 py-4 font-medium text-white transition hover:bg-white/10"
+                  className="flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-6 py-4 font-black text-white transition hover:bg-white/10"
                 >
                   <Bookmark size={18} />
                   {isBookmarked ? "Saved ✓" : "Save Note"}
@@ -639,7 +658,7 @@ export default function NoteDetailsPage() {
 
                     setReportOpen(true);
                   }}
-                  className="flex items-center justify-center gap-2 rounded-2xl border border-yellow-500/20 bg-yellow-500/10 px-6 py-4 font-medium text-yellow-400 transition hover:bg-yellow-500/20"
+                  className="flex items-center justify-center gap-2 rounded-2xl border border-yellow-500/20 bg-yellow-500/10 px-6 py-4 font-black text-yellow-400 transition hover:bg-yellow-500/20"
                 >
                   <AlertTriangle size={18} />
                   Report Note
@@ -647,16 +666,18 @@ export default function NoteDetailsPage() {
               </div>
             </div>
 
-            <div className="rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur-xl">
-              <p className="text-xs uppercase tracking-widest text-white/40">
+            <div className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-5 shadow-2xl shadow-black/20 backdrop-blur-xl sm:p-6">
+              <p className="text-xs font-bold uppercase tracking-widest text-white/40">
                 Uploaded By
               </p>
 
               <div className="mt-4 flex items-center gap-4">
                 <UserAvatar name={note.uploaderName || "User"} size="md" />
 
-                <div>
-                  <h3 className="font-semibold">{note.uploaderName}</h3>
+                <div className="min-w-0">
+                  <h3 className="truncate font-semibold">
+                    {note.uploaderName || "NotesWallah User"}
+                  </h3>
                   <p className="text-sm text-white/50">
                     NotesWallah Contributor
                   </p>
@@ -665,14 +686,14 @@ export default function NoteDetailsPage() {
 
               <button
                 onClick={() => router.push(`/profile/${note.uploaderId}`)}
-                className="mt-5 w-full rounded-2xl border border-white/10 bg-white/5 px-5 py-3 text-sm text-white/70 transition hover:bg-white/10 hover:text-white"
+                className="mt-5 w-full rounded-2xl border border-white/10 bg-white/5 px-5 py-3 text-sm font-black text-white/70 transition hover:bg-white/10 hover:text-white"
               >
                 View Profile
               </button>
             </div>
 
-            <div className="rounded-3xl border border-green-500/20 bg-green-500/5 p-5">
-              <p className="text-sm font-medium text-green-400">
+            <div className="rounded-[2rem] border border-green-500/20 bg-green-500/5 p-5">
+              <p className="text-sm font-black text-green-400">
                 Safe Download
               </p>
 
@@ -685,9 +706,46 @@ export default function NoteDetailsPage() {
         </div>
       </div>
 
+      <div className="fixed inset-x-0 bottom-[76px] z-40 border-t border-white/10 bg-[#050505]/95 px-3 pb-4 pt-3 backdrop-blur-xl lg:hidden">
+        <div className="flex gap-2">
+          <button
+            onClick={handleLike}
+            className={`flex h-14 flex-1 items-center justify-center rounded-2xl transition ${
+              isLiked
+                ? "bg-red-600 text-white"
+                : "border border-white/10 bg-white/5 text-white"
+            }`}
+            aria-label="Like note"
+          >
+            <Heart
+              size={19}
+              className={isLiked ? "fill-white text-white" : ""}
+            />
+          </button>
+
+          <button
+            onClick={handleBookmark}
+            className={`flex h-14 flex-1 items-center justify-center rounded-2xl border border-white/10 ${
+              isBookmarked ? "bg-white text-black" : "bg-white/5 text-white"
+            }`}
+            aria-label="Save note"
+          >
+            <Bookmark size={19} />
+          </button>
+
+          <button
+            onClick={handleDownload}
+            className="flex h-14 flex-[2] items-center justify-center gap-2 rounded-2xl bg-red-600 px-5 font-black text-white"
+          >
+            <Download size={18} />
+            Download
+          </button>
+        </div>
+      </div>
+
       {reportOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-lg rounded-3xl border border-white/10 bg-zinc-950 p-6 text-white shadow-2xl">
+          <div className="w-full max-w-lg rounded-[2rem] border border-white/10 bg-zinc-950 p-5 text-white shadow-2xl sm:p-6">
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-black">Report Note</h2>
 
@@ -755,8 +813,9 @@ export default function NoteDetailsPage() {
               <button
                 onClick={handleReportSubmit}
                 disabled={reporting}
-                className="w-full rounded-2xl bg-red-600 px-6 py-4 font-semibold text-white transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex w-full items-center justify-center gap-2 rounded-2xl bg-red-600 px-6 py-4 font-black text-white transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50"
               >
+                {reporting && <Loader2 size={18} className="animate-spin" />}
                 {reporting ? "Submitting..." : "Submit Report"}
               </button>
             </div>
@@ -769,9 +828,20 @@ export default function NoteDetailsPage() {
 
 function InfoBox({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
+    <div className="min-w-0 rounded-2xl border border-white/10 bg-black/30 p-4">
       <p className="text-xs text-white/40">{label}</p>
-      <p className="mt-1 font-medium">{value}</p>
+      <p className="mt-1 truncate font-medium">{value}</p>
     </div>
   );
+}
+
+function formatDate(value: string) {
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) return "Recently";
+
+  return date.toLocaleString("en-IN", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
 }

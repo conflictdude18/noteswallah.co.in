@@ -86,10 +86,10 @@ export default function Navbar() {
 
   return (
     <>
-      <header className="sticky top-0 z-50 border-b border-white/10 bg-black/80 backdrop-blur-xl">
-        <div className="container-max flex items-center justify-between py-4">
-          <Link href="/" className="flex items-center gap-3">
-            <div className="relative h-10 w-10 overflow-hidden rounded-xl border border-white/10 bg-white/5">
+      <header className="sticky top-0 z-50 border-b border-white/10 bg-[#050505]/90 backdrop-blur-xl">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
+          <Link href="/" className="flex min-w-0 items-center gap-3">
+            <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-xl border border-white/10 bg-white/5">
               <Image
                 src="/icon.png"
                 alt="NotesWallah Logo"
@@ -99,63 +99,35 @@ export default function Navbar() {
               />
             </div>
 
-            <div>
-              <h1 className="text-lg font-bold text-white">
+            <div className="min-w-0">
+              <h1 className="truncate text-lg font-black text-white">
                 Notes<span className="text-red-500">Wallah</span>
               </h1>
 
-              <p className="text-[10px] text-white/40">
+              <p className="truncate text-[10px] text-white/40">
                 Smart Notes Platform
               </p>
             </div>
           </Link>
 
-          <nav className="hidden items-center gap-6 text-sm text-white/70 md:flex">
-            <Link href="/browse" className="transition hover:text-white">
-              Browse
-            </Link>
-
-            <Link href="/following" className="transition hover:text-white">
-              Following
-            </Link>
-
-            <Link href="/creators" className="transition hover:text-white">
-              Creators
-            </Link>
-
-            <Link href="/feedback" className="transition hover:text-white">
-              Feedback
-            </Link>
+          <nav className="hidden items-center gap-5 text-sm font-semibold text-white/65 lg:flex">
+            <DesktopLink href="/browse" label="Browse" />
+            <DesktopLink href="/following" label="Following" />
+            <DesktopLink href="/creators" label="Creators" />
+            <DesktopLink href="/feedback" label="Feedback" />
 
             {user && (
               <>
-                <Link href="/upload" className="transition hover:text-white">
-                  Upload
-                </Link>
-
-                <Link
-                  href="/saved-notes"
-                  className="transition hover:text-white"
-                >
-                  Saved Notes
-                </Link>
-
-                <Link href="/my-notes" className="transition hover:text-white">
-                  My Notes
-                </Link>
-
-                <Link href="/dashboard" className="transition hover:text-white">
-                  Dashboard
-                </Link>
-
-                <Link href="/profile" className="transition hover:text-white">
-                  Profile
-                </Link>
+                <DesktopLink href="/upload" label="Upload" />
+                <DesktopLink href="/saved-notes" label="Saved" />
+                <DesktopLink href="/my-notes" label="My Notes" />
+                <DesktopLink href="/dashboard" label="Dashboard" />
+                <DesktopLink href="/profile" label="Profile" />
 
                 {isAdmin && (
                   <Link
                     href="/admin"
-                    className="text-red-400 transition hover:text-red-300"
+                    className="font-black text-red-400 transition hover:text-red-300"
                   >
                     Admin
                   </Link>
@@ -164,14 +136,20 @@ export default function Navbar() {
             )}
           </nav>
 
-          <div className="hidden items-center gap-3 md:flex">
+          <div className="hidden items-center gap-3 lg:flex">
             {!loading && !user && (
               <>
-                <Link href="/signin" className="btn-secondary text-sm">
+                <Link
+                  href="/signin"
+                  className="rounded-2xl border border-white/10 bg-white/[0.05] px-4 py-2.5 text-sm font-black text-white transition hover:bg-white/[0.08]"
+                >
                   Sign In
                 </Link>
 
-                <Link href="/signup" className="btn-primary text-sm">
+                <Link
+                  href="/signup"
+                  className="rounded-2xl bg-red-600 px-4 py-2.5 text-sm font-black text-white transition hover:bg-red-500"
+                >
                   Sign Up
                 </Link>
               </>
@@ -187,7 +165,7 @@ export default function Navbar() {
                   <Bell size={20} />
 
                   {unreadCount > 0 && (
-                    <span className="absolute -right-2 -top-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-bold text-white">
+                    <span className="absolute -right-2 -top-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-black text-white">
                       {unreadCount > 9 ? "9+" : unreadCount}
                     </span>
                   )}
@@ -195,7 +173,7 @@ export default function Navbar() {
 
                 <button
                   onClick={handleLogout}
-                  className="btn-primary text-sm"
+                  className="rounded-2xl bg-red-600 px-4 py-2.5 text-sm font-black text-white transition hover:bg-red-500"
                 >
                   Logout
                 </button>
@@ -206,16 +184,20 @@ export default function Navbar() {
           <button
             aria-label="Open Menu"
             onClick={() => setOpen(true)}
-            className="rounded-lg border border-white/10 bg-white/5 p-2 text-white md:hidden"
+            className="relative rounded-xl border border-white/10 bg-white/5 p-2 text-white lg:hidden"
           >
             <Menu size={22} />
+
+            {unreadCount > 0 && user && (
+              <span className="absolute -right-1 -top-1 h-3 w-3 rounded-full bg-red-600" />
+            )}
           </button>
         </div>
       </header>
 
       <div
         onClick={() => setOpen(false)}
-        className={`fixed inset-0 z-40 bg-black/60 backdrop-blur-sm transition-opacity duration-300 md:hidden ${
+        className={`fixed inset-0 z-40 bg-black/70 backdrop-blur-sm transition-opacity duration-300 lg:hidden ${
           open
             ? "pointer-events-auto opacity-100"
             : "pointer-events-none opacity-0"
@@ -223,13 +205,13 @@ export default function Navbar() {
       />
 
       <aside
-        className={`fixed left-0 top-0 z-50 h-full w-72 border-r border-white/10 bg-[#0d0d0d] transition-transform duration-300 ease-in-out md:hidden ${
+        className={`fixed left-0 top-0 z-50 h-dvh w-[86vw] max-w-[340px] overflow-y-auto border-r border-white/10 bg-[#0b0b0d] shadow-2xl shadow-black/40 transition-transform duration-300 ease-in-out lg:hidden ${
           open ? "translate-x-0" : "-translate-x-full"
         }`}
       >
         <div className="flex items-center justify-between border-b border-white/10 p-5">
-          <div className="flex items-center gap-3">
-            <div className="relative h-10 w-10 overflow-hidden rounded-xl border border-white/10">
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-xl border border-white/10">
               <Image
                 src="/icon.png"
                 alt="NotesWallah Logo"
@@ -239,12 +221,12 @@ export default function Navbar() {
               />
             </div>
 
-            <div>
-              <h2 className="font-bold text-white">
+            <div className="min-w-0">
+              <h2 className="truncate font-black text-white">
                 Notes<span className="text-red-500">Wallah</span>
               </h2>
 
-              <p className="text-xs text-white/40">
+              <p className="truncate text-xs text-white/40">
                 Student Community
               </p>
             </div>
@@ -253,68 +235,45 @@ export default function Navbar() {
           <button
             aria-label="Close Menu"
             onClick={() => setOpen(false)}
-            className="rounded-lg bg-white/10 p-2 text-white"
+            className="rounded-xl bg-white/10 p-2 text-white"
           >
             <X size={20} />
           </button>
         </div>
 
-        <nav className="flex flex-col gap-5 p-6 text-sm text-white/70">
-          <Link href="/browse" onClick={() => setOpen(false)}>
-            Browse Notes
-          </Link>
-
-          <Link href="/following" onClick={() => setOpen(false)}>
-            Following Feed
-          </Link>
-
-          <Link href="/creators" onClick={() => setOpen(false)}>
-            Creators
-          </Link>
-
-          <Link href="/feedback" onClick={() => setOpen(false)}>
-            Feedback
-          </Link>
+        <nav className="flex flex-col gap-2 p-4 text-sm font-bold text-white/70">
+          <MobileLink href="/browse" label="Browse Notes" close={() => setOpen(false)} />
+          <MobileLink href="/following" label="Following Feed" close={() => setOpen(false)} />
+          <MobileLink href="/creators" label="Creators" close={() => setOpen(false)} />
+          <MobileLink href="/feedback" label="Feedback" close={() => setOpen(false)} />
 
           {user && (
             <>
-              <Link href="/notifications" onClick={() => setOpen(false)}>
-                <span className="inline-flex items-center gap-2">
-                  Notifications
+              <Link
+                href="/notifications"
+                onClick={() => setOpen(false)}
+                className="flex items-center justify-between rounded-2xl px-4 py-3 transition hover:bg-white/[0.06] hover:text-white"
+              >
+                Notifications
 
-                  {unreadCount > 0 && (
-                    <span className="rounded-full bg-red-600 px-2 py-0.5 text-[10px] font-bold text-white">
-                      {unreadCount > 9 ? "9+" : unreadCount}
-                    </span>
-                  )}
-                </span>
+                {unreadCount > 0 && (
+                  <span className="rounded-full bg-red-600 px-2 py-0.5 text-[10px] font-black text-white">
+                    {unreadCount > 9 ? "9+" : unreadCount}
+                  </span>
+                )}
               </Link>
 
-              <Link href="/upload" onClick={() => setOpen(false)}>
-                Upload
-              </Link>
-
-              <Link href="/saved-notes" onClick={() => setOpen(false)}>
-                Saved Notes
-              </Link>
-
-              <Link href="/my-notes" onClick={() => setOpen(false)}>
-                My Notes
-              </Link>
-
-              <Link href="/dashboard" onClick={() => setOpen(false)}>
-                Dashboard
-              </Link>
-
-              <Link href="/profile" onClick={() => setOpen(false)}>
-                Profile
-              </Link>
+              <MobileLink href="/upload" label="Upload" close={() => setOpen(false)} />
+              <MobileLink href="/saved-notes" label="Saved Notes" close={() => setOpen(false)} />
+              <MobileLink href="/my-notes" label="My Notes" close={() => setOpen(false)} />
+              <MobileLink href="/dashboard" label="Dashboard" close={() => setOpen(false)} />
+              <MobileLink href="/profile" label="Profile" close={() => setOpen(false)} />
 
               {isAdmin && (
                 <Link
                   href="/admin"
                   onClick={() => setOpen(false)}
-                  className="text-red-400"
+                  className="rounded-2xl px-4 py-3 font-black text-red-400 transition hover:bg-red-500/10"
                 >
                   Admin
                 </Link>
@@ -323,11 +282,11 @@ export default function Navbar() {
           )}
 
           {!loading && !user && (
-            <>
+            <div className="mt-4 grid gap-3">
               <Link
                 href="/signin"
                 onClick={() => setOpen(false)}
-                className="btn-secondary text-center"
+                className="rounded-2xl border border-white/10 bg-white/[0.05] px-4 py-3 text-center font-black text-white"
               >
                 Sign In
               </Link>
@@ -335,17 +294,17 @@ export default function Navbar() {
               <Link
                 href="/signup"
                 onClick={() => setOpen(false)}
-                className="btn-primary text-center"
+                className="rounded-2xl bg-red-600 px-4 py-3 text-center font-black text-white"
               >
                 Sign Up
               </Link>
-            </>
+            </div>
           )}
 
           {!loading && user && (
             <button
               onClick={handleLogout}
-              className="btn-primary mt-3"
+              className="mt-4 rounded-2xl bg-red-600 px-4 py-3 font-black text-white"
             >
               Logout
             </button>
@@ -353,5 +312,33 @@ export default function Navbar() {
         </nav>
       </aside>
     </>
+  );
+}
+
+function DesktopLink({ href, label }: { href: string; label: string }) {
+  return (
+    <Link href={href} className="transition hover:text-white">
+      {label}
+    </Link>
+  );
+}
+
+function MobileLink({
+  href,
+  label,
+  close,
+}: {
+  href: string;
+  label: string;
+  close: () => void;
+}) {
+  return (
+    <Link
+      href={href}
+      onClick={close}
+      className="rounded-2xl px-4 py-3 transition hover:bg-white/[0.06] hover:text-white"
+    >
+      {label}
+    </Link>
   );
 }

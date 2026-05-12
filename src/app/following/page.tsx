@@ -3,8 +3,16 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { collection, getDocs, query, where } from "firebase/firestore";
-import { BookOpen, FileText, Users } from "lucide-react";
+import {
+  BookOpen,
+  ExternalLink,
+  FileText,
+  RefreshCw,
+  Search,
+  Users,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 import { db } from "@/firebase/firebase";
 import { useAuth } from "@/contexts/AuthContext";
@@ -25,6 +33,8 @@ export default function FollowingFeedPage() {
         router.push("/signin");
         return;
       }
+
+      setPageLoading(true);
 
       try {
         const followsQuery = query(
@@ -72,6 +82,7 @@ export default function FollowingFeedPage() {
         setNotes(allNotes);
       } catch (err) {
         console.error("FOLLOWING FEED ERROR:", err);
+        toast.error("Failed to load following feed.");
       } finally {
         setPageLoading(false);
       }
@@ -82,90 +93,165 @@ export default function FollowingFeedPage() {
 
   if (loading || pageLoading) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-[#050505] text-white">
-        <div className="text-center">
-          <div className="mx-auto h-14 w-14 animate-spin rounded-full border-4 border-red-500 border-t-transparent" />
-          <p className="mt-5 text-white/60">Loading following feed...</p>
+      <main className="min-h-screen bg-[#050505] px-4 py-8 text-white">
+        <div className="mx-auto flex min-h-[70vh] max-w-5xl items-center justify-center">
+          <div className="text-center">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl border border-white/10 bg-white/5">
+              <RefreshCw className="animate-spin text-red-500" size={30} />
+            </div>
+
+            <h1 className="mt-5 text-xl font-black">
+              Loading following feed
+            </h1>
+
+            <p className="mt-2 text-sm text-white/50">
+              Finding latest notes from people you follow...
+            </p>
+          </div>
         </div>
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen bg-[#050505] text-white">
-      <section className="container-max py-10">
-        <div className="mb-8 flex items-center gap-3">
-          <div className="rounded-2xl bg-red-500/10 p-3 text-red-500">
-            <Users size={24} />
+    <main className="min-h-screen bg-[#050505] px-4 py-6 text-white sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-6xl">
+        <section className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-gradient-to-br from-white/10 via-white/[0.04] to-red-500/10 p-5 shadow-2xl shadow-black/30 sm:p-7 lg:p-9">
+          <div className="absolute -right-16 -top-16 h-44 w-44 rounded-full bg-red-500/20 blur-3xl" />
+
+          <div className="relative flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <div className="inline-flex items-center gap-2 rounded-full border border-red-500/20 bg-red-500/10 px-4 py-2 text-xs font-black text-red-300">
+                <Users size={16} />
+                Following Feed
+              </div>
+
+              <h1 className="mt-5 text-3xl font-black tracking-tight sm:text-5xl">
+                Notes from people you follow
+              </h1>
+
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-white/55 sm:text-base">
+                See the latest approved uploads from your favourite
+                contributors in one clean feed.
+              </p>
+            </div>
+
+            <Link
+              href="/browse"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-red-600 px-5 py-4 text-sm font-black text-white transition hover:bg-red-500 sm:w-fit"
+            >
+              <Search size={18} />
+              Discover Notes
+            </Link>
           </div>
 
-          <div>
-            <h1 className="text-3xl font-black">Following Feed</h1>
-            <p className="text-sm text-white/50">
-              Latest approved notes from contributors you follow.
-            </p>
+          <div className="relative mt-6 grid grid-cols-2 gap-3 sm:max-w-md">
+            <StatCard label="Feed Notes" value={notes.length} />
+            <StatCard
+              label="Contributors"
+              value={
+                new Set(notes.map((note) => note.uploaderId).filter(Boolean))
+                  .size
+              }
+            />
           </div>
-        </div>
+        </section>
 
         {notes.length === 0 ? (
-          <div className="rounded-3xl border border-white/10 bg-white/5 p-10 text-center">
-            <BookOpen size={44} className="mx-auto text-white/30" />
+          <section className="mt-5 rounded-[2rem] border border-white/10 bg-white/[0.04] p-8 text-center shadow-2xl shadow-black/20 sm:p-12">
+            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-[1.5rem] border border-red-500/20 bg-red-500/10 text-red-300">
+              <BookOpen size={38} />
+            </div>
 
-            <h2 className="mt-4 text-2xl font-bold">
+            <h2 className="mt-7 text-2xl font-black">
               No notes from followed users yet
             </h2>
 
-            <p className="mt-2 text-sm text-white/50">
-              Follow contributors to see their notes here.
+            <p className="mx-auto mt-3 max-w-md text-sm leading-7 text-white/55">
+              Follow contributors from Browse or Profile pages. Their latest
+              approved notes will appear here.
             </p>
 
             <Link
               href="/browse"
-              className="mt-6 inline-flex rounded-2xl bg-red-600 px-6 py-3 font-semibold text-white transition hover:bg-red-500"
+              className="mt-8 inline-flex items-center justify-center gap-2 rounded-2xl bg-red-600 px-5 py-3 text-sm font-black text-white transition hover:bg-red-500"
             >
+              <BookOpen size={18} />
               Browse Notes
             </Link>
-          </div>
+          </section>
         ) : (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <section className="mt-5 grid gap-4 pb-24 md:grid-cols-2 xl:grid-cols-3">
             {notes.map((note) => (
               <Link
                 key={note.id}
                 href={`/notes/${note.id}`}
-                className="group overflow-hidden rounded-3xl border border-white/10 bg-white/5 transition hover:-translate-y-1 hover:border-red-500/30"
+                className="group overflow-hidden rounded-[1.6rem] border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20 transition hover:border-red-500/30 hover:bg-white/[0.06]"
               >
-                <div className="h-52 overflow-hidden bg-zinc-950">
+                <div className="relative h-44 overflow-hidden bg-zinc-950 sm:h-52">
                   {note.thumbnailUrl ? (
                     <img
                       src={note.thumbnailUrl}
-                      alt={note.title}
+                      alt={note.title || "Note thumbnail"}
                       className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
                     />
                   ) : (
-                    <div className="flex h-full items-center justify-center">
-                      <FileText className="text-red-500" size={48} />
+                    <div className="flex h-full items-center justify-center bg-red-500/10">
+                      <FileText className="text-red-400" size={48} />
                     </div>
                   )}
+
+                  <div className="absolute left-3 top-3 rounded-full border border-white/10 bg-black/60 px-3 py-1 text-[10px] font-black text-white/75 backdrop-blur-md">
+                    Approved
+                  </div>
                 </div>
 
-                <div className="p-5">
-                  <h3 className="line-clamp-2 text-lg font-bold">
-                    {note.title}
+                <div className="p-4 sm:p-5">
+                  <h3 className="line-clamp-2 text-base font-black leading-snug sm:text-lg">
+                    {note.title || "Untitled Note"}
                   </h3>
 
-                  <p className="mt-2 text-sm text-white/50">
-                    {note.subject} • Class {note.class}
-                  </p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <MiniTag>{note.subject || "Subject not set"}</MiniTag>
+                    <MiniTag>Class {note.class || "N/A"}</MiniTag>
+                    {note.topic && <MiniTag>{note.topic}</MiniTag>}
+                  </div>
 
-                  <p className="mt-3 text-xs text-white/40">
-                    By {note.uploaderName || "NotesWallah User"}
-                  </p>
+                  <div className="mt-4 flex items-center justify-between gap-3 border-t border-white/10 pt-4">
+                    <p className="min-w-0 truncate text-xs font-semibold text-white/45">
+                      By {note.uploaderName || "NotesWallah User"}
+                    </p>
+
+                    <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-white px-3 py-1.5 text-[10px] font-black text-black transition group-hover:bg-red-500 group-hover:text-white">
+                      Open
+                      <ExternalLink size={12} />
+                    </span>
+                  </div>
                 </div>
               </Link>
             ))}
-          </div>
+          </section>
         )}
-      </section>
+      </div>
     </main>
+  );
+}
+
+function StatCard({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-black/25 p-4 text-center">
+      <p className="text-2xl font-black text-white sm:text-3xl">{value}</p>
+      <p className="mt-1 text-[11px] font-bold text-white/45 sm:text-xs">
+        {label}
+      </p>
+    </div>
+  );
+}
+
+function MiniTag({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="max-w-full truncate rounded-full border border-white/10 bg-black/25 px-2.5 py-1 text-[10px] font-bold text-white/55">
+      {children}
+    </span>
   );
 }

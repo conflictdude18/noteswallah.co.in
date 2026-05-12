@@ -1,5 +1,6 @@
 "use client";
 
+import type React from "react";
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -12,6 +13,7 @@ import {
   ArrowRight,
   BookOpen,
   CheckCircle2,
+  Loader2,
   Lock,
   Mail,
   ShieldCheck,
@@ -87,22 +89,21 @@ export default function SignInPage() {
   }
 
   return (
-    <main className="flex min-h-[80vh] items-center justify-center pb-24 pt-6 md:pb-8">
-      <div className="grid w-full max-w-6xl gap-6 lg:grid-cols-[0.95fr_1.05fr] lg:items-stretch">
-        <section className="relative hidden overflow-hidden rounded-[2rem] border border-white/10 bg-[#07090d] p-8 shadow-card lg:block">
-          <div className="absolute right-[-100px] top-[-100px] h-[300px] w-[300px] rounded-full bg-red-500/20 blur-[120px]" />
-          <div className="absolute bottom-[-130px] left-[-120px] h-[280px] w-[280px] rounded-full bg-red-700/10 blur-[120px]" />
+    <main className="min-h-screen overflow-x-hidden bg-[#050505] px-4 py-6 text-white sm:px-6 lg:px-8">
+      <div className="mx-auto grid max-w-6xl gap-5 pb-28 md:pb-10 lg:grid-cols-[0.95fr_1.05fr] lg:items-stretch">
+        <section className="relative hidden overflow-hidden rounded-[2rem] border border-white/10 bg-gradient-to-br from-white/10 via-white/[0.04] to-red-500/10 p-8 shadow-2xl shadow-black/30 lg:block">
+          <div className="absolute -right-10 -top-10 h-44 w-44 rounded-full bg-red-500/20 blur-3xl" />
 
-          <div className="relative z-10 flex h-full flex-col justify-between">
+          <div className="relative flex h-full flex-col justify-between">
             <div>
               <div className="inline-flex items-center gap-2 rounded-full border border-red-500/20 bg-red-500/10 px-4 py-2 text-sm font-black text-red-300">
                 <Sparkles size={16} />
                 NotesWallah Login
               </div>
 
-              <h1 className="mt-8 text-5xl font-black leading-tight tracking-tight text-white">
-                Welcome Back,
-                <span className="block text-[#ff2d3d]">Student.</span>
+              <h1 className="mt-8 text-5xl font-black leading-tight tracking-tight">
+                Welcome back,
+                <span className="block text-red-500">student.</span>
               </h1>
 
               <p className="mt-5 max-w-md text-sm leading-7 text-white/60">
@@ -119,16 +120,16 @@ export default function SignInPage() {
           </div>
         </section>
 
-        <section className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-white/[0.035] p-6 shadow-card backdrop-blur-xl md:p-8">
-          <div className="absolute right-[-80px] top-[-80px] h-52 w-52 rounded-full bg-red-500/10 blur-[90px]" />
+        <section className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-white/[0.04] p-5 shadow-2xl shadow-black/20 backdrop-blur-xl sm:p-7 lg:p-8">
+          <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-red-500/10 blur-3xl" />
 
-          <div className="relative z-10">
-            <div className="mb-8">
+          <div className="relative">
+            <div className="mb-7">
               <div className="flex h-14 w-14 items-center justify-center rounded-[1.35rem] border border-red-500/20 bg-red-500/10 text-red-300">
                 <ShieldCheck size={26} />
               </div>
 
-              <h2 className="mt-5 text-3xl font-black tracking-tight text-white">
+              <h2 className="mt-5 text-3xl font-black tracking-tight">
                 Sign In
               </h2>
 
@@ -147,9 +148,13 @@ export default function SignInPage() {
               type="button"
               onClick={handleGoogleLogin}
               disabled={loading}
-              className="btn-secondary w-full disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/[0.05] px-5 py-4 text-sm font-black text-white transition hover:bg-white/[0.08] disabled:cursor-not-allowed disabled:opacity-50"
             >
-              <BookOpen size={18} />
+              {loading ? (
+                <Loader2 size={18} className="animate-spin" />
+              ) : (
+                <BookOpen size={18} />
+              )}
               Continue with Google
             </button>
 
@@ -160,67 +165,44 @@ export default function SignInPage() {
             </div>
 
             <form onSubmit={handleEmailLogin} className="space-y-5">
-              <div>
-                <label
-                  htmlFor="email"
-                  className="mb-2 block text-sm font-bold text-white/75"
-                >
-                  Email
-                </label>
+              <InputField
+                id="email"
+                label="Email"
+                type="email"
+                autoComplete="email"
+                placeholder="Enter your email"
+                value={email}
+                onChange={setEmail}
+                icon={<Mail size={18} />}
+              />
 
-                <div className="relative">
-                  <Mail
-                    size={18}
-                    className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-white/35"
-                  />
-
-                  <input
-                    id="email"
-                    type="email"
-                    autoComplete="email"
-                    placeholder="Enter your email"
-                    value={email}
-                    onChange={(event) => setEmail(event.target.value)}
-                    className="nw-input input-icon-left"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label
-                  htmlFor="password"
-                  className="mb-2 block text-sm font-bold text-white/75"
-                >
-                  Password
-                </label>
-
-                <div className="relative">
-                  <Lock
-                    size={18}
-                    className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-white/35"
-                  />
-
-                  <input
-                    id="password"
-                    type="password"
-                    autoComplete="current-password"
-                    placeholder="Enter your password"
-                    value={password}
-                    onChange={(event) => setPassword(event.target.value)}
-                    className="nw-input input-icon-left"
-                    required
-                  />
-                </div>
-              </div>
+              <InputField
+                id="password"
+                label="Password"
+                type="password"
+                autoComplete="current-password"
+                placeholder="Enter your password"
+                value={password}
+                onChange={setPassword}
+                icon={<Lock size={18} />}
+              />
 
               <button
                 type="submit"
                 disabled={loading}
-                className="btn-primary w-full disabled:cursor-not-allowed disabled:opacity-50"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-red-600 px-5 py-4 text-sm font-black text-white transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {loading ? "Signing In..." : "Sign In"}
-                {!loading && <ArrowRight size={18} />}
+                {loading ? (
+                  <>
+                    <Loader2 size={18} className="animate-spin" />
+                    Signing In...
+                  </>
+                ) : (
+                  <>
+                    Sign In
+                    <ArrowRight size={18} />
+                  </>
+                )}
               </button>
             </form>
 
@@ -240,9 +222,54 @@ export default function SignInPage() {
   );
 }
 
+function InputField({
+  id,
+  label,
+  type,
+  autoComplete,
+  placeholder,
+  value,
+  onChange,
+  icon,
+}: {
+  id: string;
+  label: string;
+  type: string;
+  autoComplete: string;
+  placeholder: string;
+  value: string;
+  onChange: (value: string) => void;
+  icon: React.ReactNode;
+}) {
+  return (
+    <div>
+      <label htmlFor={id} className="mb-2 block text-sm font-bold text-white/75">
+        {label}
+      </label>
+
+      <div className="relative">
+        <div className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-white/35">
+          {icon}
+        </div>
+
+        <input
+          id={id}
+          type={type}
+          autoComplete={autoComplete}
+          placeholder={placeholder}
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          className="w-full rounded-2xl border border-white/10 bg-black/30 px-5 py-4 pl-12 text-sm text-white outline-none transition placeholder:text-white/30 focus:border-red-500"
+          required
+        />
+      </div>
+    </div>
+  );
+}
+
 function FeatureRow({ text }: { text: string }) {
   return (
-    <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm font-bold text-white/65">
+    <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-sm font-bold text-white/65">
       <CheckCircle2 size={17} className="text-green-400" />
       {text}
     </div>

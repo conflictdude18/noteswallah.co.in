@@ -14,14 +14,12 @@ import {
 } from "firebase/firestore";
 import { deleteObject, ref } from "firebase/storage";
 import {
-  BookOpen,
   CheckCircle2,
   Clock,
   Download,
   Eye,
   FileText,
   PlusCircle,
-  Sparkles,
   Trash2,
   UploadCloud,
   XCircle,
@@ -147,36 +145,37 @@ export default function MyNotesPage() {
   }
 
   return (
-    <main className="space-y-8 overflow-x-hidden pb-24">
-      <section className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-[#07090d] p-6 shadow-card md:p-10">
+    <main className="space-y-6 overflow-x-hidden pb-28 md:space-y-8 md:pb-10">
+      <section className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-[#07090d] p-5 shadow-card md:p-10">
         <div className="absolute right-[-90px] top-[-90px] h-[260px] w-[260px] rounded-full bg-red-500/20 blur-[120px]" />
-        <div className="absolute bottom-[-120px] left-[20%] h-[240px] w-[240px] rounded-full bg-red-700/10 blur-[130px]" />
 
-        <div className="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+        <div className="relative z-10 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-red-500/20 bg-red-500/10 px-4 py-2 text-sm font-medium text-red-300">
+            <div className="inline-flex items-center gap-2 rounded-full border border-red-500/20 bg-red-500/10 px-4 py-2 text-xs font-bold text-red-300 md:text-sm">
               <FileText size={16} />
               Creator Studio
             </div>
 
-            <h1 className="mt-6 text-4xl font-black tracking-tight text-white md:text-6xl">
+            <h1 className="mt-5 text-3xl font-black tracking-tight text-white md:mt-6 md:text-6xl">
               My Notes
             </h1>
 
-            <p className="mt-4 max-w-2xl text-base leading-7 text-white/60">
-              Manage your uploaded notes, track approval status and monitor
-              downloads from one place.
+            <p className="mt-3 max-w-2xl text-sm leading-7 text-white/60 md:mt-4 md:text-base">
+              Manage uploads, track approval status and monitor downloads.
             </p>
           </div>
 
-          <Link href="/upload" className="btn-primary w-full sm:w-fit">
+          <Link
+            href="/upload"
+            className="flex w-full items-center justify-center gap-2 rounded-2xl bg-red-600 px-5 py-4 text-sm font-black text-white transition hover:bg-red-500 sm:w-fit"
+          >
             <PlusCircle size={18} />
             Upload New Note
           </Link>
         </div>
       </section>
 
-      <section className="grid gap-5 md:grid-cols-2 xl:grid-cols-5">
+      <section className="no-scrollbar flex gap-3 overflow-x-auto pb-1 md:grid md:grid-cols-2 md:gap-5 xl:grid-cols-5">
         <StatCard label="Total" value={stats.total} icon={<FileText />} />
         <StatCard label="Downloads" value={stats.downloads} icon={<Download />} />
         <StatCard
@@ -200,7 +199,7 @@ export default function MyNotesPage() {
       </section>
 
       {notes.length === 0 ? (
-        <section className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-10 text-center shadow-card backdrop-blur-xl">
+        <section className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-8 text-center shadow-card backdrop-blur-xl md:p-10">
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-red-500/10 text-red-300">
             <UploadCloud size={34} />
           </div>
@@ -213,61 +212,62 @@ export default function MyNotesPage() {
             Upload your first PDF note and help other students study better.
           </p>
 
-          <Link href="/upload" className="btn-primary mt-7 inline-flex">
+          <Link
+            href="/upload"
+            className="mt-7 inline-flex items-center justify-center rounded-2xl bg-red-600 px-5 py-3 text-sm font-black text-white"
+          >
             Upload Notes
           </Link>
         </section>
       ) : (
-        <section className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {notes.map((note) => (
             <article
               key={note.id}
-              className="group min-w-0 overflow-hidden rounded-[2rem] border border-white/10 bg-white/[0.04] p-4 shadow-card backdrop-blur-xl transition hover:border-red-500/30 hover:bg-white/[0.06]"
+              className="group grid grid-cols-[92px_1fr] overflow-hidden rounded-[1.5rem] border border-white/10 bg-white/[0.04] shadow-card backdrop-blur-xl transition hover:border-red-500/30 md:block md:rounded-[2rem]"
             >
-              <div className="relative h-44 overflow-hidden rounded-[1.5rem] border border-white/10 bg-black/30">
+              <div className="relative min-h-[150px] overflow-hidden border-r border-white/10 bg-black/30 md:h-44 md:border-r-0">
                 {note.thumbnailUrl ? (
                   <Image
                     src={note.thumbnailUrl}
                     alt={note.title || "Note thumbnail"}
                     fill
-                    sizes="(max-width: 768px) 100vw, 33vw"
+                    sizes="(max-width: 768px) 92px, 33vw"
                     className="object-cover transition duration-500 group-hover:scale-105"
                   />
                 ) : (
                   <div className="flex h-full w-full flex-col items-center justify-center gap-2 text-white/35">
-                    <FileText size={38} />
-                    <span className="text-xs font-medium">PDF Note</span>
+                    <FileText size={34} />
+                    <span className="hidden text-xs font-medium md:block">
+                      PDF Note
+                    </span>
                   </div>
                 )}
 
-                <div className="absolute left-3 top-3">
+                <div className="absolute left-2 top-2 md:left-3 md:top-3">
                   <StatusBadge status={note.status || "pending"} />
                 </div>
               </div>
 
-              <div className="p-2 pt-5">
-                <h2 className="line-clamp-2 break-words text-xl font-black leading-tight text-white">
+              <div className="min-w-0 p-4 md:p-5">
+                <h2 className="line-clamp-2 break-words text-base font-black leading-tight text-white md:text-xl">
                   {note.title || "Untitled Note"}
                 </h2>
 
-                <p className="mt-3 line-clamp-2 text-sm leading-6 text-white/55">
+                <p className="mt-2 line-clamp-2 text-xs leading-5 text-white/55 md:text-sm md:leading-6">
                   {note.description || "No description provided."}
                 </p>
 
-                <div className="mt-5 grid grid-cols-2 gap-3 text-xs">
-                  <InfoBox label="Subject" value={note.subject || "N/A"} />
-                  <InfoBox label="Class" value={note.class || "N/A"} />
-                  <InfoBox label="Topic" value={note.topic || "N/A"} />
-                  <InfoBox
-                    label="Downloads"
-                    value={String(note.downloadsCount ?? 0)}
-                  />
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <MiniTag>{note.subject || "N/A"}</MiniTag>
+                  <MiniTag>Class {note.class || "N/A"}</MiniTag>
+                  <MiniTag>{note.downloadsCount ?? 0} downloads</MiniTag>
                 </div>
 
-                <div className="mt-6 flex items-center gap-3 border-t border-white/10 pt-5">
+                <div className="mt-4 flex items-center gap-2 border-t border-white/10 pt-4">
                   <Link
                     href={`/notes/${note.id}`}
-                    className="flex min-h-[2.6rem] flex-1 items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-2 text-xs font-medium text-white/75 transition hover:bg-white/[0.08] hover:text-white"
+                    className="flex min-h-[2.5rem] flex-1 items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-black text-white/75"
                   >
                     <Eye size={15} />
                     View
@@ -279,10 +279,10 @@ export default function MyNotesPage() {
                     aria-label="Delete note"
                     onClick={() => handleDelete(note)}
                     disabled={deletingId === note.id}
-                    className="flex min-h-[2.6rem] flex-1 items-center justify-center gap-2 rounded-2xl bg-red-600 px-4 py-2 text-xs font-medium text-white transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="flex min-h-[2.5rem] flex-1 items-center justify-center gap-2 rounded-2xl bg-red-600 px-3 py-2 text-xs font-black text-white disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     <Trash2 size={15} />
-                    {deletingId === note.id ? "Deleting..." : "Delete"}
+                    {deletingId === note.id ? "Deleting" : "Delete"}
                   </button>
                 </div>
               </div>
@@ -312,15 +312,17 @@ function StatCard({
   };
 
   return (
-    <div className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-5 shadow-card backdrop-blur-xl">
+    <div className="min-w-[150px] rounded-[1.5rem] border border-white/10 bg-white/[0.04] p-4 shadow-card backdrop-blur-xl md:min-w-0 md:rounded-[2rem] md:p-5">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="text-sm font-medium text-white/50">{label}</p>
-          <p className="mt-2 text-3xl font-black text-white">{value}</p>
+          <p className="text-xs font-bold text-white/45 md:text-sm">{label}</p>
+          <p className="mt-2 text-2xl font-black text-white md:text-3xl">
+            {value}
+          </p>
         </div>
 
         <div
-          className={`flex h-11 w-11 items-center justify-center rounded-2xl ${styles[tone]}`}
+          className={`flex h-10 w-10 items-center justify-center rounded-2xl md:h-11 md:w-11 ${styles[tone]}`}
         >
           {icon}
         </div>
@@ -341,18 +343,17 @@ function StatusBadge({ status }: { status: string }) {
 
   return (
     <span
-      className={`rounded-full border px-3 py-1 text-xs font-medium capitalize backdrop-blur-xl ${styles}`}
+      className={`rounded-full border px-2.5 py-1 text-[10px] font-black capitalize backdrop-blur-xl md:px-3 md:text-xs ${styles}`}
     >
       {status}
     </span>
   );
 }
 
-function InfoBox({ label, value }: { label: string; value: string }) {
+function MiniTag({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-w-0 rounded-2xl border border-white/10 bg-black/25 p-3">
-      <p className="text-[11px] font-medium text-white/40">{label}</p>
-      <p className="mt-1 truncate text-sm font-black text-white">{value}</p>
-    </div>
+    <span className="max-w-full truncate rounded-full border border-white/10 bg-black/25 px-2.5 py-1 text-[10px] font-bold text-white/55">
+      {children}
+    </span>
   );
 }

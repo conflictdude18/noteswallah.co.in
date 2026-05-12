@@ -1,12 +1,13 @@
 "use client";
 
+import type React from "react";
 import { useState } from "react";
 import Link from "next/link";
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import {
   ArrowRight,
-  BookOpen,
   CheckCircle2,
+  Loader2,
   Lock,
   Mail,
   ShieldCheck,
@@ -58,7 +59,7 @@ export default function SignUpPage() {
       );
 
       await updateProfile(userCred.user, {
-        displayName: name,
+        displayName: name.trim(),
       });
 
       window.location.href = "/dashboard";
@@ -74,24 +75,21 @@ export default function SignUpPage() {
   }
 
   return (
-    <main className="flex min-h-[80vh] items-center justify-center pb-24 pt-6 md:pb-8">
-      <div className="grid w-full max-w-6xl gap-6 lg:grid-cols-[0.95fr_1.05fr] lg:items-stretch">
-        <section className="relative hidden overflow-hidden rounded-[2rem] border border-white/10 bg-[#07090d] p-8 shadow-card lg:block">
-          <div className="absolute right-[-100px] top-[-100px] h-[300px] w-[300px] rounded-full bg-red-500/20 blur-[120px]" />
-          <div className="absolute bottom-[-130px] left-[-120px] h-[280px] w-[280px] rounded-full bg-red-700/10 blur-[120px]" />
+    <main className="min-h-screen overflow-x-hidden bg-[#050505] px-4 py-6 text-white sm:px-6 lg:px-8">
+      <div className="mx-auto grid max-w-6xl gap-5 pb-28 md:pb-10 lg:grid-cols-[0.95fr_1.05fr] lg:items-stretch">
+        <section className="relative hidden overflow-hidden rounded-[2rem] border border-white/10 bg-gradient-to-br from-white/10 via-white/[0.04] to-red-500/10 p-8 shadow-2xl shadow-black/30 lg:block">
+          <div className="absolute -right-10 -top-10 h-44 w-44 rounded-full bg-red-500/20 blur-3xl" />
 
-          <div className="relative z-10 flex h-full flex-col justify-between">
+          <div className="relative flex h-full flex-col justify-between">
             <div>
               <div className="inline-flex items-center gap-2 rounded-full border border-red-500/20 bg-red-500/10 px-4 py-2 text-sm font-black text-red-300">
                 <Sparkles size={16} />
                 Join NotesWallah
               </div>
 
-              <h1 className="mt-8 text-5xl font-black leading-tight tracking-tight text-white">
-                Create Your
-                <span className="block text-[#ff2d3d]">
-                  Student Account.
-                </span>
+              <h1 className="mt-8 text-5xl font-black leading-tight tracking-tight">
+                Create your
+                <span className="block text-red-500">student account.</span>
               </h1>
 
               <p className="mt-5 max-w-md text-sm leading-7 text-white/60">
@@ -108,16 +106,16 @@ export default function SignUpPage() {
           </div>
         </section>
 
-        <section className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-white/[0.035] p-6 shadow-card backdrop-blur-xl md:p-8">
-          <div className="absolute right-[-80px] top-[-80px] h-52 w-52 rounded-full bg-red-500/10 blur-[90px]" />
+        <section className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-white/[0.04] p-5 shadow-2xl shadow-black/20 backdrop-blur-xl sm:p-7 lg:p-8">
+          <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-red-500/10 blur-3xl" />
 
-          <div className="relative z-10">
-            <div className="mb-8">
+          <div className="relative">
+            <div className="mb-7">
               <div className="flex h-14 w-14 items-center justify-center rounded-[1.35rem] border border-red-500/20 bg-red-500/10 text-red-300">
                 <ShieldCheck size={26} />
               </div>
 
-              <h2 className="mt-5 text-3xl font-black tracking-tight text-white">
+              <h2 className="mt-5 text-3xl font-black tracking-tight">
                 Create Account
               </h2>
 
@@ -133,88 +131,39 @@ export default function SignUpPage() {
             )}
 
             <form onSubmit={handleSignup} className="space-y-5">
-              <div>
-                <label
-                  htmlFor="name"
-                  className="mb-2 block text-sm font-bold text-white/75"
-                >
-                  Full Name
-                </label>
+              <InputField
+                id="name"
+                label="Full Name"
+                type="text"
+                autoComplete="name"
+                placeholder="Enter your full name"
+                value={name}
+                onChange={setName}
+                icon={<User size={18} />}
+              />
 
-                <div className="relative">
-                  <User
-                    size={18}
-                    className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-white/35"
-                  />
-
-                  <input
-                    id="name"
-                    name="name"
-                    type="text"
-                    autoComplete="name"
-                    placeholder="Enter your full name"
-                    value={name}
-                    onChange={(event) => setName(event.target.value)}
-                    className="nw-input input-icon-left"
-                    required
-                  />
-                </div>
-              </div>
+              <InputField
+                id="email"
+                label="Email"
+                type="email"
+                autoComplete="email"
+                placeholder="Enter your email"
+                value={email}
+                onChange={setEmail}
+                icon={<Mail size={18} />}
+              />
 
               <div>
-                <label
-                  htmlFor="email"
-                  className="mb-2 block text-sm font-bold text-white/75"
-                >
-                  Email
-                </label>
-
-                <div className="relative">
-                  <Mail
-                    size={18}
-                    className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-white/35"
-                  />
-
-                  <input
-                    id="email"
-                    name="email"
-                    type="email"
-                    autoComplete="email"
-                    placeholder="Enter your email"
-                    value={email}
-                    onChange={(event) => setEmail(event.target.value)}
-                    className="nw-input input-icon-left"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label
-                  htmlFor="password"
-                  className="mb-2 block text-sm font-bold text-white/75"
-                >
-                  Password
-                </label>
-
-                <div className="relative">
-                  <Lock
-                    size={18}
-                    className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-white/35"
-                  />
-
-                  <input
-                    id="password"
-                    name="password"
-                    type="password"
-                    autoComplete="new-password"
-                    placeholder="Create a password"
-                    value={password}
-                    onChange={(event) => setPassword(event.target.value)}
-                    className="nw-input input-icon-left"
-                    required
-                  />
-                </div>
+                <InputField
+                  id="password"
+                  label="Password"
+                  type="password"
+                  autoComplete="new-password"
+                  placeholder="Create a password"
+                  value={password}
+                  onChange={setPassword}
+                  icon={<Lock size={18} />}
+                />
 
                 <p className="mt-2 text-xs font-semibold text-white/35">
                   Use at least 6 characters.
@@ -224,10 +173,19 @@ export default function SignUpPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="btn-primary w-full disabled:cursor-not-allowed disabled:opacity-50"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-red-600 px-5 py-4 text-sm font-black text-white transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {loading ? "Creating..." : "Sign Up"}
-                {!loading && <ArrowRight size={18} />}
+                {loading ? (
+                  <>
+                    <Loader2 size={18} className="animate-spin" />
+                    Creating...
+                  </>
+                ) : (
+                  <>
+                    Sign Up
+                    <ArrowRight size={18} />
+                  </>
+                )}
               </button>
             </form>
 
@@ -247,9 +205,55 @@ export default function SignUpPage() {
   );
 }
 
+function InputField({
+  id,
+  label,
+  type,
+  autoComplete,
+  placeholder,
+  value,
+  onChange,
+  icon,
+}: {
+  id: string;
+  label: string;
+  type: string;
+  autoComplete: string;
+  placeholder: string;
+  value: string;
+  onChange: (value: string) => void;
+  icon: React.ReactNode;
+}) {
+  return (
+    <div>
+      <label htmlFor={id} className="mb-2 block text-sm font-bold text-white/75">
+        {label}
+      </label>
+
+      <div className="relative">
+        <div className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-white/35">
+          {icon}
+        </div>
+
+        <input
+          id={id}
+          name={id}
+          type={type}
+          autoComplete={autoComplete}
+          placeholder={placeholder}
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          className="w-full rounded-2xl border border-white/10 bg-black/30 px-5 py-4 pl-12 text-sm text-white outline-none transition placeholder:text-white/30 focus:border-red-500"
+          required
+        />
+      </div>
+    </div>
+  );
+}
+
 function FeatureRow({ text }: { text: string }) {
   return (
-    <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm font-bold text-white/65">
+    <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-sm font-bold text-white/65">
       <CheckCircle2 size={17} className="text-green-400" />
       {text}
     </div>

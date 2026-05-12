@@ -1,5 +1,7 @@
 "use client";
 
+import type React from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -19,7 +21,10 @@ import {
   Download,
   FileText,
   GraduationCap,
+  Loader2,
+  RefreshCw,
   UserRound,
+  Users,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -37,6 +42,9 @@ type UserProfile = {
   occupation?: string;
   avatarUrl?: string;
   photoURL?: string;
+  profileImage?: string;
+  profileImageUrl?: string;
+  imageUrl?: string;
   verified?: boolean;
 };
 
@@ -135,7 +143,13 @@ export default function PublicProfilePage() {
   const displayName =
     profile?.displayName || profile?.name || "NotesWallah User";
 
-  const avatarUrl = profile?.avatarUrl || profile?.photoURL || "";
+  const avatarUrl =
+    profile?.avatarUrl ||
+    profile?.photoURL ||
+    profile?.profileImage ||
+    profile?.profileImageUrl ||
+    profile?.imageUrl ||
+    "";
 
   const totalDownloads = useMemo(() => {
     return notes.reduce((sum, note) => sum + (note.downloadsCount ?? 0), 0);
@@ -193,81 +207,97 @@ export default function PublicProfilePage() {
 
   if (loading) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-black text-white">
-        Loading profile...
+      <main className="min-h-screen bg-[#050505] px-4 py-8 text-white">
+        <div className="mx-auto flex min-h-[70vh] max-w-6xl items-center justify-center">
+          <div className="text-center">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl border border-white/10 bg-white/5">
+              <RefreshCw className="animate-spin text-red-500" size={30} />
+            </div>
+
+            <h1 className="mt-5 text-xl font-black">Loading profile</h1>
+
+            <p className="mt-2 text-sm text-white/50">
+              Fetching profile and uploaded notes...
+            </p>
+          </div>
+        </div>
       </main>
     );
   }
 
   if (!profile) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-black text-white">
-        User not found.
+      <main className="flex min-h-screen items-center justify-center bg-[#050505] px-4 text-white">
+        <div className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-8 text-center">
+          <UserRound size={42} className="mx-auto text-red-400" />
+          <h1 className="mt-5 text-3xl font-black">User not found</h1>
+        </div>
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen bg-black text-white">
-      <section className="container-max py-10">
-        <div className="overflow-hidden rounded-3xl border border-white/10 bg-zinc-950">
-          <div className="h-32 border-b border-white/10 bg-gradient-to-r from-red-600/30 via-red-500/10 to-zinc-950" />
+    <main className="min-h-screen overflow-x-hidden bg-[#050505] px-4 py-6 text-white sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-7xl pb-28 md:pb-10">
+        <section className="overflow-hidden rounded-[2rem] border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/30">
+          <div className="h-28 border-b border-white/10 bg-gradient-to-r from-red-600/35 via-red-500/10 to-zinc-950 md:h-36" />
 
-          <div className="p-6 md:p-8">
-            <div className="-mt-20 flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
-              <div className="flex flex-col gap-5 md:flex-row md:items-end">
-                <div className="rounded-3xl border-4 border-black shadow-xl">
-                  <UserAvatar name={displayName} src={avatarUrl} size="xl" />
+          <div className="p-5 sm:p-7 lg:p-8">
+            <div className="-mt-10 flex flex-col gap-5 md:-mt-20 md:flex-row md:items-end md:justify-between">
+              <div className="flex min-w-0 flex-col gap-4 md:flex-row md:items-end">
+                <div className="w-fit rounded-[1.7rem] border-4 border-[#050505] shadow-xl">
+                  <UserAvatar name={displayName} src={avatarUrl} size="lg" />
                 </div>
 
-                <div>
-                  <div className="flex flex-wrap items-center gap-3">
-                    <h1 className="text-4xl font-black">{displayName}</h1>
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h1 className="break-words text-3xl font-black sm:text-4xl">
+                      {displayName}
+                    </h1>
 
                     {profile.verified && (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-blue-500/10 px-3 py-1 text-xs text-blue-400">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-blue-500/10 px-3 py-1 text-xs font-bold text-blue-400">
                         <BadgeCheck size={14} />
                         Verified
                       </span>
                     )}
                   </div>
 
-                  <p className="mt-2 flex items-center gap-2 text-white/55">
-                    <GraduationCap size={18} />
+                  <p className="mt-2 flex items-center gap-2 text-sm font-semibold text-white/55 sm:text-base">
+                    <GraduationCap size={17} />
                     {profile.occupation || "Student"}
                   </p>
                 </div>
               </div>
 
-              <div className="flex flex-wrap items-center gap-3">
-                <div className="rounded-2xl border border-green-500/20 bg-green-500/10 px-4 py-2 text-sm text-green-400">
-                  Trusted Contributor
-                </div>
-
+              <div className="grid grid-cols-2 gap-3 md:flex md:flex-wrap md:items-center">
                 <Link
                   href={`/profile/${id}/followers`}
-                  className="rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/70 transition hover:bg-white/10 hover:text-white"
+                  className="rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-center text-sm font-black text-white/75"
                 >
                   {followersCount} followers
                 </Link>
 
                 <Link
                   href={`/profile/${id}/following`}
-                  className="rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/70 transition hover:bg-white/10 hover:text-white"
+                  className="rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-center text-sm font-black text-white/75"
                 >
                   {followingCount} following
                 </Link>
 
-                {user && user.uid !== id && (
+                {user?.uid !== id && (
                   <button
                     onClick={handleFollow}
                     disabled={followLoading}
-                    className={`rounded-2xl px-5 py-2 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-60 ${
+                    className={`col-span-2 inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-3 text-sm font-black transition disabled:cursor-not-allowed disabled:opacity-60 md:col-span-1 ${
                       isFollowing
-                        ? "border border-white/10 bg-white/10 hover:bg-white/15"
-                        : "bg-red-600 hover:bg-red-500"
+                        ? "border border-white/10 bg-white/10 text-white hover:bg-white/15"
+                        : "bg-red-600 text-white hover:bg-red-500"
                     }`}
                   >
+                    {followLoading && (
+                      <Loader2 size={16} className="animate-spin" />
+                    )}
                     {followLoading
                       ? "Please wait..."
                       : isFollowing
@@ -275,90 +305,126 @@ export default function PublicProfilePage() {
                         : "Follow"}
                   </button>
                 )}
-
-                {!user && (
-                  <button
-                    onClick={handleFollow}
-                    className="rounded-2xl bg-red-600 px-5 py-2 text-sm font-medium transition hover:bg-red-500"
-                  >
-                    Follow
-                  </button>
-                )}
               </div>
             </div>
 
-            <p className="mt-8 max-w-3xl text-white/65">
+            <p className="mt-6 rounded-[1.5rem] border border-white/10 bg-black/25 p-4 text-sm leading-7 text-white/65 md:mt-8 md:max-w-3xl">
               {profile.bio || "This user has not added a bio yet."}
             </p>
 
-            <div className="mt-8 grid gap-4 md:grid-cols-3">
-              <div className="glass-card p-5">
-                <BookOpen className="text-red-500" />
-                <p className="mt-3 text-2xl font-black">{notes.length}</p>
-                <p className="text-sm text-white/50">Approved Notes</p>
-              </div>
+            <div className="mt-5 grid grid-cols-3 gap-3 md:mt-8 md:gap-4">
+              <StatCard
+                icon={<BookOpen size={22} />}
+                value={notes.length}
+                label="Notes"
+              />
 
-              <div className="glass-card p-5">
-                <Download className="text-red-500" />
-                <p className="mt-3 text-2xl font-black">{totalDownloads}</p>
-                <p className="text-sm text-white/50">Total Downloads</p>
-              </div>
+              <StatCard
+                icon={<Download size={22} />}
+                value={totalDownloads}
+                label="Downloads"
+              />
 
-              <div className="glass-card p-5">
-                <UserRound className="text-red-500" />
-                <p className="mt-3 text-2xl font-black">
-                  {profile.verified ? "Verified" : "Active"}
-                </p>
-                <p className="text-sm text-white/50">Contributor Status</p>
-              </div>
+              <StatCard
+                icon={<UserRound size={22} />}
+                value={profile.verified ? "Verified" : "Active"}
+                label="Status"
+              />
             </div>
           </div>
-        </div>
+        </section>
 
-        <div className="mt-12">
-          <h2 className="text-3xl font-black">Uploaded Notes</h2>
+        <section className="mt-8 md:mt-12">
+          <div className="flex items-end justify-between gap-3">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.22em] text-red-300">
+                Public Library
+              </p>
+              <h2 className="mt-2 text-2xl font-black md:text-3xl">
+                Uploaded Notes
+              </h2>
+            </div>
+
+            <p className="text-xs font-semibold text-white/45">
+              {notes.length} notes
+            </p>
+          </div>
 
           {notes.length === 0 ? (
-            <div className="glass-card mt-6 p-10 text-center text-white/50">
+            <div className="mt-5 rounded-[2rem] border border-white/10 bg-white/[0.04] p-8 text-center text-white/50 shadow-2xl shadow-black/20 md:mt-6 md:p-10">
               No uploaded notes yet.
             </div>
           ) : (
-            <div className="mt-6 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <div className="mt-5 grid gap-4 md:mt-6 md:grid-cols-2 lg:grid-cols-3">
               {notes.map((note) => (
                 <Link
                   key={note.id}
                   href={`/notes/${note.id}`}
-                  className="group overflow-hidden rounded-3xl border border-white/10 bg-white/5 transition hover:-translate-y-1 hover:border-red-500/30"
+                  className="group overflow-hidden rounded-[1.6rem] border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20 transition hover:border-red-500/30 hover:bg-white/[0.06]"
                 >
-                  <div className="h-52 overflow-hidden bg-zinc-950">
-                    {note.thumbnailUrl ? (
-                      <img
-                        src={note.thumbnailUrl}
-                        alt={note.title}
-                        className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-                      />
-                    ) : (
-                      <div className="flex h-full items-center justify-center">
-                        <FileText className="text-red-500" size={48} />
+                  <div className="grid grid-cols-[92px_1fr] md:block">
+                    <div className="relative min-h-[125px] overflow-hidden border-r border-white/10 bg-zinc-950 md:h-52 md:border-b md:border-r-0">
+                      {note.thumbnailUrl ? (
+                        <Image
+                          src={note.thumbnailUrl}
+                          alt={note.title || "Note thumbnail"}
+                          fill
+                          sizes="(max-width: 768px) 92px, (max-width: 1280px) 50vw, 33vw"
+                          className="object-cover transition duration-500 group-hover:scale-105"
+                        />
+                      ) : (
+                        <div className="flex h-full items-center justify-center bg-red-500/10">
+                          <FileText className="text-red-400" size={36} />
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="min-w-0 p-4 sm:p-5">
+                      <h3 className="line-clamp-2 text-base font-black leading-snug sm:text-lg">
+                        {note.title || "Untitled Note"}
+                      </h3>
+
+                      <p className="mt-2 truncate text-xs font-semibold text-white/50 sm:text-sm">
+                        {note.subject || "General"} • Class{" "}
+                        {note.class || "not set"}
+                      </p>
+
+                      <div className="mt-3 flex items-center gap-1.5 text-xs font-semibold text-white/45">
+                        <Download size={14} />
+                        {note.downloadsCount ?? 0} downloads
                       </div>
-                    )}
-                  </div>
-
-                  <div className="p-5">
-                    <h3 className="line-clamp-2 text-lg font-bold">
-                      {note.title}
-                    </h3>
-
-                    <p className="mt-2 text-sm text-white/50">
-                      {note.subject} • Class {note.class}
-                    </p>
+                    </div>
                   </div>
                 </Link>
               ))}
             </div>
           )}
-        </div>
-      </section>
+        </section>
+      </div>
     </main>
+  );
+}
+
+function StatCard({
+  icon,
+  value,
+  label,
+}: {
+  icon: React.ReactNode;
+  value: string | number;
+  label: string;
+}) {
+  return (
+    <div className="min-w-0 rounded-[1.25rem] border border-white/10 bg-black/25 p-3 md:rounded-[1.5rem] md:p-5">
+      <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-red-500/10 text-red-300 md:h-11 md:w-11">
+        {icon}
+      </div>
+
+      <p className="mt-3 truncate text-xl font-black md:text-2xl">{value}</p>
+
+      <p className="text-[11px] font-bold text-white/45 md:text-sm">
+        {label}
+      </p>
+    </div>
   );
 }
