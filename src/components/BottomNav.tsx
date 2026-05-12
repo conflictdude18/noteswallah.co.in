@@ -157,7 +157,7 @@ export default function BottomNav() {
                 const Icon = item.icon;
                 const active = isActive(item.href);
                 const admin = item.href === "/admin";
-                const badge = "badge" in item ? item.badge : 0;
+                const badge = "badge" in item && typeof item.badge === "number" ? item.badge : 0;
 
                 return (
                   <Link
