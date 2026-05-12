@@ -456,9 +456,22 @@ export default function NoteDetailsPage() {
                 className="h-[62vh] w-full bg-black md:h-[82vh]"
               />
             </div>
+            <section className="rounded-[2rem] border border-yellow-500/20 bg-yellow-500/5 p-4 md:p-5">
+              {/* MOBILE DISCLAIMER */}
+              <div className="flex items-center gap-2 md:hidden">
+                <div className="rounded-xl bg-yellow-500/10 p-2 text-yellow-400">
+                  <AlertTriangle size={16} />
+                  
+                </div>
 
-            <section className="rounded-[2rem] border border-yellow-500/20 bg-yellow-500/5 p-5">
-              <div className="flex items-start gap-3">
+                <p className="text-xs leading-relaxed text-white/70">
+                  Educational disclaimer: NotesWallah does not claim ownership of
+                  third-party content uploaded by users.
+                </p>
+              </div>
+
+              {/* DESKTOP DISCLAIMER */}
+              <div className="hidden md:flex items-start gap-3">
                 <div className="rounded-2xl bg-yellow-500/10 p-2 text-yellow-400">
                   <AlertTriangle size={20} />
                 </div>
