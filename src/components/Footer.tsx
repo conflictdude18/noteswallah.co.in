@@ -1,5 +1,5 @@
 "use client";
-
+import Image from "next/image";
 import Link from "next/link";
 import {
   BookOpen,
@@ -17,8 +17,14 @@ export default function Footer() {
         <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-4">
           <div>
             <div className="flex items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-red-600 text-white">
-                <BookOpen size={24} />
+              <div className="relative h-12 w-12 overflow-hidden rounded-2xl border border-white/10 bg-white/5">
+                <Image
+                  src="/icon.png"
+                  alt="NotesWallah Logo"
+                  fill
+                  sizes="48px"
+                  className="object-cover"
+                />
               </div>
 
               <div>
