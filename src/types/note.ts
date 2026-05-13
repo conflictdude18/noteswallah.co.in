@@ -14,4 +14,17 @@ export type Note = {
   downloadsCount: number;
   status: "pending" | "approved" | "rejected";
   thumbnailUrl?: string;
+  board?: string;
+  type?: string;
+  keywords?: string[];
+  likes?: number;
+  views?: number;
+  downloads?: number;
+  saves?: number;
+  reports?: number;
+  pageCount?: number;
+  fileSize?: number;
+  fileName?: string;
+  filePath?: string;
+  updatedAt?: unknown;
 };
