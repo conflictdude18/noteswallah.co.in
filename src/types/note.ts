@@ -27,4 +27,5 @@ export type Note = {
   fileName?: string;
   filePath?: string;
   updatedAt?: unknown;
+  createdAt?: unknown;
 };
