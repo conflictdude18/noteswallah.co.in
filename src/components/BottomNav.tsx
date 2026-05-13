@@ -9,6 +9,7 @@ import {
   Bell,
   BookOpen,
   FileText,
+  GraduationCap,
   Heart,
   Home,
   LayoutDashboard,
@@ -263,11 +264,7 @@ export default function BottomNav() {
               <Menu size={22} />
             </span>
 
-            <span
-              className={`text-[10px] font-black ${
-                open ? "text-white" : "text-white/45"
-              }`}
-            >
+            <span className={`text-[10px] font-black ${open ? "text-white" : "text-white/45"}`}>
               More
             </span>
           </button>

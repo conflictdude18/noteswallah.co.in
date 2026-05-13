@@ -1,6 +1,5 @@
 "use client";
 
-import type React from "react";
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -12,7 +11,6 @@ import {
   CheckCircle2,
   FileText,
   Layers,
-  Loader2,
   ShieldCheck,
   UploadCloud,
   X,
@@ -27,451 +25,469 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
   import.meta.url
 ).toString();
 
+const boards = [
+  "CBSE",
+  "ICSE",
+  "Maharashtra Board",
+  "State Board",
+  "JEE",
+  "NEET",
+  "CUET",
+  "Other",
+];
+
+const noteTypes = [
+  "Handwritten",
+  "Typed",
+  "Short Notes",
+  "PYQ",
+  "Formula Sheet",
+  "Sample Paper",
+  "Assignment",
+  "Other",
+];
+
+function cleanText(value: string) {
+  return value.trim().replace(/\s+/g, " ");
+}
+
+function makeKeywords(values: string[]) {
+  const words = values
+    .join(" ")
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, " ")
+    .split(/\s+/)
+    .map((word) => word.trim())
+    .filter(Boolean);
+
+  return Array.from(new Set(words));
+}
+
 export default function UploadPage() {
   const router = useRouter();
   const { user, loading } = useAuth();
 
   const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [noteClass, setNoteClass] = useState("");
   const [subject, setSubject] = useState("");
+  const [className, setClassName] = useState("");
+  const [board, setBoard] = useState("CBSE");
   const [topic, setTopic] = useState("");
-  const [tags, setTags] = useState("");
+  const [noteType, setNoteType] = useState("Handwritten");
+  const [keywordsInput, setKeywordsInput] = useState("");
+  const [description, setDescription] = useState("");
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
 
-  const tagList = useMemo(
-    () =>
-      tags
-        .split(",")
-        .map((tag) => tag.trim())
-        .filter(Boolean),
-    [tags]
-  );
+  const generatedTags = useMemo(() => {
+    const baseTags = [
+      subject,
+      topic,
+      `class ${className}`,
+      board,
+      noteType,
+      title,
+    ]
+      .map((item) => cleanText(item).toLowerCase())
+      .filter((item) => item && item !== "class");
 
-  if (!loading && !user) {
-    router.push("/signin");
-    return null;
-  }
+    return Array.from(new Set(baseTags));
+  }, [title, subject, className, board, topic, noteType]);
 
-  async function generateThumbnail(file: File): Promise<Blob> {
-    const fileReader = new FileReader();
-
-    return new Promise((resolve, reject) => {
-      fileReader.onload = async () => {
-        try {
-          const typedArray = new Uint8Array(fileReader.result as ArrayBuffer);
-          const pdf = await pdfjsLib.getDocument(typedArray).promise;
-          const page = await pdf.getPage(1);
-          const viewport = page.getViewport({ scale: 1.5 });
-
-          const canvas = document.createElement("canvas");
-          const context = canvas.getContext("2d");
-
-          if (!context) {
-            reject(new Error("Canvas context error"));
-            return;
-          }
-
-          canvas.width = viewport.width;
-          canvas.height = viewport.height;
-
-          await page.render({
-            canvasContext: context,
-            viewport,
-          } as Parameters<typeof page.render>[0]).promise;
-
-          canvas.toBlob(
-            (blob) => {
-              if (blob) resolve(blob);
-              else reject(new Error("Thumbnail generation failed"));
-            },
-            "image/jpeg",
-            0.9
-          );
-        } catch (err) {
-          reject(err);
-        }
-      };
-
-      fileReader.onerror = reject;
-      fileReader.readAsArrayBuffer(file);
-    });
+  async function getPdfPageCount(file: File) {
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    return pdf.numPages;
   }
 
   async function handleUpload(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
 
+    if (loading) return;
+
     if (!user) {
-      toast.error("You must be logged in.");
+      toast.error("Please sign in before uploading notes.");
+      router.push("/signin");
+      return;
+    }
+
+    const finalTitle = cleanText(title);
+    const finalSubject = cleanText(subject);
+    const finalClass = cleanText(className);
+    const finalTopic = cleanText(topic);
+    const finalDescription = cleanText(description);
+
+    if (!finalTitle || !finalSubject || !finalClass || !finalTopic) {
+      toast.error("Please fill title, subject, class, and topic.");
       return;
     }
 
     if (!pdfFile) {
-      toast.error("Please select a PDF.");
-      return;
-    }
-
-    if (!title.trim() || !noteClass.trim() || !subject.trim() || !topic.trim()) {
-      toast.error("Fill all required fields.");
+      toast.error("Please select a PDF file.");
       return;
     }
 
     if (pdfFile.type !== "application/pdf") {
-      toast.error("Only PDF files allowed.");
+      toast.error("Only PDF files are allowed.");
       return;
     }
 
-    if (pdfFile.size > 10 * 1024 * 1024) {
-      toast.error("PDF must be under 10MB.");
+    const maxSize = 15 * 1024 * 1024;
+
+    if (pdfFile.size > maxSize) {
+      toast.error("PDF size should be less than 15 MB.");
       return;
     }
-
-    setUploading(true);
 
     try {
-      const createdAt = Date.now();
+      setUploading(true);
 
-      const pdfPath = `notes/${user.uid}/${createdAt}-${pdfFile.name}`;
-      const pdfRef = ref(storage, pdfPath);
+      const pageCount = await getPdfPageCount(pdfFile);
 
-      await uploadBytes(pdfRef, pdfFile);
-      const pdfURL = await getDownloadURL(pdfRef);
+      const filePath = `notes/${user.uid}/${Date.now()}-${pdfFile.name}`;
+      const storageRef = ref(storage, filePath);
 
-      const thumbnailBlob = await generateThumbnail(pdfFile);
-      const thumbPath = `thumbnails/${user.uid}/${createdAt}.jpg`;
-      const thumbRef = ref(storage, thumbPath);
+      await uploadBytes(storageRef, pdfFile);
+      const pdfURL = await getDownloadURL(storageRef);
 
-      await uploadBytes(thumbRef, thumbnailBlob);
-      const thumbnailUrl = await getDownloadURL(thumbRef);
+      const manualKeywords = keywordsInput
+        .split(",")
+        .map((keyword) => cleanText(keyword).toLowerCase())
+        .filter(Boolean);
 
-      const newNote = await addDoc(collection(db, "notes"), {
-        title: title.trim(),
-        description: description.trim(),
-        class: noteClass.trim(),
-        subject: subject.trim(),
-        topic: topic.trim(),
-        tags: tagList,
+      const searchKeywords = makeKeywords([
+        finalTitle,
+        finalSubject,
+        finalClass,
+        board,
+        finalTopic,
+        noteType,
+        finalDescription,
+        keywordsInput,
+      ]);
+
+      const finalTags = Array.from(
+        new Set([...generatedTags, ...manualKeywords, ...searchKeywords])
+      );
+
+      const docRef = await addDoc(collection(db, "notes"), {
+        title: finalTitle,
+        subject: finalSubject,
+        class: finalClass,
+        board,
+        topic: finalTopic,
+        type: noteType,
+        description: finalDescription,
+
+        tags: finalTags,
+        keywords: searchKeywords,
+
         pdfURL,
-        thumbnailUrl,
+        filePath,
+        fileName: pdfFile.name,
+        fileSize: pdfFile.size,
+        pageCount,
+
         uploaderId: user.uid,
-        uploaderName: user.displayName || "Anonymous",
+        uploaderName: user.displayName || user.email || "NotesWallah User",
         uploaderEmail: user.email || "",
-        uploadDate: serverTimestamp(),
-        createdAt: new Date().toISOString(),
-        downloadsCount: 0,
+        uploaderPhotoURL: user.photoURL || "",
+
         status: "pending",
+        moderationStatus: "pending",
+
+        downloads: 0,
+        likes: 0,
+        views: 0,
+        saves: 0,
+        reports: 0,
+
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
       });
 
-      await sendFollowerUploadNotifications({
-        uploaderId: user.uid,
-        uploaderName: user.displayName || user.email || "Someone you follow",
-        noteId: newNote.id,
-        noteTitle: title.trim(),
-      });
+      try {
+        await sendFollowerUploadNotifications({
+          uploaderId: user.uid,
+          uploaderName: user.displayName || user.email || "NotesWallah User",
+          noteId: docRef.id,
+          noteTitle: finalTitle,
+        });
+      } catch {
+        console.warn("Follower notification failed.");
+      }
 
-      toast.success("Note uploaded successfully!");
+      toast.success("Notes uploaded successfully. Waiting for approval.");
+
+      setTitle("");
+      setSubject("");
+      setClassName("");
+      setBoard("CBSE");
+      setTopic("");
+      setNoteType("Handwritten");
+      setKeywordsInput("");
+      setDescription("");
+      setPdfFile(null);
+
       router.push("/my-notes");
-    } catch (err: unknown) {
-      console.error("UPLOAD ERROR:", err);
-      toast.error(err instanceof Error ? err.message : "Upload failed.");
+    } catch (error) {
+      console.error(error);
+      toast.error("Upload failed. Please try again.");
     } finally {
       setUploading(false);
     }
   }
 
-  const canSubmit =
-    Boolean(pdfFile) &&
-    Boolean(title.trim()) &&
-    Boolean(noteClass.trim()) &&
-    Boolean(subject.trim()) &&
-    Boolean(topic.trim()) &&
-    !uploading;
+  if (loading) {
+    return (
+      <main className="min-h-screen bg-[#050607] px-4 py-10 text-white">
+        <div className="mx-auto max-w-4xl rounded-3xl border border-white/10 bg-white/[0.04] p-8 text-center">
+          <p className="text-sm text-white/60">Checking your account...</p>
+        </div>
+      </main>
+    );
+  }
 
   return (
-    <main className="min-h-screen overflow-x-hidden bg-[#050505] px-4 py-6 text-white sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-7xl pb-52 md:pb-10">
-        <section className="relative max-w-full overflow-hidden rounded-[2rem] border border-white/10 bg-gradient-to-br from-white/10 via-white/[0.04] to-red-500/10 p-5 shadow-2xl shadow-black/30 sm:p-7 lg:p-9">
-          <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-red-500/20 blur-3xl" />
+    <main className="min-h-screen bg-[#050607] px-4 py-6 text-white sm:px-6 lg:px-8">
+      <section className="mx-auto max-w-5xl">
+        <div className="mb-8 overflow-hidden rounded-[2rem] border border-white/10 bg-white/[0.04] p-6 shadow-2xl shadow-black/30 md:p-8">
+          <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
+            <div>
+              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-red-400/20 bg-red-500/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.25em] text-red-200">
+                <UploadCloud size={15} />
+                Upload Notes
+              </div>
 
-          <div className="relative max-w-3xl">
-            <div className="inline-flex items-center gap-2 rounded-full border border-red-500/20 bg-red-500/10 px-4 py-2 text-xs font-black text-red-300">
-              <UploadCloud size={16} />
-              Upload Study Notes
-            </div>
+              <h1 className="text-3xl font-black tracking-tight md:text-5xl">
+                Share useful study material.
+              </h1>
 
-            <h1 className="mt-5 text-3xl font-black leading-tight sm:text-5xl lg:text-6xl">
-              Help students
-              <span className="block text-red-500">learn faster</span>
-            </h1>
-
-            <p className="mt-4 text-sm leading-6 text-white/55 sm:text-base">
-              Upload PDFs, assignments, handwritten notes and revision sheets to
-              help other students study better.
-            </p>
-
-            <div className="mt-6 flex flex-wrap gap-2 overflow-hidden pb-1">
-              <TopBadge text="Fast Uploads" />
-              <TopBadge text="Secure Storage" />
-              <TopBadge text="Community Driven" />
-            </div>
-          </div>
-        </section>
-
-        <section className="mt-5 grid gap-5 xl:grid-cols-[1fr_380px]">
-          <form
-            id="upload-note-form"
-            onSubmit={handleUpload}
-            className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-5 shadow-2xl shadow-black/20 backdrop-blur-xl sm:p-7 lg:p-8"
-          >
-            <div className="mb-6">
-              <h2 className="text-2xl font-black">Create Upload</h2>
-              <p className="mt-1 text-sm leading-6 text-white/50">
-                Add a PDF first, then fill details students can easily search.
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-white/60 md:text-base">
+                Upload clean PDF notes with proper details so students can find
+                them through search, filters, and recommendations.
               </p>
             </div>
 
-            <div className="grid gap-5">
-              <div className="rounded-[1.8rem] border border-dashed border-red-500/25 bg-red-500/[0.05] p-5 transition sm:p-6">
-                <div className="flex flex-col items-center justify-center text-center">
-                  <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-red-500/10 text-red-300">
-                    <UploadCloud size={28} />
-                  </div>
+            <div className="grid grid-cols-3 gap-3 text-center">
+              <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
+                <BookOpen className="mx-auto mb-2 text-red-300" size={22} />
+                <p className="text-xs text-white/50">Organized</p>
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
+                <ShieldCheck className="mx-auto mb-2 text-red-300" size={22} />
+                <p className="text-xs text-white/50">Moderated</p>
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
+                <Layers className="mx-auto mb-2 text-red-300" size={22} />
+                <p className="text-xs text-white/50">Searchable</p>
+              </div>
+            </div>
+          </div>
+        </div>
 
-                  <h3 className="mt-4 text-lg font-black">Upload PDF File</h3>
+        <form
+          onSubmit={handleUpload}
+          className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-5 shadow-2xl shadow-black/30 md:p-8"
+        >
+          <div className="grid gap-5 md:grid-cols-2">
+            <div className="md:col-span-2">
+              <label className="mb-2 block text-sm font-bold text-white/80">
+                Note Title
+              </label>
+              <input
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Example: Electrostatics Full Notes"
+                className="w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-sm outline-none transition placeholder:text-white/30 focus:border-red-400/60"
+              />
+            </div>
 
-                  <p className="mt-2 max-w-md text-sm leading-6 text-white/45">
-                    PDF only. Maximum size: 10MB.
-                  </p>
+            <div>
+              <label className="mb-2 block text-sm font-bold text-white/80">
+                Subject
+              </label>
+              <input
+                value={subject}
+                onChange={(e) => setSubject(e.target.value)}
+                placeholder="Physics, Chemistry, Maths..."
+                className="w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-sm outline-none transition placeholder:text-white/30 focus:border-red-400/60"
+              />
+            </div>
 
-                  <label className="mt-5 flex cursor-pointer items-center justify-center rounded-2xl bg-red-600 px-6 py-4 text-sm font-black text-white transition hover:bg-red-500">
-                    Choose PDF
+            <div>
+              <label className="mb-2 block text-sm font-bold text-white/80">
+                Class
+              </label>
+              <input
+                value={className}
+                onChange={(e) => setClassName(e.target.value)}
+                placeholder="10, 11, 12, JEE, NEET..."
+                className="w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-sm outline-none transition placeholder:text-white/30 focus:border-red-400/60"
+              />
+            </div>
+
+            <div>
+              <label className="mb-2 block text-sm font-bold text-white/80">
+                Board / Exam
+              </label>
+              <select
+                value={board}
+                onChange={(e) => setBoard(e.target.value)}
+                className="w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-sm outline-none transition focus:border-red-400/60"
+              >
+                {boards.map((item) => (
+                  <option key={item} value={item} className="bg-[#050607]">
+                    {item}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="mb-2 block text-sm font-bold text-white/80">
+                Note Type
+              </label>
+              <select
+                value={noteType}
+                onChange={(e) => setNoteType(e.target.value)}
+                className="w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-sm outline-none transition focus:border-red-400/60"
+              >
+                {noteTypes.map((item) => (
+                  <option key={item} value={item} className="bg-[#050607]">
+                    {item}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="md:col-span-2">
+              <label className="mb-2 block text-sm font-bold text-white/80">
+                Topic / Chapter
+              </label>
+              <input
+                value={topic}
+                onChange={(e) => setTopic(e.target.value)}
+                placeholder="Example: Ray Optics, Electrostatics, Organic Chemistry"
+                className="w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-sm outline-none transition placeholder:text-white/30 focus:border-red-400/60"
+              />
+            </div>
+
+            <div className="md:col-span-2">
+              <label className="mb-2 block text-sm font-bold text-white/80">
+                Extra Keywords
+              </label>
+              <input
+                value={keywordsInput}
+                onChange={(e) => setKeywordsInput(e.target.value)}
+                placeholder="Separate with commas: derivation, formula, important questions"
+                className="w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-sm outline-none transition placeholder:text-white/30 focus:border-red-400/60"
+              />
+              <p className="mt-2 text-xs text-white/40">
+                These help students find your notes faster.
+              </p>
+            </div>
+
+            <div className="md:col-span-2">
+              <label className="mb-2 block text-sm font-bold text-white/80">
+                Description
+              </label>
+              <textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Briefly describe what this PDF contains..."
+                rows={4}
+                className="w-full resize-none rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-sm outline-none transition placeholder:text-white/30 focus:border-red-400/60"
+              />
+            </div>
+
+            <div className="md:col-span-2">
+              <label className="mb-2 block text-sm font-bold text-white/80">
+                PDF File
+              </label>
+
+              <div className="rounded-3xl border border-dashed border-white/15 bg-black/30 p-5">
+                {!pdfFile ? (
+                  <label className="flex cursor-pointer flex-col items-center justify-center rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-8 text-center transition hover:border-red-400/40">
+                    <UploadCloud className="mb-3 text-red-300" size={34} />
+                    <span className="text-sm font-bold">
+                      Click to select PDF
+                    </span>
+                    <span className="mt-1 text-xs text-white/40">
+                      Maximum size: 15 MB
+                    </span>
                     <input
-                      title="Upload PDF File"
-                      aria-label="Upload PDF File"
                       type="file"
                       accept="application/pdf"
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      onChange={(e) =>
                         setPdfFile(e.target.files?.[0] || null)
                       }
                       className="hidden"
-                      required
                     />
                   </label>
-
-                  {pdfFile && (
-                    <div className="mt-5 flex w-full min-w-0 items-center justify-between gap-3 overflow-hidden rounded-2xl border border-white/10 bg-black/30 px-3 py-3">
-                      <div className="flex min-w-0 items-center gap-3">
-                        <div className="rounded-xl bg-red-500/10 p-2 text-red-300">
-                          <FileText size={18} />
-                        </div>
-
-                        <div className="min-w-0 text-left">
-                          <p className="max-w-[210px] truncate text-sm font-bold sm:max-w-none">
-                            {pdfFile.name}
-                          </p>
-                          <p className="text-xs text-white/45">
-                            {(pdfFile.size / (1024 * 1024)).toFixed(2)} MB
-                          </p>
-                        </div>
+                ) : (
+                  <div className="flex items-center justify-between gap-4 rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-red-500/15 text-red-200">
+                        <FileText size={22} />
                       </div>
 
-                      <button
-                        type="button"
-                        title="Remove selected PDF"
-                        aria-label="Remove selected PDF"
-                        onClick={() => setPdfFile(null)}
-                        className="shrink-0 rounded-xl p-2 text-white/45 transition hover:bg-white/10 hover:text-white"
-                      >
-                        <X size={16} />
-                      </button>
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-bold">
+                          {pdfFile.name}
+                        </p>
+                        <p className="text-xs text-white/40">
+                          {(pdfFile.size / (1024 * 1024)).toFixed(2)} MB
+                        </p>
+                      </div>
                     </div>
-                  )}
-                </div>
-              </div>
 
-              <InputField
-                label="Title *"
-                icon={<FileText size={18} />}
-                value={title}
-                onChange={setTitle}
-                placeholder="Class 12 Matrix Notes"
-              />
-
-              <div>
-                <label className="mb-2 block text-sm font-bold text-white/75">
-                  Description
-                </label>
-
-                <textarea
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  rows={4}
-                  placeholder="Short description..."
-                  className="w-full rounded-2xl border border-white/10 bg-black/30 px-5 py-4 text-sm text-white outline-none transition placeholder:text-white/30 focus:border-red-500"
-                />
-              </div>
-
-              <div className="grid gap-5 md:grid-cols-2">
-                <InputField
-                  label="Class *"
-                  icon={<Layers size={18} />}
-                  value={noteClass}
-                  onChange={setNoteClass}
-                  placeholder="12th"
-                />
-
-                <InputField
-                  label="Subject *"
-                  icon={<BookOpen size={18} />}
-                  value={subject}
-                  onChange={setSubject}
-                  placeholder="Physics"
-                />
-
-                <InputField
-                  label="Topic *"
-                  icon={<FileText size={18} />}
-                  value={topic}
-                  onChange={setTopic}
-                  placeholder="Current Electricity"
-                />
-
-                <InputField
-                  label="Tags"
-                  icon={<Layers size={18} />}
-                  value={tags}
-                  onChange={setTags}
-                  placeholder="cbse, boards, jee"
-                />
-              </div>
-
-              {tagList.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {tagList.map((tag) => (
-                    <span
-                      key={tag}
-                      className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-1 text-xs font-bold text-white/70"
+                    <button
+                      type="button"
+                      onClick={() => setPdfFile(null)}
+                      className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-white/10 bg-black/30 text-white/60 transition hover:border-red-400/40 hover:text-red-200"
                     >
-                      #{tag}
-                    </span>
-                  ))}
-                </div>
-              )}
-
-              <button
-                type="submit"
-                disabled={!canSubmit}
-                className="hidden w-full items-center justify-center gap-2 rounded-2xl bg-red-600 px-6 py-4 text-sm font-black text-white transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50 md:flex"
-              >
-                {uploading && <Loader2 size={18} className="animate-spin" />}
-                {uploading ? "Uploading..." : "Upload Note"}
-              </button>
-            </div>
-          </form>
-
-          <aside className="space-y-5">
-            <div className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-5 shadow-2xl shadow-black/20 backdrop-blur-xl sm:p-6">
-              <div className="flex items-center gap-3">
-                <div className="rounded-2xl bg-green-500/10 p-3 text-green-400">
-                  <CheckCircle2 size={22} />
-                </div>
-
-                <div>
-                  <h3 className="font-black">Upload Guidelines</h3>
-                  <p className="text-sm text-white/45">
-                    Keep uploads clean and useful.
-                  </p>
-                </div>
-              </div>
-
-              <div className="mt-6 space-y-4">
-                <Guideline text="Only upload educational PDFs." />
-                <Guideline text="Avoid blurred or low-quality scans." />
-                <Guideline text="Add proper titles and subjects." />
-                <Guideline text="Do not upload copyrighted books." />
+                      <X size={18} />
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
+          </div>
 
-            <div className="rounded-[2rem] border border-green-500/20 bg-green-500/5 p-5 sm:p-6">
-              <div className="flex items-center gap-2 text-sm font-black text-green-400">
-                <ShieldCheck size={18} />
-                Safe & Moderated
-              </div>
-
-              <p className="mt-3 text-sm leading-6 text-white/55">
-                Every uploaded note is reviewed before appearing publicly on
-                NotesWallah.
+          {generatedTags.length > 0 && (
+            <div className="mt-6 rounded-3xl border border-white/10 bg-black/25 p-4">
+              <p className="mb-3 flex items-center gap-2 text-sm font-bold text-white/80">
+                <CheckCircle2 size={17} className="text-red-300" />
+                Auto-generated search tags
               </p>
+
+              <div className="flex flex-wrap gap-2">
+                {generatedTags.map((tag) => (
+                  <span
+                    key={tag}
+                    className="rounded-full border border-red-400/20 bg-red-500/10 px-3 py-1 text-xs font-semibold text-red-100"
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
             </div>
-          </aside>
-        </section>
-      </div>
+          )}
 
-      <div className="fixed inset-x-0 bottom-0 z-40 w-screen overflow-hidden border-t border-white/10 bg-[#050505]/95 px-4 pb-5 pt-3 backdrop-blur-xl md:hidden">
-        <button
-          type="submit"
-          form="upload-note-form"
-          disabled={!canSubmit}
-          className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-red-600 text-sm font-black text-white shadow-lg shadow-red-600/25 disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {uploading && <Loader2 size={18} className="animate-spin" />}
-          {uploading ? "Uploading..." : "Upload Note"}
-        </button>
-      </div>
+          <button
+            type="submit"
+            disabled={uploading}
+            className="mt-7 flex w-full items-center justify-center gap-2 rounded-2xl bg-red-500 px-5 py-4 text-sm font-black text-white shadow-xl shadow-red-500/20 transition hover:bg-red-400 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <UploadCloud size={19} />
+            {uploading ? "Uploading..." : "Upload Notes"}
+          </button>
+
+          <p className="mt-4 text-center text-xs leading-5 text-white/40">
+            Uploaded notes will appear publicly only after approval.
+          </p>
+        </form>
+      </section>
     </main>
-  );
-}
-
-function InputField({
-  label,
-  icon,
-  value,
-  onChange,
-  placeholder,
-}: {
-  label: string;
-  icon: React.ReactNode;
-  value: string;
-  onChange: (value: string) => void;
-  placeholder: string;
-}) {
-  return (
-    <div>
-      <label className="mb-2 block text-sm font-bold text-white/75">
-        {label}
-      </label>
-
-      <div className="relative">
-        <div className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-white/35">
-          {icon}
-        </div>
-
-        <input
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={placeholder}
-          className="w-full rounded-2xl border border-white/10 bg-black/30 px-5 py-4 pl-12 text-sm text-white outline-none transition placeholder:text-white/30 focus:border-red-500"
-          required={label.includes("*")}
-        />
-      </div>
-    </div>
-  );
-}
-
-function TopBadge({ text }: { text: string }) {
-  return (
-    <div className="max-w-full rounded-full border border-white/10 bg-white/[0.04] px-3 py-2 text-[11px] font-bold text-white/70 sm:px-4 sm:text-xs">
-      {text}
-    </div>
-  );
-}
-
-function Guideline({ text }: { text: string }) {
-  return (
-    <div className="flex items-start gap-3">
-      <div className="mt-2 h-2 w-2 rounded-full bg-red-400" />
-      <p className="text-sm leading-6 text-white/60">{text}</p>
-    </div>
   );
 }

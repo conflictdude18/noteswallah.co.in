@@ -10,6 +10,7 @@ import {
   Bell,
   BookOpen,
   FileText,
+  GraduationCap,
   Heart,
   Home,
   LayoutDashboard,
@@ -128,10 +129,7 @@ export default function Sidebar() {
                 }`}
               >
                 <Icon size={18} />
-
-                <span className="truncate font-bold">
-                  {item.label}
-                </span>
+                <span className="truncate font-bold">{item.label}</span>
               </Link>
             );
           }
@@ -181,9 +179,7 @@ export default function Sidebar() {
                   {user.displayName || "NotesWallah User"}
                 </p>
 
-                <p className="truncate text-xs text-white/45">
-                  {user.email}
-                </p>
+                <p className="truncate text-xs text-white/45">{user.email}</p>
               </div>
             </Link>
 

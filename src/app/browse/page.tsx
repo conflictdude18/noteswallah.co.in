@@ -7,7 +7,9 @@ import { collection, getDocs } from "firebase/firestore";
 import {
   BookOpen,
   Download,
+  Eye,
   FileText,
+  Heart,
   Layers,
   RefreshCw,
   Search,
@@ -22,6 +24,8 @@ import type { Note } from "@/types/note";
 import { useAuth } from "@/contexts/AuthContext";
 import NoteCardSkeleton from "@/components/NoteCardSkeleton";
 
+type SortOption = "latest" | "downloads" | "likes" | "views";
+
 export default function BrowseNotesPage() {
   const { user } = useAuth();
 
@@ -30,6 +34,9 @@ export default function BrowseNotesPage() {
 
   const [classFilter, setClassFilter] = useState("");
   const [subjectFilter, setSubjectFilter] = useState("");
+  const [boardFilter, setBoardFilter] = useState("");
+  const [typeFilter, setTypeFilter] = useState("");
+  const [sortBy, setSortBy] = useState<SortOption>("latest");
   const [search, setSearch] = useState("");
 
   async function fetchNotes() {
@@ -58,62 +65,124 @@ export default function BrowseNotesPage() {
     fetchNotes();
   }, []);
 
-  const subjectChips = useMemo(() => {
-    const items = notes
-      .map((note) => note.subject)
-      .filter(Boolean)
-      .map((subject) => subject as string);
+  const subjects = useMemo(
+    () => getUniqueValues(notes.map((note) => note.subject)),
+    [notes]
+  );
 
-    return Array.from(new Set(items)).slice(0, 12);
-  }, [notes]);
+  const classes = useMemo(
+    () =>
+      getUniqueValues(notes.map((note) => normalizeClassName(note.class))).sort(
+        (a, b) => Number(a) - Number(b)
+      ),
+    [notes]
+  );
 
-  const classChips = ["9", "10", "11", "12"];
+  const boards = useMemo(
+    () => getUniqueValues(notes.map((note) => note.board)),
+    [notes]
+  );
+
+  const types = useMemo(
+    () => getUniqueValues(notes.map((note) => note.type)),
+    [notes]
+  );
 
   const filteredNotes = useMemo(() => {
-    return notes.filter((note) => {
-      const noteClass = normalizeText(note.class);
-      const noteSubject = normalizeText(note.subject);
-      const noteTitle = normalizeText(note.title);
-      const noteTopic = normalizeText(note.topic);
-      const noteDescription = normalizeText(note.description);
+    const normalizedClassFilter = normalizeText(classFilter);
+    const normalizedSubjectFilter = normalizeText(subjectFilter);
+    const normalizedBoardFilter = normalizeText(boardFilter);
+    const normalizedTypeFilter = normalizeText(typeFilter);
+    const normalizedSearch = normalizeText(search);
 
-      const normalizedClassFilter = normalizeText(classFilter);
-      const normalizedSubjectFilter = normalizeText(subjectFilter);
-      const normalizedSearch = normalizeText(search);
+    const result = notes.filter((note) => {
+      const noteClass = normalizeText(normalizeClassName(note.class));
+      const noteSubject = normalizeText(note.subject);
+      const noteBoard = normalizeText(note.board);
+      const noteType = normalizeText(note.type);
+
+      const searchableText = [
+        note.title,
+        note.subject,
+        note.class,
+        note.board,
+        note.topic,
+        note.type,
+        note.description,
+        ...(Array.isArray(note.tags) ? note.tags : []),
+        ...(Array.isArray(note.keywords) ? note.keywords : []),
+      ]
+        .join(" ")
+        .toLowerCase();
 
       const matchesClass = normalizedClassFilter
-        ? noteClass.includes(normalizedClassFilter)
+        ? noteClass === normalizedClassFilter
         : true;
 
       const matchesSubject = normalizedSubjectFilter
-        ? noteSubject.includes(normalizedSubjectFilter)
+        ? noteSubject === normalizedSubjectFilter
+        : true;
+
+      const matchesBoard = normalizedBoardFilter
+        ? noteBoard === normalizedBoardFilter
+        : true;
+
+      const matchesType = normalizedTypeFilter
+        ? noteType === normalizedTypeFilter
         : true;
 
       const matchesSearch = normalizedSearch
-        ? noteTitle.includes(normalizedSearch) ||
-          noteTopic.includes(normalizedSearch) ||
-          noteSubject.includes(normalizedSearch) ||
-          noteDescription.includes(normalizedSearch)
+        ? searchableText.includes(normalizedSearch)
         : true;
 
-      return matchesClass && matchesSubject && matchesSearch;
+      return (
+        matchesClass &&
+        matchesSubject &&
+        matchesBoard &&
+        matchesType &&
+        matchesSearch
+      );
     });
-  }, [notes, classFilter, subjectFilter, search]);
 
-  const subjectsCount = new Set(
-    notes.map((note) => normalizeText(note.subject)).filter(Boolean)
-  ).size;
+    return result.sort((a, b) => {
+      if (sortBy === "downloads") {
+        return getDownloads(b) - getDownloads(a);
+      }
 
-  const classesCount = new Set(
-    notes.map((note) => normalizeClassName(note.class)).filter(Boolean)
-  ).size;
+      if (sortBy === "likes") {
+        return getNumber(b.likes) - getNumber(a.likes);
+      }
 
-  const hasFilters = Boolean(search || classFilter || subjectFilter);
+      if (sortBy === "views") {
+        return getNumber(b.views) - getNumber(a.views);
+      }
+
+      return getCreatedTime(b.createdAt) - getCreatedTime(a.createdAt);
+    });
+  }, [
+    notes,
+    classFilter,
+    subjectFilter,
+    boardFilter,
+    typeFilter,
+    sortBy,
+    search,
+  ]);
+
+  const subjectsCount = subjects.length;
+  const classesCount = classes.length;
+
+  const hasFilters = Boolean(
+    search || classFilter || subjectFilter || boardFilter || typeFilter
+  );
 
   function clearFilters() {
     setSearch("");
     setClassFilter("");
     setSubjectFilter("");
+    setBoardFilter("");
+    setTypeFilter("");
+    setSortBy("latest");
   }
 
   return (
@@ -138,8 +207,8 @@ export default function BrowseNotesPage() {
                 </h1>
 
                 <p className="mt-4 max-w-2xl text-sm leading-6 text-white/55 sm:text-base">
-                  Explore approved PDFs, assignments, PYQs, revision sheets and
-                  study material uploaded by the NotesWallah community.
+                  Search by title, subject, topic, board, note type, tags and
+                  keywords. Find the right study material faster.
                 </p>
               </div>
 
@@ -163,7 +232,7 @@ export default function BrowseNotesPage() {
               <input
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
-                placeholder="Search notes, subject, topic..."
+                placeholder="Search notes, subject, topic, tags..."
                 className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3.5 pl-11 pr-12 text-sm font-semibold text-white outline-none placeholder:text-white/35 focus:border-red-500/40"
               />
 
@@ -179,9 +248,74 @@ export default function BrowseNotesPage() {
               )}
             </div>
 
+            <div className="mt-4 grid gap-3 md:grid-cols-5">
+              <FilterSelect
+                label="Class"
+                value={classFilter}
+                onChange={setClassFilter}
+                options={classes}
+                placeholder="All Classes"
+                formatOption={(value) =>
+                  /^\d+$/.test(value) ? `Class ${value}` : value
+                }
+              />
+
+              <FilterSelect
+                label="Subject"
+                value={subjectFilter}
+                onChange={setSubjectFilter}
+                options={subjects}
+                placeholder="All Subjects"
+              />
+
+              <FilterSelect
+                label="Board"
+                value={boardFilter}
+                onChange={setBoardFilter}
+                options={boards}
+                placeholder="All Boards"
+              />
+
+              <FilterSelect
+                label="Type"
+                value={typeFilter}
+                onChange={setTypeFilter}
+                options={types}
+                placeholder="All Types"
+              />
+
+              <div>
+                <label className="mb-2 flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.18em] text-white/35">
+                  <Sparkles size={13} />
+                  Sort
+                </label>
+
+                <select
+                  value={sortBy}
+                  onChange={(event) =>
+                    setSortBy(event.target.value as SortOption)
+                  }
+                  className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-xs font-bold text-white outline-none focus:border-red-500/40"
+                >
+                  <option value="latest" className="bg-[#050505]">
+                    Latest
+                  </option>
+                  <option value="downloads" className="bg-[#050505]">
+                    Most Downloaded
+                  </option>
+                  <option value="likes" className="bg-[#050505]">
+                    Most Liked
+                  </option>
+                  <option value="views" className="bg-[#050505]">
+                    Most Viewed
+                  </option>
+                </select>
+              </div>
+            </div>
+
             <div className="mt-4 flex items-center gap-2 text-xs font-black uppercase tracking-[0.18em] text-white/35">
               <SlidersHorizontal size={14} />
-              Subjects
+              Popular Subjects
             </div>
 
             <div className="no-scrollbar mt-3 flex gap-2 overflow-x-auto pb-1">
@@ -191,34 +325,14 @@ export default function BrowseNotesPage() {
                 onClick={() => setSubjectFilter("")}
               />
 
-              {subjectChips.map((subject) => (
+              {subjects.slice(0, 12).map((subject) => (
                 <Chip
                   key={subject}
                   label={subject}
-                  active={normalizeText(subjectFilter) === normalizeText(subject)}
+                  active={
+                    normalizeText(subjectFilter) === normalizeText(subject)
+                  }
                   onClick={() => setSubjectFilter(subject)}
-                />
-              ))}
-            </div>
-
-            <div className="mt-4 flex items-center gap-2 text-xs font-black uppercase tracking-[0.18em] text-white/35">
-              <Layers size={14} />
-              Classes
-            </div>
-
-            <div className="no-scrollbar mt-3 flex gap-2 overflow-x-auto pb-1">
-              <Chip
-                label="All Classes"
-                active={!classFilter}
-                onClick={() => setClassFilter("")}
-              />
-
-              {classChips.map((className) => (
-                <Chip
-                  key={className}
-                  label={`Class ${className}`}
-                  active={normalizeText(classFilter) === className}
-                  onClick={() => setClassFilter(className)}
                 />
               ))}
             </div>
@@ -243,7 +357,7 @@ export default function BrowseNotesPage() {
               <h2 className="mt-7 text-2xl font-black">No notes found</h2>
 
               <p className="mx-auto mt-3 max-w-md text-sm leading-7 text-white/55">
-                Try changing your search, class, or subject filter.
+                Try changing your search, class, subject, board or type filter.
               </p>
 
               {hasFilters && (
@@ -311,6 +425,18 @@ export default function BrowseNotesPage() {
                           <span className="rounded-full border border-white/10 bg-black/25 px-2.5 py-1 text-[10px] font-semibold text-white/60">
                             {formatClassLabel(note.class)}
                           </span>
+
+                          {note.board && (
+                            <span className="rounded-full border border-white/10 bg-black/25 px-2.5 py-1 text-[10px] font-semibold text-white/60">
+                              {note.board}
+                            </span>
+                          )}
+
+                          {note.type && (
+                            <span className="rounded-full border border-white/10 bg-black/25 px-2.5 py-1 text-[10px] font-semibold text-white/60">
+                              {note.type}
+                            </span>
+                          )}
                         </div>
 
                         <h3 className="line-clamp-2 text-base font-black leading-snug transition group-hover:text-red-300 sm:text-lg">
@@ -324,9 +450,21 @@ export default function BrowseNotesPage() {
                         </p>
 
                         <div className="mt-4 flex items-center justify-between gap-3">
-                          <div className="flex items-center gap-1.5 text-xs font-semibold text-white/45">
-                            <Download size={15} />
-                            <span>{note.downloadsCount ?? 0}</span>
+                          <div className="flex items-center gap-3 text-xs font-semibold text-white/45">
+                            <span className="flex items-center gap-1">
+                              <Download size={14} />
+                              {getDownloads(note)}
+                            </span>
+
+                            <span className="flex items-center gap-1">
+                              <Heart size={14} />
+                              {getNumber(note.likes)}
+                            </span>
+
+                            <span className="flex items-center gap-1">
+                              <Eye size={14} />
+                              {getNumber(note.views)}
+                            </span>
                           </div>
 
                           <div className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-2 text-[11px] font-black text-black transition group-hover:bg-red-500 group-hover:text-white">
@@ -344,6 +482,47 @@ export default function BrowseNotesPage() {
         </section>
       </div>
     </main>
+  );
+}
+
+function FilterSelect({
+  label,
+  value,
+  onChange,
+  options,
+  placeholder,
+  formatOption,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  options: string[];
+  placeholder: string;
+  formatOption?: (value: string) => string;
+}) {
+  return (
+    <div>
+      <label className="mb-2 flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.18em] text-white/35">
+        <SlidersHorizontal size={13} />
+        {label}
+      </label>
+
+      <select
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-xs font-bold text-white outline-none focus:border-red-500/40"
+      >
+        <option value="" className="bg-[#050505]">
+          {placeholder}
+        </option>
+
+        {options.map((option) => (
+          <option key={option} value={option} className="bg-[#050505]">
+            {formatOption ? formatOption(option) : option}
+          </option>
+        ))}
+      </select>
+    </div>
   );
 }
 
@@ -385,6 +564,16 @@ function StatsCard({ label, value }: { label: string; value: number }) {
   );
 }
 
+function getUniqueValues(values: Array<string | undefined>) {
+  return Array.from(
+    new Set(
+      values
+        .map((value) => value?.trim())
+        .filter((value): value is string => Boolean(value))
+    )
+  );
+}
+
 function normalizeText(value?: string) {
   return (value || "").toLowerCase().trim();
 }
@@ -401,4 +590,31 @@ function formatClassLabel(value?: string) {
   if (/^\d+$/.test(normalized)) return `Class ${normalized}`;
 
   return value || "Class not set";
+}
+
+function getNumber(value: unknown) {
+  return typeof value === "number" ? value : 0;
+}
+
+function getDownloads(note: Note) {
+  return getNumber(note.downloads) || getNumber(note.downloadsCount);
+}
+
+function getCreatedTime(value: unknown) {
+  if (!value) return 0;
+
+  if (
+    typeof value === "object" &&
+    value !== null &&
+    "toDate" in value &&
+    typeof value.toDate === "function"
+  ) {
+    return value.toDate().getTime();
+  }
+
+  if (typeof value === "string") {
+    return new Date(value).getTime() || 0;
+  }
+
+  return 0;
 }

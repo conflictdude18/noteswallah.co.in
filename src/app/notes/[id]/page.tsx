@@ -2,7 +2,7 @@
 
 import { sendNotification } from "@/lib/sendNotification";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
   addDoc,
@@ -22,6 +22,9 @@ import {
   Bookmark,
   Download,
   ExternalLink,
+  Eye,
+  BookOpen,
+  Sparkles,
   FileText,
   Heart,
   Loader2,
@@ -123,6 +126,26 @@ export default function NoteDetailsPage() {
     fetchComments();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
+
+    const hasTrackedView = useRef(false);
+
+    useEffect(() => {
+      async function increaseViews() {
+        if (!id || hasTrackedView.current) return;
+
+        hasTrackedView.current = true;
+
+        try {
+          await updateDoc(doc(db, "notes", id), {
+            views: increment(1),
+          });
+        } catch (err) {
+          console.error("VIEW UPDATE ERROR:", err);
+        }
+      }
+
+      increaseViews();
+    }, [id]);
 
   useEffect(() => {
     async function fetchUserActions() {
@@ -232,8 +255,15 @@ export default function NoteDetailsPage() {
     if (!note?.id) return;
 
     try {
+      const noteRef = doc(db, "notes", note.id);
+
       if (likeId) {
         await deleteDoc(doc(db, "likes", likeId));
+
+        await updateDoc(noteRef, {
+          likes: increment(-1),
+        });
+
         setLikeId(null);
         setLikesCount((prev) => Math.max(0, prev - 1));
       } else {
@@ -242,6 +272,10 @@ export default function NoteDetailsPage() {
           noteId: note.id,
           noteTitle: note.title,
           createdAt: new Date().toISOString(),
+        });
+
+        await updateDoc(noteRef, {
+          likes: increment(1),
         });
 
         if (note.uploaderId && note.uploaderId !== user.uid) {

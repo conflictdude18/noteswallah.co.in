@@ -7,7 +7,6 @@ import "./globals.css";
 
 import { AuthProvider } from "@/contexts/AuthContext";
 import LayoutClient from "@/components/LayoutClient";
-import Footer from "@/components/Footer";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -20,32 +19,83 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://noteswallah.co.in"),
+
   title: {
-    default: "NotesWallah — Smart Notes Sharing Platform",
+    default: "NotesWallah - Free Study Notes, PDFs & Student Resources",
     template: "%s | NotesWallah",
   },
+
   description:
-    "NotesWallah is a modern educational platform where students upload, browse, save, and download study notes.",
+    "NotesWallah is a free student notes sharing platform where students can upload, browse, save and download study notes, PDFs, assignments, PYQs and revision material.",
+
   keywords: [
     "NotesWallah",
-    "notes sharing",
     "study notes",
+    "free notes PDF",
     "student notes",
-    "education platform",
-    "PDF notes",
+    "notes sharing platform",
     "CBSE notes",
+    "Class 10 notes",
+    "Class 11 notes",
     "Class 12 notes",
+    "JEE notes",
+    "NEET notes",
+    "PYQ PDF",
+    "revision notes",
+    "handwritten notes",
+    "student resources",
   ],
+
   authors: [{ name: "NotesWallah Team" }],
   creator: "NotesWallah",
-  metadataBase: new URL("https://noteswallah.co.in"),
+  publisher: "NotesWallah",
+
+  alternates: {
+    canonical: "https://noteswallah.co.in",
+  },
+
+  icons: {
+    icon: "/favicon.ico",
+    shortcut: "/favicon.ico",
+    apple: "/apple-touch-icon.png",
+  },
+
   openGraph: {
-    title: "NotesWallah",
+    title: "NotesWallah - Free Study Notes & PDFs",
     description:
-      "Upload, browse, save, and download educational notes easily.",
+      "Upload, browse, save and download free study notes, PDFs, assignments, PYQs and revision material shared by students.",
     url: "https://noteswallah.co.in",
     siteName: "NotesWallah",
     type: "website",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "NotesWallah - Free Study Notes and PDFs",
+      },
+    ],
+  },
+
+  twitter: {
+    card: "summary_large_image",
+    title: "NotesWallah - Free Study Notes & PDFs",
+    description:
+      "Upload, browse, save and download free study notes and PDFs shared by students.",
+    images: ["/og-image.png"],
+  },
+
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+    },
   },
 };
 
@@ -60,7 +110,8 @@ export default function RootLayout({
       data-scroll-behavior="smooth"
       className={`${geistSans.variable} ${geistMono.variable} antialiased`}
     >
-      <body className="min-h-screen overflow-x-hidden bg-[#050607] pb-24 text-white selection:bg-red-500/30 selection:text-white lg:pb-0">        <div className="fixed inset-0 -z-10 bg-[#050607]" />
+      <body className="min-h-screen overflow-x-hidden bg-[#050607] pb-24 text-white selection:bg-red-500/30 selection:text-white lg:pb-0">
+        <div className="fixed inset-0 -z-10 bg-[#050607]" />
         <div className="fixed left-[-10%] top-[-10%] -z-10 h-[420px] w-[420px] rounded-full bg-red-500/10 blur-[140px]" />
         <div className="fixed bottom-[-12%] right-[-10%] -z-10 h-[420px] w-[420px] rounded-full bg-red-700/10 blur-[150px]" />
         <div className="fixed inset-0 -z-10 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.04),transparent_35%)]" />
