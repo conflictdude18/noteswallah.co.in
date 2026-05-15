@@ -1,16 +1,21 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { motion } from "framer-motion";
 import {
   ArrowRight,
   BookOpen,
+  Bot,
   Download,
   Eye,
   FileText,
   Flame,
   Heart,
+  Lock,
   Search,
+  ShieldCheck,
   Sparkles,
   TrendingUp,
   UploadCloud,
@@ -34,7 +39,270 @@ type HomeNote = Note & {
   createdAt?: unknown;
 };
 
+const fadeUp = {
+  hidden: { opacity: 0, y: 26 },
+  visible: { opacity: 1, y: 0 },
+};
+
 export default function HomePage() {
+  const { user } = useAuth();
+
+  if (!user) {
+    return <GuestLandingPage />;
+  }
+
+  return <LoggedInHomePage />;
+}
+
+function GuestLandingPage() {
+  return (
+    <main className="min-h-screen overflow-hidden bg-[#050607] text-white">
+      <section className="relative min-h-screen border-b border-white/10 px-5 py-6 md:px-8">
+        <div className="absolute left-1/2 top-0 h-80 w-80 -translate-x-1/2 rounded-full bg-red-600/20 blur-[130px]" />
+        <div className="absolute bottom-10 right-0 h-72 w-72 rounded-full bg-purple-600/20 blur-[130px]" />
+
+        <nav className="relative z-10 mx-auto flex max-w-6xl items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Image
+              src="/logo.png"
+              alt="NotesWallah"
+              width={44}
+              height={44}
+              className="rounded-xl"
+              priority
+            />
+            <span className="text-xl font-black">
+              Notes<span className="text-red-400">Wallah</span>
+            </span>
+          </div>
+
+          <Link
+            href="/signin"
+            className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.06] px-4 py-3 text-xs font-black text-white transition hover:border-red-500/40 hover:bg-red-500/15"
+          >
+            <Lock size={15} />
+            Sign In / Sign Up
+          </Link>
+        </nav>
+
+        <div className="relative z-10 mx-auto grid max-w-6xl items-center gap-12 pb-16 pt-20 md:grid-cols-[1fr_0.9fr] md:pb-24 md:pt-28">
+          <motion.div
+            initial="hidden"
+            animate="visible"
+            variants={fadeUp}
+            transition={{ duration: 0.7 }}
+          >
+            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-red-500/20 bg-red-500/10 px-4 py-2 text-xs font-black text-red-200">
+              <Sparkles size={14} />
+              India’s Smart Notes Sharing Platform
+            </div>
+
+            <h1 className="text-4xl font-black leading-tight tracking-tight md:text-6xl">
+              Share. Learn. Succeed.
+              <span className="block bg-gradient-to-r from-red-500 via-red-300 to-white bg-clip-text text-transparent">
+                With NotesWallah
+              </span>
+            </h1>
+
+            <p className="mt-5 max-w-2xl text-sm leading-7 text-white/65 md:text-base">
+              NotesWallah is a student-powered platform where learners can
+              upload notes, download study material, save resources, follow
+              creators and grow together.
+            </p>
+
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+              <Link
+                href="/signin"
+                className="inline-flex items-center justify-center gap-2 rounded-2xl bg-red-600 px-6 py-4 text-sm font-black text-white transition hover:bg-red-500"
+              >
+                Unlock NotesWallah
+                <ArrowRight size={18} />
+              </Link>
+
+              <a
+                href="#about"
+                className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/[0.04] px-6 py-4 text-sm font-black text-white/80 transition hover:border-red-500/30 hover:bg-white/[0.07]"
+              >
+                Learn More
+              </a>
+            </div>
+
+            <div className="mt-8 grid grid-cols-3 gap-3">
+              <MiniTrust icon={Users} label="Built for Students" />
+              <MiniTrust icon={ShieldCheck} label="Community Powered" />
+              <MiniTrust icon={Bot} label="Notique AI Ready" />
+            </div>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, scale: 0.92, y: 30 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.15 }}
+            className="relative"
+          >
+            <div className="absolute -inset-6 rounded-[3rem] bg-red-600/20 blur-3xl" />
+
+            <div className="relative rounded-[2rem] border border-white/10 bg-white/[0.06] p-5 shadow-2xl backdrop-blur">
+              <div className="mb-5 flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-bold text-white/40">Preview</p>
+                  <h2 className="font-black">Student Dashboard</h2>
+                </div>
+
+                <div className="rounded-full bg-red-500/15 px-3 py-1 text-xs font-black text-red-200">
+                  Locked
+                </div>
+              </div>
+
+              <div className="rounded-3xl border border-white/10 bg-black/30 p-4">
+                <div className="mb-4 flex items-center gap-3 rounded-2xl bg-white/[0.04] px-4 py-3 text-sm text-white/35">
+                  <Search size={17} />
+                  Search notes, subjects, topics...
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {["Physics", "Chemistry", "Biology", "Maths"].map((item) => (
+                    <div
+                      key={item}
+                      className="rounded-2xl border border-white/10 bg-white/[0.04] p-4"
+                    >
+                      <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-red-500/15 text-red-300">
+                        <FileText size={20} />
+                      </div>
+                      <p className="font-black">{item}</p>
+                      <p className="mt-1 text-xs text-white/40">
+                        Notes, PDFs & summaries
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="mt-4 rounded-3xl border border-red-500/20 bg-red-500/10 p-4">
+                <div className="flex items-center gap-3">
+                  <Bot className="text-red-300" size={24} />
+                  <div>
+                    <h3 className="font-black">Notique</h3>
+                    <p className="text-xs text-white/55">
+                      Your AI study assistant for smarter learning.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
+      <section id="about" className="mx-auto max-w-6xl px-5 py-16 md:px-8">
+        <motion.div
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.25 }}
+          variants={fadeUp}
+          transition={{ duration: 0.6 }}
+        >
+          <h2 className="text-3xl font-black md:text-4xl">
+            Everything students need, locked safely behind login.
+          </h2>
+          <p className="mt-3 max-w-2xl text-sm leading-7 text-white/55">
+            Guests can learn what NotesWallah does. After signing in, students
+            can access the complete platform.
+          </p>
+        </motion.div>
+
+        <div className="mt-8 grid gap-4 md:grid-cols-3">
+          {[
+            {
+              title: "Upload & Share",
+              text: "Students can upload useful notes and help others study better.",
+              icon: UploadCloud,
+            },
+            {
+              title: "Download Notes",
+              text: "Access notes, PDFs, summaries and study material after login.",
+              icon: Download,
+            },
+            {
+              title: "Save & Organize",
+              text: "Bookmark important notes and build a personal study library.",
+              icon: Heart,
+            },
+            {
+              title: "Follow Creators",
+              text: "Follow good uploaders and discover more helpful resources.",
+              icon: Users,
+            },
+            {
+              title: "Smart Search",
+              text: "Find notes by subject, class, exam, topic and category.",
+              icon: Search,
+            },
+            {
+              title: "Notique AI",
+              text: "A future-ready AI assistant to support students while learning.",
+              icon: Bot,
+            },
+          ].map((item, index) => {
+            const Icon = item.icon;
+
+            return (
+              <motion.div
+                key={item.title}
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true, amount: 0.25 }}
+                variants={fadeUp}
+                transition={{ duration: 0.45, delay: index * 0.06 }}
+                className="rounded-3xl border border-white/10 bg-white/[0.04] p-5 transition hover:border-red-500/30 hover:bg-white/[0.07]"
+              >
+                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-red-500/15 text-red-300">
+                  <Icon size={23} />
+                </div>
+                <h3 className="text-lg font-black">{item.title}</h3>
+                <p className="mt-2 text-sm leading-6 text-white/55">
+                  {item.text}
+                </p>
+              </motion.div>
+            );
+          })}
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-6xl px-5 pb-16 md:px-8">
+        <motion.div
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.25 }}
+          variants={fadeUp}
+          transition={{ duration: 0.6 }}
+          className="rounded-[2rem] border border-white/10 bg-gradient-to-br from-red-600 to-red-900 p-6 md:p-10"
+        >
+          <h2 className="text-3xl font-black leading-tight">
+            Ready to unlock NotesWallah?
+          </h2>
+          <p className="mt-3 max-w-2xl text-sm leading-7 text-white/80">
+            Sign in to access notes, upload resources, save material and become
+            part of the student learning community.
+          </p>
+
+          <Link
+            href="/signin"
+            className="mt-6 inline-flex items-center justify-center gap-2 rounded-2xl bg-white px-6 py-4 text-sm font-black text-black transition hover:scale-[1.02] hover:bg-white/90"
+          >
+            <span className="text-black">
+              Sign In / Sign Up
+            </span>
+
+            <ArrowRight size={18} className="text-black" />
+          </Link>
+        </motion.div>
+      </section>
+    </main>
+  );
+}
+
+function LoggedInHomePage() {
   const { user } = useAuth();
 
   const [notes, setNotes] = useState<HomeNote[]>([]);
@@ -92,57 +360,49 @@ export default function HomePage() {
   }, [notes]);
 
   const mostDownloadedNotes = useMemo(() => {
-    return [...notes].sort((a, b) => getDownloads(b) - getDownloads(a)).slice(0, 3);
+    return [...notes]
+      .sort((a, b) => getDownloads(b) - getDownloads(a))
+      .slice(0, 3);
   }, [notes]);
 
-const topSubjects = useMemo(() => {
-  const subjectMap = new Map<
-    string,
-    {
-      label: string;
-      count: number;
-    }
-  >();
+  const topSubjects = useMemo(() => {
+    const subjectMap = new Map<string, { label: string; count: number }>();
 
-  notes.forEach((note) => {
-    if (!note.subject?.trim()) return;
+    notes.forEach((note) => {
+      if (!note.subject?.trim()) return;
 
-    const cleaned = note.subject.trim();
-    const normalized = cleaned.toLowerCase();
+      const cleaned = note.subject.trim();
+      const normalized = cleaned.toLowerCase();
+      const existing = subjectMap.get(normalized);
 
-    const existing = subjectMap.get(normalized);
+      if (existing) {
+        existing.count += 1;
+      } else {
+        subjectMap.set(normalized, {
+          label: cleaned,
+          count: 1,
+        });
+      }
+    });
 
-    if (existing) {
-      existing.count += 1;
-    } else {
-      subjectMap.set(normalized, {
-        label: cleaned,
-        count: 1,
-      });
-    }
-  });
+    return Array.from(subjectMap.values())
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 8)
+      .map((item) => item.label);
+  }, [notes]);
 
-  return Array.from(subjectMap.values())
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 8)
-    .map((item) => item.label);
-}, [notes]);
+  const fallbackSubjects = [
+    "Physics",
+    "Chemistry",
+    "Mathematics",
+    "Biology",
+    "JEE",
+    "NEET",
+    "Computer",
+    "English",
+  ];
 
-const fallbackSubjects = [
-  "Physics",
-  "Chemistry",
-  "Mathematics",
-  "Biology",
-  "JEE",
-  "NEET",
-  "Computer",
-  "English",
-];
-
-const subjectLinks =
-  topSubjects.length > 0
-    ? topSubjects
-    : fallbackSubjects;
+  const subjectLinks = topSubjects.length > 0 ? topSubjects : fallbackSubjects;
 
   return (
     <main className="min-h-screen overflow-hidden bg-[#050607] pb-24 text-white md:pb-0">
@@ -289,30 +549,39 @@ const subjectLinks =
       <section className="mx-auto max-w-6xl px-5 pb-8 md:px-8">
         <div className="rounded-[2rem] border border-white/10 bg-gradient-to-br from-red-600 to-red-800 p-6 md:p-10">
           <h2 className="text-3xl font-black leading-tight">
-            {user
-              ? "Welcome back to NotesWallah."
-              : "Join the growing NotesWallah student network."}
+            Welcome back to NotesWallah.
           </h2>
 
           <p className="mt-3 text-sm leading-7 text-white/80">
-            {user
-              ? "Continue exploring notes, uploading resources and helping other students."
-              : "Upload notes, support students and build your academic profile."}
+            Continue exploring notes, uploading resources and helping other
+            students.
           </p>
 
           <Link
-            href={user ? "/dashboard" : "/signup"}
+            href="/dashboard"
             className="mt-6 inline-flex w-fit items-center justify-center gap-2 rounded-2xl bg-white px-6 py-4 text-sm font-black text-black transition hover:scale-[1.02]"
           >
-            <span className="text-black">
-              {user ? "Go to Dashboard" : "Create Account"}
-            </span>
-
+            <span className="text-black">Go to Dashboard</span>
             <ArrowRight size={18} className="text-black" />
           </Link>
         </div>
       </section>
     </main>
+  );
+}
+
+function MiniTrust({
+  icon: Icon,
+  label,
+}: {
+  icon: typeof Users;
+  label: string;
+}) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-3">
+      <Icon size={18} className="mb-2 text-red-300" />
+      <p className="text-[11px] font-bold text-white/60">{label}</p>
+    </div>
   );
 }
 

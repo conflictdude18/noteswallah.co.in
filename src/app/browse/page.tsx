@@ -565,13 +565,20 @@ function StatsCard({ label, value }: { label: string; value: number }) {
 }
 
 function getUniqueValues(values: Array<string | undefined>) {
-  return Array.from(
-    new Set(
-      values
-        .map((value) => value?.trim())
-        .filter((value): value is string => Boolean(value))
-    )
-  );
+  const map = new Map<string, string>();
+
+  values.forEach((value) => {
+    if (!value?.trim()) return;
+
+    const cleaned = value.trim();
+    const normalized = cleaned.toLowerCase();
+
+    if (!map.has(normalized)) {
+      map.set(normalized, cleaned);
+    }
+  });
+
+  return Array.from(map.values());
 }
 
 function normalizeText(value?: string) {
