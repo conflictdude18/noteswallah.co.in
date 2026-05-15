@@ -1,9 +1,9 @@
 "use client";
-
+import { motion, useMotionValue } from "framer-motion";
+import { TypeAnimation } from "react-type-animation";
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { motion } from "framer-motion";
 import {
   ArrowRight,
   BookOpen,
@@ -47,6 +47,45 @@ const fadeUp = {
 export default function HomePage() {
   const { user } = useAuth();
 
+    const [loadingScreen, setLoadingScreen] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setLoadingScreen(false);
+    }, 1200);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (loadingScreen) {
+    return (
+      <main className="flex min-h-screen items-center justify-center overflow-hidden bg-[#050607] text-white">
+        <div className="relative text-center">
+          <div className="absolute inset-0 rounded-full bg-red-600/20 blur-3xl" />
+
+          <div className="relative">
+            <Image
+              src="/logo.png"
+              alt="NotesWallah"
+              width={86}
+              height={86}
+              className="mx-auto animate-pulse rounded-3xl"
+              priority
+            />
+
+            <h1 className="mt-5 text-4xl font-black">
+              Notes<span className="text-red-400">Wallah</span>
+            </h1>
+
+            <p className="mt-2 text-sm text-white/45">
+              Preparing your study space...
+            </p>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
   if (!user) {
     return <GuestLandingPage />;
   }
@@ -55,13 +94,94 @@ export default function HomePage() {
 }
 
 function GuestLandingPage() {
+const [stats, setStats] = useState({
+  notes: 0,
+  users: 0,
+  subjects: 0,
+});
+
+useEffect(() => {
+  const unsubscribeNotes = onSnapshot(collection(db, "notes"), (notesSnap) => {
+    const approvedNotes = notesSnap.docs
+      .map((doc) => doc.data())
+      .filter((note) => note.status === "approved");
+
+    const subjects = new Set(
+      approvedNotes.map((note) => note.subject).filter(Boolean)
+    );
+
+    setStats((prev) => ({
+      ...prev,
+      notes: approvedNotes.length,
+      subjects: subjects.size,
+    }));
+  });
+
+  const unsubscribeUsers = onSnapshot(collection(db, "users"), (usersSnap) => {
+    setStats((prev) => ({
+      ...prev,
+      users: usersSnap.size,
+    }));
+  });
+
+  return () => {
+    unsubscribeNotes();
+    unsubscribeUsers();
+  };
+}, []);
+
+    const mouseX = useMotionValue(0);
+      const mouseY = useMotionValue(0);
+      function handleMouseMove(e: React.MouseEvent<HTMLDivElement>) {
+        mouseX.set(e.clientX);
+        mouseY.set(e.clientY);
+      }
   return (
     <main className="min-h-screen overflow-hidden bg-[#050607] text-white">
-      <section className="relative min-h-screen border-b border-white/10 px-5 py-6 md:px-8">
+      <section
+        onMouseMove={handleMouseMove}
+        className="relative min-h-screen overflow-hidden px-5 py-6 md:px-8"
+      >
         <div className="absolute left-1/2 top-0 h-80 w-80 -translate-x-1/2 rounded-full bg-red-600/20 blur-[130px]" />
         <div className="absolute bottom-10 right-0 h-72 w-72 rounded-full bg-purple-600/20 blur-[130px]" />
 
-        <nav className="relative z-10 mx-auto flex max-w-6xl items-center justify-between">
+        <motion.div
+          className="pointer-events-none absolute hidden h-[320px] w-[320px] rounded-full bg-red-500/10 blur-3xl md:block"
+          style={{
+            x: mouseX,
+            y: mouseY,
+            translateX: "-50%",
+            translateY: "-50%",
+          }}
+        />
+        <div className="pointer-events-none absolute inset-0 overflow-hidden">
+          {Array.from({ length: 18 }).map((_, i) => (
+            <motion.div
+              key={i}
+              className="absolute h-2 w-2 rounded-full bg-red-300/45 shadow-[0_0_18px_rgba(248,113,113,0.8)]"
+              initial={{
+                opacity: 0,
+                y: 40,
+              }}
+              animate={{
+                opacity: [0.25, 0.8, 0.25],
+                y: [0, -80],
+              }}
+              transition={{
+                duration: 4 + (i % 5),
+                repeat: Infinity,
+                delay: i * 0.3,
+                ease: "easeInOut",
+              }}
+              style={{
+                left: `${(i * 13) % 100}%`,
+                top: `${(i * 17) % 100}%`,
+              }}
+            />
+          ))}
+        </div>
+
+        <nav className="sticky top-4 z-50 mx-auto flex max-w-6xl items-center justify-between rounded-3xl border border-white/10 bg-black/25 px-4 py-3 shadow-2xl backdrop-blur-xl">
           <div className="flex items-center gap-3">
             <Image
               src="/logo.png"
@@ -97,8 +217,24 @@ function GuestLandingPage() {
               India’s Smart Notes Sharing Platform
             </div>
 
-            <h1 className="text-4xl font-black leading-tight tracking-tight md:text-6xl">
-              Share. Learn. Succeed.
+            <h1 className="min-h-[120px] text-4xl font-black leading-tight tracking-tight md:min-h-[150px] md:text-6xl">
+              <TypeAnimation
+                sequence={[
+                  "Share Notes.",
+                  1400,
+                  "Learn Faster.",
+                  1400,
+                  "Crack Exams.",
+                  1400,
+                  "Help Students.",
+                  1400,
+                ]}
+                wrapper="span"
+                speed={45}
+                repeat={Infinity}
+                className="block"
+              />
+
               <span className="block bg-gradient-to-r from-red-500 via-red-300 to-white bg-clip-text text-transparent">
                 With NotesWallah
               </span>
@@ -128,6 +264,12 @@ function GuestLandingPage() {
             </div>
 
             <div className="mt-8 grid grid-cols-3 gap-3">
+            <StatsCard value={`${stats.notes}+`} label="Notes" />
+            <StatsCard value={`${stats.users}+`} label="Students" />
+            <StatsCard value={`${stats.subjects}+`} label="Subjects" />
+            </div>
+
+            <div className="mt-8 grid grid-cols-3 gap-3">
               <MiniTrust icon={Users} label="Built for Students" />
               <MiniTrust icon={ShieldCheck} label="Community Powered" />
               <MiniTrust icon={Bot} label="Notique AI Ready" />
@@ -142,7 +284,7 @@ function GuestLandingPage() {
           >
             <div className="absolute -inset-6 rounded-[3rem] bg-red-600/20 blur-3xl" />
 
-            <div className="relative rounded-[2rem] border border-white/10 bg-white/[0.06] p-5 shadow-2xl backdrop-blur">
+            <div className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-white/[0.06] p-5 shadow-2xl backdrop-blur">
               <div className="mb-5 flex items-center justify-between">
                 <div>
                   <p className="text-xs font-bold text-white/40">Preview</p>
@@ -179,22 +321,44 @@ function GuestLandingPage() {
               </div>
 
               <div className="mt-4 rounded-3xl border border-red-500/20 bg-red-500/10 p-4">
-                <div className="flex items-center gap-3">
-                  <Bot className="text-red-300" size={24} />
-                  <div>
-                    <h3 className="font-black">Notique</h3>
-                    <p className="text-xs text-white/55">
-                      Your AI study assistant for smarter learning.
-                    </p>
+                <div className="flex items-start gap-3">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-red-500/15 text-red-300">
+                    <Bot size={22} />
+                  </div>
+
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="font-black leading-none">Notique AI</h3>
+
+                      <span className="rounded-full bg-green-500/15 px-2 py-0.5 text-[10px] font-bold leading-none text-green-300">
+                        ONLINE
+                      </span>
+                    </div>
+
+                    <div className="mt-3 space-y-2">
+                      <div className="w-fit max-w-full rounded-2xl rounded-bl-sm bg-black/30 px-3 py-2 text-xs text-white/75">
+                        Explain electrostatics briefly.
+                      </div>
+
+                      <motion.div
+                        initial={{ opacity: 0.4 }}
+                        animate={{ opacity: [0.4, 1, 0.4] }}
+                        transition={{ duration: 1.8, repeat: Infinity }}
+                        className="w-fit max-w-full rounded-2xl rounded-tl-sm bg-red-500/15 px-3 py-2 text-xs text-red-100"
+                      >
+                        Electrostatics studies stationary electric charges and their interactions...
+                      </motion.div>
+                    </div>
                   </div>
                 </div>
               </div>
+              
             </div>
           </motion.div>
         </div>
       </section>
 
-      <section id="about" className="mx-auto max-w-6xl px-5 py-16 md:px-8">
+      <section id="about" className="mx-auto max-w-6xl px-5 pb-16 pt-10 md:-mt-52 md:px-8 md:pt-0">
         <motion.div
           initial="hidden"
           whileInView="visible"
@@ -254,7 +418,7 @@ function GuestLandingPage() {
                 viewport={{ once: true, amount: 0.25 }}
                 variants={fadeUp}
                 transition={{ duration: 0.45, delay: index * 0.06 }}
-                className="rounded-3xl border border-white/10 bg-white/[0.04] p-5 transition hover:border-red-500/30 hover:bg-white/[0.07]"
+                className="rounded-3xl border border-white/10 bg-white/[0.04] p-5 transition duration-300 hover:-translate-y-2 hover:rotate-[0.4deg] hover:border-red-500/30 hover:bg-white/[0.07] hover:shadow-[0_20px_80px_rgba(239,68,68,0.18)] md:hover:scale-[1.02]"
               >
                 <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-red-500/15 text-red-300">
                   <Icon size={23} />
@@ -759,4 +923,30 @@ function formatClassLabel(value?: string) {
   if (/^\d+$/.test(normalized)) return `Class ${normalized}`;
 
   return value || "Class not set";
+}
+
+function StatsCard({
+  value,
+  label,
+}: {
+  value: string;
+  label: string;
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 18 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      transition={{ duration: 0.45 }}
+      className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 text-center backdrop-blur-sm"
+    >
+      <p className="text-2xl font-black text-white">
+        {value}
+      </p>
+
+      <p className="mt-1 text-[11px] font-bold uppercase tracking-wide text-white/45">
+        {label}
+      </p>
+    </motion.div>
+  );
 }
