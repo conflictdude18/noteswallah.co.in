@@ -95,34 +95,54 @@ export default function HomePage() {
     return [...notes].sort((a, b) => getDownloads(b) - getDownloads(a)).slice(0, 3);
   }, [notes]);
 
-  const topSubjects = useMemo(() => {
-    const subjectMap = new Map<string, number>();
+const topSubjects = useMemo(() => {
+  const subjectMap = new Map<
+    string,
+    {
+      label: string;
+      count: number;
+    }
+  >();
 
-    notes.forEach((note) => {
-      if (!note.subject) return;
-      subjectMap.set(note.subject, (subjectMap.get(note.subject) || 0) + 1);
-    });
+  notes.forEach((note) => {
+    if (!note.subject?.trim()) return;
 
-    return Array.from(subjectMap.entries())
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 8);
-  }, [notes]);
+    const cleaned = note.subject.trim();
+    const normalized = cleaned.toLowerCase();
 
-  const fallbackSubjects = [
-    "Physics",
-    "Chemistry",
-    "Mathematics",
-    "Biology",
-    "JEE",
-    "NEET",
-    "Computer",
-    "English",
-  ];
+    const existing = subjectMap.get(normalized);
 
-  const subjectLinks =
-    topSubjects.length > 0
-      ? topSubjects.map(([subject]) => subject)
-      : fallbackSubjects;
+    if (existing) {
+      existing.count += 1;
+    } else {
+      subjectMap.set(normalized, {
+        label: cleaned,
+        count: 1,
+      });
+    }
+  });
+
+  return Array.from(subjectMap.values())
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 8)
+    .map((item) => item.label);
+}, [notes]);
+
+const fallbackSubjects = [
+  "Physics",
+  "Chemistry",
+  "Mathematics",
+  "Biology",
+  "JEE",
+  "NEET",
+  "Computer",
+  "English",
+];
+
+const subjectLinks =
+  topSubjects.length > 0
+    ? topSubjects
+    : fallbackSubjects;
 
   return (
     <main className="min-h-screen overflow-hidden bg-[#050607] pb-24 text-white md:pb-0">
