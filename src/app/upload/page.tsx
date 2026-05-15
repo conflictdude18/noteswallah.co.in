@@ -99,6 +99,31 @@ export default function UploadPage() {
     return pdf.numPages;
   }
 
+  async function generatePdfThumbnail(file: File) {
+    const arrayBuffer = await file.arrayBuffer();
+
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    const page = await pdf.getPage(1);
+
+    const viewport = page.getViewport({ scale: 1.5 });
+    const canvas = document.createElement("canvas");
+    const context = canvas.getContext("2d");
+
+    if (!context) return null;
+
+    canvas.width = viewport.width;
+    canvas.height = viewport.height;
+
+    await page.render({
+      canvasContext: context,
+      viewport,
+    } as any).promise;
+
+    return new Promise<Blob | null>((resolve) => {
+      canvas.toBlob((blob) => resolve(blob), "image/jpeg", 0.85);
+    });
+  }
+
   async function handleUpload(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
 
@@ -149,6 +174,21 @@ export default function UploadPage() {
       await uploadBytes(storageRef, pdfFile);
       const pdfURL = await getDownloadURL(storageRef);
 
+      let thumbnailUrl = "";
+
+      const thumbnailBlob = await generatePdfThumbnail(pdfFile);
+
+      if (thumbnailBlob) {
+        const thumbnailPath = `thumbnails/${user.uid}/${Date.now()}-${pdfFile.name}.jpg`;
+        const thumbnailRef = ref(storage, thumbnailPath);
+
+        await uploadBytes(thumbnailRef, thumbnailBlob, {
+          contentType: "image/jpeg",
+        });
+
+        thumbnailUrl = await getDownloadURL(thumbnailRef);
+      }
+
       const manualKeywords = keywordsInput
         .split(",")
         .map((keyword) => cleanText(keyword).toLowerCase())
@@ -182,6 +222,7 @@ export default function UploadPage() {
         keywords: searchKeywords,
 
         pdfURL,
+        thumbnailUrl,
         filePath,
         fileName: pdfFile.name,
         fileSize: pdfFile.size,
