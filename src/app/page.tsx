@@ -269,7 +269,7 @@ useEffect(() => {
             <StatsCard value={`${stats.subjects}+`} label="Subjects" />
             </div>
 
-            <div className="mt-8 grid grid-cols-3 gap-3">
+            <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-3">
               <MiniTrust icon={Users} label="Built for Students" />
               <MiniTrust icon={ShieldCheck} label="Community Powered" />
               <MiniTrust icon={Bot} label="Notique AI Ready" />
@@ -358,7 +358,10 @@ useEffect(() => {
         </div>
       </section>
 
-      <section id="about" className="mx-auto max-w-6xl px-5 pb-16 pt-10 md:-mt-52 md:px-8 md:pt-0">
+      <section
+          id="about"
+          className="relative z-30 mx-auto max-w-6xl px-5 pb-16 pt-20 md:-mt-24 md:px-8 md:pt-10"
+        >
         <motion.div
           initial="hidden"
           whileInView="visible"
@@ -366,7 +369,7 @@ useEffect(() => {
           variants={fadeUp}
           transition={{ duration: 0.6 }}
         >
-          <h2 className="text-3xl font-black md:text-4xl">
+          <h2 className="relative z-30 text-3xl font-black leading-tight md:text-4xl">
             Everything students need, locked safely behind login.
           </h2>
           <p className="mt-3 max-w-2xl text-sm leading-7 text-white/55">
