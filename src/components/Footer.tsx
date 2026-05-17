@@ -128,6 +128,18 @@ export default function Footer() {
             © {new Date().getFullYear()} NotesWallah. All rights reserved.
           </p>
 
+          <p className="mt-1 text-xs text-white/30">
+            Founded & developed by{" "}
+            <a
+              href="https://instagram.com/imxanshul"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-semibold text-white/80 transition hover:text-red-400"
+            >
+              Anshul Harish Chaware
+            </a>
+          </p>
+
           <div className="flex items-center gap-2 text-sm text-white/45">
             Built with
             <Heart size={15} className="fill-red-500 text-red-500" />
