@@ -23,6 +23,7 @@ import {
   RefreshCw,
   Search,
   Shield,
+  Sparkles,
   Trash2,
   Users,
   XCircle,
@@ -250,7 +251,9 @@ export default function AdminPage() {
       .filter((note) => {
         if (!queryText) return true;
 
-        return `${note.title} ${note.subject} ${note.class} ${note.topic} ${note.uploaderEmail} ${note.uploaderName}`
+        return `${note.title || ""} ${note.subject || ""} ${note.class || ""} ${
+          note.topic || ""
+        } ${note.uploaderEmail || ""} ${note.uploaderName || ""}`
           .toLowerCase()
           .includes(queryText);
       });
@@ -264,7 +267,9 @@ export default function AdminPage() {
       .filter((report) => {
         if (!queryText) return true;
 
-        return `${report.noteTitle} ${report.reason} ${report.details} ${report.reporterEmail}`
+        return `${report.noteTitle || ""} ${report.reason || ""} ${
+          report.details || ""
+        } ${report.reporterEmail || ""}`
           .toLowerCase()
           .includes(queryText);
       });
@@ -285,7 +290,10 @@ export default function AdminPage() {
           <p className="mt-3 text-sm text-white/55">
             You do not have admin permission for this page.
           </p>
-          <button onClick={() => router.push("/")} className="btn-primary mt-7 w-full">
+          <button
+            onClick={() => router.push("/")}
+            className="btn-primary mt-7 w-full"
+          >
             Go Home
           </button>
         </section>
@@ -296,57 +304,48 @@ export default function AdminPage() {
   return (
     <main className="space-y-8 pb-24 md:pb-8">
       <section className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-[#06070b] p-6 shadow-card md:p-10">
-        <div className="absolute right-[-120px] top-[-120px] h-[340px] w-[340px] rounded-full bg-red-500/20 blur-[130px]" />
+        <div className="absolute right-[-140px] top-[-140px] h-[380px] w-[380px] rounded-full bg-red-500/20 blur-[130px]" />
+        <div className="absolute bottom-[-160px] left-[-160px] h-[360px] w-[360px] rounded-full bg-yellow-500/10 blur-[140px]" />
 
-<div className="relative z-10 flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
-  <div>
-    <div className="inline-flex items-center gap-2 rounded-full border border-red-500/20 bg-red-500/10 px-4 py-2 text-sm font-black text-red-300">
-      <Shield size={16} />
-      Admin V2
-    </div>
+        <div className="relative z-10 flex flex-col gap-7 xl:flex-row xl:items-end xl:justify-between">
+          <div>
+            <div className="inline-flex items-center gap-2 rounded-full border border-red-500/20 bg-red-500/10 px-4 py-2 text-sm font-black text-red-300">
+              <Sparkles size={16} />
+              Premium Admin Control
+            </div>
 
-    <h1 className="mt-6 text-4xl font-black tracking-tight text-white md:text-6xl">
-      Moderation Dashboard
-    </h1>
+            <h1 className="mt-6 text-4xl font-black tracking-tight text-white md:text-6xl">
+              Moderation Dashboard
+            </h1>
 
-    <p className="mt-4 max-w-2xl text-sm leading-7 text-white/60">
-      Review notes, approve uploads, manage rejected content, and handle user reports from one clean dashboard.
-    </p>
-  </div>
-      <div className="flex flex-col gap-3 xl:w-[240px]">
-        <button
-          type="button"
-          onClick={() => router.push("/admin/users")}
-          className="flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/[0.06] px-5 py-3 text-sm font-black text-white transition hover:border-red-500/30 hover:bg-red-500/10"
-        >
-          <Users size={17} />
-          Manage Users
-        </button>
+            <p className="mt-4 max-w-2xl text-sm leading-7 text-white/60">
+              Review uploads, approve notes, manage rejected content, and handle
+              reports from one powerful admin workspace.
+            </p>
+          </div>
 
-        <button
-          type="button"
-          onClick={fetchAdminData}
-          disabled={fetching}
-          className="flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/[0.06] px-5 py-3 text-sm font-black text-white transition hover:border-red-500/30 hover:bg-red-500/10 disabled:opacity-60"
-        >
-          <RefreshCw
-            size={17}
-            className={fetching ? "animate-spin" : ""}
-          />
-          Refresh Data
-        </button>
-      </div>
-    </div>
-  </section>
+          <div className="grid gap-3 sm:grid-cols-2 xl:w-[420px]">
+            <button
+              type="button"
+              onClick={() => router.push("/admin/users")}
+              className="flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/[0.06] px-5 py-3 text-sm font-black text-white transition hover:border-red-500/30 hover:bg-red-500/10"
+            >
+              <Users size={17} />
+              Manage Users
+            </button>
 
-      <button
-        type="button"
-        onClick={() => router.push("/admin/users")}
-        className="flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/[0.06] px-5 py-3 text-sm font-black text-white transition hover:border-red-500/30 hover:bg-red-500/10"
-      >
-        <Users size={17} />
-        Manage Users
-      </button>
+            <button
+              type="button"
+              onClick={fetchAdminData}
+              disabled={fetching}
+              className="flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/[0.06] px-5 py-3 text-sm font-black text-white transition hover:border-red-500/30 hover:bg-red-500/10 disabled:opacity-60"
+            >
+              <RefreshCw size={17} className={fetching ? "animate-spin" : ""} />
+              Refresh
+            </button>
+          </div>
+        </div>
+      </section>
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-6">
         <StatCard label="Total Notes" value={stats.total} icon={<FileText size={22} />} />
@@ -396,7 +395,10 @@ export default function AdminPage() {
       ) : activeTab === "reported" ? (
         <section className="space-y-5">
           {filteredReports.length === 0 ? (
-            <EmptyState title="No pending reports" text="All reports are resolved or no report matches your search." />
+            <EmptyState
+              title="No pending reports"
+              text="All reports are resolved or no report matches your search."
+            />
           ) : (
             filteredReports.map((report) => (
               <ReportCard
@@ -411,7 +413,10 @@ export default function AdminPage() {
       ) : (
         <section className="space-y-5">
           {filteredNotes.length === 0 ? (
-            <EmptyState title="No notes found" text="No notes match this tab or search filter." />
+            <EmptyState
+              title="No notes found"
+              text="No notes match this tab or search filter."
+            />
           ) : (
             filteredNotes.map((note) => (
               <NoteCard
@@ -526,7 +531,10 @@ function NoteCard({
             <InfoRow label="Class" value={note.class} />
             <InfoRow label="Subject" value={note.subject} />
             <InfoRow label="Topic" value={note.topic} />
-            <InfoRow label="Uploader" value={note.uploaderEmail || note.uploaderName || "Unknown"} />
+            <InfoRow
+              label="Uploader"
+              value={note.uploaderEmail || note.uploaderName || "Unknown"}
+            />
           </div>
         </div>
 
@@ -638,7 +646,9 @@ function StatusBadge({ status }: { status: string }) {
         : "border-yellow-500/20 bg-yellow-500/10 text-yellow-200";
 
   return (
-    <span className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-black ${classes}`}>
+    <span
+      className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-black ${classes}`}
+    >
       <BarChart3 size={13} />
       {status.toUpperCase()}
     </span>
