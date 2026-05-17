@@ -74,8 +74,15 @@ export default function AdminPage() {
   const recentNotes = useMemo(() => {
   return [...notes]
     .sort((a, b) => {
-      const aTime = new Date(a.createdAt || "").getTime();
-      const bTime = new Date(b.createdAt || "").getTime();
+    const aTime =
+      typeof a.createdAt === "string"
+        ? new Date(a.createdAt).getTime()
+        : 0;
+
+    const bTime =
+      typeof b.createdAt === "string"
+        ? new Date(b.createdAt).getTime()
+        : 0;
 
       return bTime - aTime;
     })
