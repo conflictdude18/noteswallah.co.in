@@ -19,17 +19,14 @@ export default function AppShell({ children }: Props) {
           <div className="relative">
             <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-[3rem]">
               <div className="absolute left-[-120px] top-[-120px] h-[260px] w-[260px] rounded-full bg-red-500/6 blur-[100px]" />
-
               <div className="absolute bottom-[-120px] right-[-120px] h-[260px] w-[260px] rounded-full bg-red-500/6 blur-[100px]" />
             </div>
 
-            <div className="relative z-10">
-              {children}
-            </div>
+            <div className="relative z-10">{children}</div>
           </div>
         </div>
       </main>
-      
+
       <BottomNav />
     </div>
   );

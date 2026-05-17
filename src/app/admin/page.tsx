@@ -1,5 +1,6 @@
 "use client";
 
+import { createNotification } from "@/lib/createNotification";
 import type React from "react";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -131,9 +132,21 @@ export default function AdminPage() {
     setActionLoadingId(noteId);
 
     try {
+      const selectedNote = notes.find((note) => note.id === noteId);
+
       await updateDoc(doc(db, "notes", noteId), {
         status: "approved",
       });
+
+      if (selectedNote?.uploaderId) {
+        await createNotification({
+          userId: selectedNote.uploaderId,
+          type: "approved",
+          title: "Note approved ✅",
+          message: `Your note "${selectedNote.title || "Untitled Note"}" has been approved.`,
+          link: `/notes/${noteId}`,
+        });
+      }
 
       toast.success("Note approved.");
       await fetchAdminData();
@@ -151,9 +164,21 @@ export default function AdminPage() {
     setActionLoadingId(noteId);
 
     try {
+      const selectedNote = notes.find((note) => note.id === noteId);
+
       await updateDoc(doc(db, "notes", noteId), {
         status: "rejected",
       });
+
+      if (selectedNote?.uploaderId) {
+        await createNotification({
+          userId: selectedNote.uploaderId,
+          type: "rejected",
+          title: "Note rejected",
+          message: `Your note "${selectedNote.title || "Untitled Note"}" was rejected after review.`,
+          link: "/my-notes",
+        });
+      }
 
       toast.success("Note rejected.");
       await fetchAdminData();

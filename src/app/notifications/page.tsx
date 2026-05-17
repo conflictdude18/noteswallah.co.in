@@ -1,15 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   Bell,
-  Bookmark,
-  CheckCircle2,
-  FileText,
-  Heart,
-  MessageCircle,
-  RefreshCw,
+  CheckCheck,
+  Clock,
+  ExternalLink,
+  Inbox,
 } from "lucide-react";
 import {
   collection,
@@ -23,240 +22,209 @@ import {
 
 import { db } from "@/firebase/firebase";
 import { useAuth } from "@/contexts/AuthContext";
-import type { AppNotification } from "@/types/notification";
+import LoadingSpinner from "@/components/LoadingSpinner";
+
+type Notification = {
+  id: string;
+  userId: string;
+  type: "follow" | "upload" | "approved" | "rejected" | "admin";
+  title: string;
+  message: string;
+  link?: string;
+  read: boolean;
+  createdAt?: {
+    seconds: number;
+    nanoseconds: number;
+  };
+};
+
+function formatDate(notification: Notification) {
+  if (!notification.createdAt?.seconds) return "Just now";
+
+  return new Date(notification.createdAt.seconds * 1000).toLocaleString("en-IN", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
+}
 
 export default function NotificationsPage() {
-  const { user, loading: authLoading } = useAuth();
+  const router = useRouter();
+  const { user, loading } = useAuth();
 
-  const [notifications, setNotifications] = useState<AppNotification[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const unreadCount = useMemo(
-    () => notifications.filter((notification) => !notification.read).length,
-    [notifications]
-  );
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [fetching, setFetching] = useState(true);
 
   useEffect(() => {
-    if (authLoading) return;
+    if (loading) return;
 
     if (!user) {
-      setNotifications([]);
-      setLoading(false);
+      router.push("/signin");
       return;
     }
 
-    const notificationsQuery = query(
+    const q = query(
       collection(db, "notifications"),
       where("userId", "==", user.uid),
       orderBy("createdAt", "desc")
     );
 
     const unsubscribe = onSnapshot(
-      notificationsQuery,
-      async (snap) => {
-        const data: AppNotification[] = snap.docs.map((notificationDoc) => ({
-          id: notificationDoc.id,
-          ...(notificationDoc.data() as Omit<AppNotification, "id">),
-        }));
+      q,
+      (snapshot) => {
+        const data = snapshot.docs.map((item) => ({
+          id: item.id,
+          ...item.data(),
+        })) as Notification[];
 
         setNotifications(data);
-        setLoading(false);
-
-        const unreadNotifications = data.filter(
-          (notification) => !notification.read
-        );
-
-        if (unreadNotifications.length > 0) {
-          await Promise.all(
-            unreadNotifications.map((notification) =>
-              updateDoc(doc(db, "notifications", notification.id), {
-                read: true,
-              })
-            )
-          );
-        }
+        setFetching(false);
       },
-      (error) => {
-        console.error("REALTIME NOTIFICATIONS PAGE ERROR:", error);
-        setLoading(false);
+      () => {
+        setFetching(false);
       }
     );
 
     return () => unsubscribe();
-  }, [user, authLoading]);
+  }, [user, loading, router]);
 
-  function getIcon(type: string) {
-    switch (type) {
-      case "like":
-        return <Heart size={18} className="text-red-400" />;
-
-      case "comment":
-        return <MessageCircle size={18} className="text-blue-400" />;
-
-      case "bookmark":
-        return <Bookmark size={18} className="text-yellow-300" />;
-
-      default:
-        return <Bell size={18} className="text-white" />;
-    }
-  }
-
-  function formatDate(value: string) {
-    if (!value) return "Recently";
-
-    const date = new Date(value);
-
-    if (Number.isNaN(date.getTime())) return "Recently";
-
-    return date.toLocaleString("en-IN", {
-      dateStyle: "medium",
-      timeStyle: "short",
+  async function markAsRead(id: string) {
+    await updateDoc(doc(db, "notifications", id), {
+      read: true,
     });
   }
 
-  if (loading || authLoading) {
-    return (
-      <main className="min-h-screen bg-[#050505] px-4 py-8 text-white">
-        <div className="mx-auto flex min-h-[70vh] max-w-4xl items-center justify-center">
-          <div className="text-center">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl border border-white/10 bg-white/5">
-              <RefreshCw className="animate-spin text-red-500" size={30} />
-            </div>
+  async function markAllAsRead() {
+    const unread = notifications.filter((item) => !item.read);
 
-            <h1 className="mt-5 text-xl font-black">
-              Loading notifications
-            </h1>
-
-            <p className="mt-2 text-sm text-white/50">
-              Checking latest activity on your notes...
-            </p>
-          </div>
-        </div>
-      </main>
+    await Promise.all(
+      unread.map((item) =>
+        updateDoc(doc(db, "notifications", item.id), {
+          read: true,
+        })
+      )
     );
   }
 
+  if (loading || fetching) {
+    return <LoadingSpinner />;
+  }
+
+  const unreadCount = notifications.filter((item) => !item.read).length;
+
   return (
-    <main className="min-h-screen bg-[#050505] px-4 py-6 text-white sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-4xl">
-        <section className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-gradient-to-br from-white/10 via-white/[0.04] to-red-500/10 p-5 shadow-2xl shadow-black/30 sm:p-7">
-          <div className="absolute -right-16 -top-16 h-40 w-40 rounded-full bg-red-500/20 blur-3xl" />
-
-          <div className="relative flex items-start justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <div className="rounded-3xl bg-red-500/10 p-3 text-red-500 ring-1 ring-red-500/20">
-                <Bell size={26} />
+    <main className="min-h-screen text-white">
+      <section className="mx-auto w-full max-w-5xl px-1 py-4 sm:px-4">
+        <div className="mb-6 rounded-[2rem] border border-white/10 bg-white/[0.04] p-5 shadow-2xl backdrop-blur-xl sm:p-7">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-red-500/20 bg-red-500/10 px-3 py-1 text-xs font-bold text-red-200">
+                <Bell size={14} />
+                Notifications
               </div>
 
-              <div>
-                <p className="text-xs font-bold uppercase tracking-[0.25em] text-red-400">
-                  Activity Center
-                </p>
+              <h1 className="text-3xl font-black tracking-tight sm:text-4xl">
+                Your updates
+              </h1>
 
-                <h1 className="mt-1 text-2xl font-black sm:text-4xl">
-                  Notifications
-                </h1>
-
-                <p className="mt-1 text-sm text-white/55">
-                  Likes, comments and saves on your notes appear here.
-                </p>
-              </div>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-white/55">
+                Follow requests, note approvals, admin alerts, and activity from
+                NotesWallah will appear here.
+              </p>
             </div>
 
-            <div className="hidden rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-right sm:block">
-              <p className="text-2xl font-black">{notifications.length}</p>
-              <p className="text-xs text-white/45">Total</p>
-            </div>
+            {unreadCount > 0 && (
+              <button
+                type="button"
+                onClick={markAllAsRead}
+                className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/[0.06] px-4 py-3 text-sm font-bold text-white/80 transition hover:border-red-500/30 hover:bg-red-500/10 hover:text-red-100"
+              >
+                <CheckCheck size={17} />
+                Mark all read
+              </button>
+            )}
           </div>
-
-          <div className="relative mt-5 grid grid-cols-2 gap-3 sm:max-w-md">
-            <div className="rounded-2xl border border-white/10 bg-black/25 p-4">
-              <p className="text-xl font-black">{notifications.length}</p>
-              <p className="mt-1 text-xs text-white/45">All notifications</p>
-            </div>
-
-            <div className="rounded-2xl border border-white/10 bg-black/25 p-4">
-              <p className="text-xl font-black">{unreadCount}</p>
-              <p className="mt-1 text-xs text-white/45">New now</p>
-            </div>
-          </div>
-        </section>
+        </div>
 
         {notifications.length === 0 ? (
-          <section className="mt-5 rounded-[2rem] border border-white/10 bg-white/[0.04] p-8 text-center sm:p-12">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-white/5 text-white/35">
-              <Bell size={34} />
+          <div className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-10 text-center backdrop-blur-xl">
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-white/[0.06] text-white/70">
+              <Inbox size={26} />
             </div>
 
-            <h2 className="mt-5 text-2xl font-black">
-              No notifications yet
-            </h2>
+            <h2 className="text-xl font-black">No notifications yet</h2>
 
-            <p className="mx-auto mt-2 max-w-sm text-sm leading-relaxed text-white/50">
-              When someone likes, comments on, or saves your notes, you will see
-              the update here.
+            <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-white/50">
+              When someone follows you, your note gets approved, or there is an
+              important update, it will show here.
             </p>
-          </section>
+          </div>
         ) : (
-          <section className="mt-5 space-y-3 pb-24">
-            {notifications.map((notification) => (
-              <article
-                key={notification.id}
-                className={`group rounded-[1.6rem] border p-4 transition active:scale-[0.99] sm:p-5 ${
-                  notification.read
-                    ? "border-white/10 bg-white/[0.04] hover:bg-white/[0.07]"
-                    : "border-red-500/25 bg-red-500/[0.08]"
+          <div className="space-y-3">
+            {notifications.map((item) => (
+              <div
+                key={item.id}
+                className={`rounded-[1.5rem] border p-4 backdrop-blur-xl transition ${
+                  item.read
+                    ? "border-white/10 bg-white/[0.035]"
+                    : "border-red-500/25 bg-red-500/[0.08] shadow-[0_0_35px_rgba(255,45,61,0.12)]"
                 }`}
               >
-                <div className="flex gap-3 sm:gap-4">
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-black/30">
-                    {getIcon(notification.type)}
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="flex gap-3">
+                    <div
+                      className={`mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl ${
+                        item.read
+                          ? "bg-white/[0.06] text-white/55"
+                          : "bg-red-500/15 text-red-200"
+                      }`}
+                    >
+                      <Bell size={18} />
+                    </div>
+
+                    <div>
+                      <h3 className="font-black text-white">{item.title}</h3>
+
+                      <p className="mt-1 text-sm leading-6 text-white/60">
+                        {item.message}
+                      </p>
+
+                      <div className="mt-2 flex items-center gap-2 text-xs text-white/40">
+                        <Clock size={13} />
+                        {formatDate(item)}
+                      </div>
+                    </div>
                   </div>
 
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <h2 className="line-clamp-2 text-sm font-black sm:text-base">
-                          {notification.title || "New notification"}
-                        </h2>
+                  <div className="flex shrink-0 gap-2 sm:justify-end">
+                    {!item.read && (
+                      <button
+                        type="button"
+                        onClick={() => markAsRead(item.id)}
+                        className="rounded-xl border border-white/10 bg-white/[0.05] px-3 py-2 text-xs font-bold text-white/70 transition hover:bg-white/[0.08] hover:text-white"
+                      >
+                        Mark read
+                      </button>
+                    )}
 
-                        <p className="mt-1 text-xs text-white/40">
-                          {formatDate(notification.createdAt)}
-                        </p>
-                      </div>
-
-                      {!notification.read && (
-                        <span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-red-500 shadow-lg shadow-red-500/40" />
-                      )}
-                    </div>
-
-                    <p className="mt-3 line-clamp-3 text-sm leading-relaxed text-white/60">
-                      {notification.message}
-                    </p>
-
-                    <div className="mt-4 flex flex-wrap items-center gap-2">
-                      {notification.noteId && (
-                        <Link
-                          href={`/notes/${notification.noteId}`}
-                          className="inline-flex items-center gap-2 rounded-2xl bg-white px-4 py-2 text-xs font-bold text-black transition hover:bg-red-500 hover:text-white"
-                        >
-                          <FileText size={15} />
-                          View Note
-                        </Link>
-                      )}
-
-                      <span className="inline-flex items-center gap-1 rounded-2xl border border-white/10 bg-white/5 px-3 py-2 text-xs text-white/45">
-                        <CheckCircle2 size={14} />
-                        Seen
-                      </span>
-                    </div>
+                    <Link
+                      href={item.link || "/notifications"}
+                      onClick={() => {
+                        if (!item.read) {
+                          markAsRead(item.id);
+                        }
+                      }}
+                      className="inline-flex items-center gap-1 rounded-xl bg-red-500 px-3 py-2 text-xs font-black text-white transition hover:bg-red-600"
+                    >
+                      Open
+                      <ExternalLink size={13} />
+                    </Link>
                   </div>
                 </div>
-              </article>
+              </div>
             ))}
-          </section>
+          </div>
         )}
-      </div>
+      </section>
     </main>
   );
 }

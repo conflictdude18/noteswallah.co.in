@@ -5,12 +5,18 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { usePathname } from "next/navigation";
 import { signOut } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
+import {
+  collection,
+  doc,
+  getDoc,
+  onSnapshot,
+  query,
+  where,
+} from "firebase/firestore";
 import {
   Bell,
   BookOpen,
   FileText,
-  GraduationCap,
   Heart,
   Home,
   LayoutDashboard,
@@ -50,6 +56,7 @@ export default function Sidebar() {
   const { user, loading } = useAuth();
 
   const [isAdmin, setIsAdmin] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
     async function checkAdmin() {
@@ -69,6 +76,25 @@ export default function Sidebar() {
     }
 
     checkAdmin();
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) {
+      setUnreadCount(0);
+      return;
+    }
+
+    const unreadQuery = query(
+      collection(db, "notifications"),
+      where("userId", "==", user.uid),
+      where("read", "==", false)
+    );
+
+    const unsubscribe = onSnapshot(unreadQuery, (snap) => {
+      setUnreadCount(snap.size);
+    });
+
+    return () => unsubscribe();
   }, [user]);
 
   const links = useMemo(() => {
@@ -145,7 +171,14 @@ export default function Sidebar() {
               }`}
             >
               <Icon size={18} />
+
               <span className="truncate">{item.label}</span>
+
+              {item.href === "/notifications" && unreadCount > 0 && (
+                <span className="ml-auto rounded-full bg-red-600 px-2 py-0.5 text-[10px] font-black text-white">
+                  {unreadCount > 99 ? "99+" : unreadCount}
+                </span>
+              )}
             </Link>
           );
         })}
@@ -179,7 +212,9 @@ export default function Sidebar() {
                   {user.displayName || "NotesWallah User"}
                 </p>
 
-                <p className="truncate text-xs text-white/45">{user.email}</p>
+                <p className="truncate text-xs text-white/45">
+                  {user.email}
+                </p>
               </div>
             </Link>
 

@@ -36,7 +36,7 @@ import { db } from "@/firebase/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import UserAvatar from "@/components/UserAvatar";
 import type { Note } from "@/types/note";
-import { sendNotification } from "@/lib/sendNotification";
+import { createNotification } from "@/lib/createNotification";
 
 type UserProfile = {
   uid: string;
@@ -234,13 +234,14 @@ export default function PublicProfilePage() {
           createdAt: new Date().toISOString(),
         });
 
-        await sendNotification({
+        await createNotification({
           userId: id,
-          title: "New Follower 👋",
+          type: "follow",
+          title: "New follower 👋",
           message: `${
             user.displayName || user.email || "Someone"
           } started following you.`,
-          type: "system",
+          link: `/profile/${user.uid}`,
         });
 
         setFollowDocId(newFollow.id);
