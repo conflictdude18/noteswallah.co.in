@@ -246,6 +246,40 @@ export default function UploadPage() {
         updatedAt: serverTimestamp(),
       });
 
+      await addDoc(collection(db, "adminNotifications"), {
+        type: "new_note_pending",
+        title: "New note pending approval",
+        message: `${user.displayName || user.email || "A user"} uploaded a note for approval.`,
+        noteTitle: finalTitle,
+        noteId: docRef.id,
+        uploaderId: user.uid,
+        uploaderName: user.displayName || "NotesWallah User",
+        read: false,
+        createdAt: serverTimestamp(),
+      });
+
+      await addDoc(collection(db, "adminNotifications"), {
+        type: "new_note_pending",
+        title: "New note pending approval",
+        message: `${user.displayName || user.email || "A user"} uploaded a note for approval.`,
+        noteTitle: title,
+        uploaderId: user.uid,
+        uploaderName: user.displayName || "NotesWallah User",
+        read: false,
+        createdAt: serverTimestamp(),
+      });
+
+      await addDoc(collection(db, "adminNotifications"), {
+        type: "new_note_pending",
+        title: "New note pending approval",
+        message: `${user.displayName || user.email || "A user"} uploaded a note for approval.`,
+        noteTitle: title,
+        uploaderId: user.uid,
+        uploaderName: user.displayName || "NotesWallah User",
+        read: false,
+        createdAt: serverTimestamp(),
+      });
+
       try {
         await sendFollowerUploadNotifications({
           uploaderId: user.uid,

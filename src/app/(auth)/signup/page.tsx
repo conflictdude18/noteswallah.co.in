@@ -58,11 +58,24 @@ export default function SignUpPage() {
         password
       );
 
-      await updateProfile(userCred.user, {
-        displayName: name.trim(),
-      });
+    await updateProfile(userCred.user, {
+      displayName: name.trim(),
+    });
 
+    await fetch("/api/send-welcome-email", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        email: userCred.user.email,
+        name: name.trim() || "Student",
+      }),
+    });
+
+    setTimeout(() => {
       window.location.href = "/dashboard";
+    }, 300);
     } catch (err: unknown) {
       if (err instanceof Error) {
         setError(getFirebaseErrorMessage(err.message));

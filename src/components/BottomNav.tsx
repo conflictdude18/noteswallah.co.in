@@ -4,12 +4,19 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { signOut } from "firebase/auth";
-import { collection, doc, getDoc, onSnapshot, query, where } from "firebase/firestore";
+import {
+  collection,
+  doc,
+  getDoc,
+  onSnapshot,
+  query,
+  where,
+} from "firebase/firestore";
+
 import {
   Bell,
   BookOpen,
   FileText,
-  GraduationCap,
   Heart,
   Home,
   LayoutDashboard,
@@ -37,7 +44,9 @@ export default function BottomNav() {
 
   const [open, setOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+
   const [unreadCount, setUnreadCount] = useState(0);
+  const [adminNotificationCount, setAdminNotificationCount] = useState(0);
 
   useEffect(() => {
     async function checkAdmin() {
@@ -48,7 +57,11 @@ export default function BottomNav() {
 
       try {
         const snap = await getDoc(doc(db, "users", user.uid));
-        setIsAdmin(snap.exists() && (snap.data() as UserDoc).role === "admin");
+
+        setIsAdmin(
+          snap.exists() &&
+            (snap.data() as UserDoc).role === "admin"
+        );
       } catch (err) {
         console.error("ADMIN CHECK ERROR:", err);
         setIsAdmin(false);
@@ -76,6 +89,24 @@ export default function BottomNav() {
 
     return () => unsubscribe();
   }, [user]);
+
+  useEffect(() => {
+    if (!user || !isAdmin) {
+      setAdminNotificationCount(0);
+      return;
+    }
+
+    const q = query(
+      collection(db, "adminNotifications"),
+      where("read", "==", false)
+    );
+
+    const unsubscribe = onSnapshot(q, (snap) => {
+      setAdminNotificationCount(snap.size);
+    });
+
+    return () => unsubscribe();
+  }, [user, isAdmin]);
 
   useEffect(() => {
     document.body.style.overflow = open ? "hidden" : "auto";
@@ -113,19 +144,75 @@ export default function BottomNav() {
 
   const moreLinks = user
     ? [
-        { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-        { href: "/my-notes", label: "My Notes", icon: FileText },
-        { href: "/notifications", label: "Notifications", icon: Bell, badge: unreadCount },
-        { href: "/following", label: "Following Feed", icon: Users },
-        { href: "/followers", label: "Followers", icon: Users },
-        { href: "/feedback", label: "Feedback", icon: MessageSquare },
-        { href: "/premium", label: "Premium", icon: Sparkles },
-        { href: "/profile", label: "Profile", icon: User },
-        ...(isAdmin ? [{ href: "/admin", label: "Admin", icon: Shield }] : []),
+        {
+          href: "/dashboard",
+          label: "Dashboard",
+          icon: LayoutDashboard,
+        },
+        {
+          href: "/my-notes",
+          label: "My Notes",
+          icon: FileText,
+        },
+        {
+          href: "/notifications",
+          label: "Notifications",
+          icon: Bell,
+          badge: unreadCount,
+        },
+        {
+          href: "/following",
+          label: "Following Feed",
+          icon: Users,
+        },
+        {
+          href: "/followers",
+          label: "Followers",
+          icon: Users,
+        },
+        {
+          href: "/feedback",
+          label: "Feedback",
+          icon: MessageSquare,
+        },
+        {
+          href: "/premium",
+          label: "Premium",
+          icon: Sparkles,
+        },
+        {
+          href: "/profile",
+          label: "Profile",
+          icon: User,
+        },
+
+        ...(isAdmin
+          ? [
+              {
+                href: "/admin",
+                label: "Admin",
+                icon: Shield,
+              },
+              {
+                href: "/admin/notifications",
+                label: "Admin Alerts",
+                icon: Bell,
+                badge: adminNotificationCount,
+              },
+            ]
+          : []),
       ]
     : [
-        { href: "/signin", label: "Sign In", icon: User },
-        { href: "/signup", label: "Create Account", icon: Sparkles },
+        {
+          href: "/signin",
+          label: "Sign In",
+          icon: User,
+        },
+        {
+          href: "/signup",
+          label: "Create Account",
+          icon: Sparkles,
+        },
       ];
 
   return (
@@ -136,6 +223,7 @@ export default function BottomNav() {
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-2xl font-black">More</h2>
+
                 <p className="mt-1 text-xs font-semibold text-white/45">
                   Account, activity and tools
                 </p>
@@ -156,9 +244,18 @@ export default function BottomNav() {
             <div className="grid grid-cols-2 gap-3">
               {moreLinks.map((item) => {
                 const Icon = item.icon;
+
                 const active = isActive(item.href);
-                const admin = item.href === "/admin";
-                const badge = "badge" in item && typeof item.badge === "number" ? item.badge : 0;
+
+                const admin =
+                  item.href === "/admin" ||
+                  item.href === "/admin/notifications";
+
+                const badge =
+                  "badge" in item &&
+                  typeof item.badge === "number"
+                    ? item.badge
+                    : 0;
 
                 return (
                   <Link
@@ -185,7 +282,9 @@ export default function BottomNav() {
                       <Icon size={22} />
                     </span>
 
-                    <span className="text-sm font-black">{item.label}</span>
+                    <span className="text-sm font-black">
+                      {item.label}
+                    </span>
                   </Link>
                 );
               })}
@@ -210,6 +309,7 @@ export default function BottomNav() {
         <div className="grid grid-cols-5 items-end gap-1">
           {mainLinks.map((item) => {
             const Icon = item.icon;
+
             const active = !open && isActive(item.href);
 
             return (
@@ -224,8 +324,8 @@ export default function BottomNav() {
                     item.special
                       ? "flex h-10 w-10 items-center justify-center rounded-2xl bg-red-600 text-white shadow-lg shadow-red-600/35"
                       : active
-                        ? "flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-black"
-                        : "flex h-10 w-10 items-center justify-center rounded-2xl text-white/50"
+                      ? "flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-black"
+                      : "flex h-10 w-10 items-center justify-center rounded-2xl text-white/50"
                   }
                 >
                   <Icon size={20} />
@@ -233,7 +333,9 @@ export default function BottomNav() {
 
                 <span
                   className={`text-[10px] font-black ${
-                    active || item.special ? "text-white" : "text-white/45"
+                    active || item.special
+                      ? "text-white"
+                      : "text-white/45"
                   }`}
                 >
                   {item.label}
@@ -248,11 +350,15 @@ export default function BottomNav() {
             onClick={() => setOpen((prev) => !prev)}
             className="relative flex flex-col items-center justify-center gap-1 rounded-2xl py-1"
           >
-            {user && unreadCount > 0 && !open && (
-              <span className="absolute right-5 top-0 z-10 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-600 px-1 text-[9px] font-black text-white">
-                {unreadCount > 9 ? "9+" : unreadCount}
-              </span>
-            )}
+            {((user && unreadCount > 0) ||
+              (isAdmin && adminNotificationCount > 0)) &&
+              !open && (
+                <span className="absolute right-5 top-0 z-10 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-600 px-1 text-[9px] font-black text-white">
+                  {unreadCount + adminNotificationCount > 9
+                    ? "9+"
+                    : unreadCount + adminNotificationCount}
+                </span>
+              )}
 
             <span
               className={
@@ -264,7 +370,11 @@ export default function BottomNav() {
               <Menu size={22} />
             </span>
 
-            <span className={`text-[10px] font-black ${open ? "text-white" : "text-white/45"}`}>
+            <span
+              className={`text-[10px] font-black ${
+                open ? "text-white" : "text-white/45"
+              }`}
+            >
               More
             </span>
           </button>

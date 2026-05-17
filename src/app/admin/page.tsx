@@ -69,6 +69,29 @@ export default function AdminPage() {
 
   const [activeTab, setActiveTab] = useState<AdminTab>("pending");
   const [search, setSearch] = useState("");
+  const [previewNote, setPreviewNote] = useState<Note | null>(null);
+
+  const recentNotes = useMemo(() => {
+  return [...notes]
+    .sort((a, b) => {
+      const aTime = new Date(a.createdAt || "").getTime();
+      const bTime = new Date(b.createdAt || "").getTime();
+
+      return bTime - aTime;
+    })
+    .slice(0, 6);
+}, [notes]);
+
+const recentReports = useMemo(() => {
+  return [...reports]
+    .sort((a, b) => {
+      const aTime = new Date(a.createdAt || "").getTime();
+      const bTime = new Date(b.createdAt || "").getTime();
+
+      return bTime - aTime;
+    })
+    .slice(0, 5);
+}, [reports]);
 
   useEffect(() => {
     async function checkAdmin() {
@@ -243,6 +266,64 @@ export default function AdminPage() {
     };
   }, [notes, reports]);
 
+  const analytics = useMemo(() => {
+  const approvalRate =
+    stats.total === 0
+      ? 0
+      : Math.round((stats.approved / stats.total) * 100);
+
+  const rejectionRate =
+    stats.total === 0
+      ? 0
+      : Math.round((stats.rejected / stats.total) * 100);
+
+  const reportRate =
+    stats.total === 0
+      ? 0
+      : Math.round((stats.reports / stats.total) * 100);
+
+  const subjectCounts: Record<string, number> = {};
+
+  notes.forEach((note) => {
+    const subject = note.subject || "Unknown";
+
+    subjectCounts[subject] = (subjectCounts[subject] || 0) + 1;
+  });
+
+  const topSubject =
+    Object.entries(subjectCounts).sort((a, b) => b[1] - a[1])[0]?.[0] ||
+    "N/A";
+
+  return {
+    approvalRate,
+    rejectionRate,
+    reportRate,
+    topSubject,
+  };
+}, [stats, notes]);
+
+const topUploaders = useMemo(() => {
+  const uploaderCounts: Record<string, { name: string; email: string; count: number }> = {};
+
+  notes.forEach((note) => {
+    const uploaderId = note.uploaderId || note.uploaderEmail || "unknown";
+
+    if (!uploaderCounts[uploaderId]) {
+      uploaderCounts[uploaderId] = {
+        name: note.uploaderName || "Unknown User",
+        email: note.uploaderEmail || "No email",
+        count: 0,
+      };
+    }
+
+    uploaderCounts[uploaderId].count += 1;
+  });
+
+  return Object.values(uploaderCounts)
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 5);
+}, [notes]);
+
   const filteredNotes = useMemo(() => {
     const queryText = search.toLowerCase().trim();
 
@@ -356,6 +437,178 @@ export default function AdminPage() {
         <StatCard label="Uploaders" value={stats.users} icon={<Users size={22} />} />
       </section>
 
+      <section className="grid gap-5 xl:grid-cols-[1.1fr_0.9fr]">
+        <div className="rounded-[2rem] border border-white/10 bg-white/[0.035] p-5 shadow-card">
+          <div className="mb-5 flex items-center justify-between">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.22em] text-white/35">
+                Recent Notes
+              </p>
+
+              <h2 className="mt-2 text-2xl font-black text-white">
+                Latest Upload Activity
+              </h2>
+            </div>
+
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-red-500/20 bg-red-500/10 text-red-300">
+              <FileText size={18} />
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            {recentNotes.length === 0 ? (
+              <p className="text-sm text-white/45">
+                No recent note activity found.
+              </p>
+            ) : (
+              recentNotes.map((note) => (
+                <div
+                  key={note.id}
+                  className="flex items-center justify-between gap-4 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-black text-white">
+                      {note.title || "Untitled Note"}
+                    </p>
+
+                    <p className="mt-1 text-xs text-white/45">
+                      {note.subject || "Unknown Subject"}
+                    </p>
+                  </div>
+
+                  <StatusBadge status={note.status || "pending"} />
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        <div className="rounded-[2rem] border border-white/10 bg-white/[0.035] p-5 shadow-card">
+          <div className="mb-5 flex items-center justify-between">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.22em] text-white/35">
+                Reports
+              </p>
+
+              <h2 className="mt-2 text-2xl font-black text-white">
+                Recent Reports
+              </h2>
+            </div>
+
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-yellow-500/20 bg-yellow-500/10 text-yellow-200">
+              <AlertTriangle size={18} />
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            {recentReports.length === 0 ? (
+              <p className="text-sm text-white/45">
+                No reports found.
+              </p>
+            ) : (
+              recentReports.map((report) => (
+                <div
+                  key={report.id}
+                  className="rounded-2xl border border-white/10 bg-white/[0.03] p-4"
+                >
+                  <p className="line-clamp-1 text-sm font-black text-white">
+                    {report.noteTitle || "Reported Note"}
+                  </p>
+
+                  <p className="mt-2 text-xs text-yellow-200">
+                    {report.reason || "No reason"}
+                  </p>
+
+                  <p className="mt-2 line-clamp-2 text-xs leading-6 text-white/45">
+                    {report.details || "No extra details"}
+                  </p>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </section>
+
+      <section className="rounded-[2rem] border border-white/10 bg-white/[0.035] p-5 shadow-card">
+        <div className="mb-5 flex items-center justify-between">
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.22em] text-white/35">
+              Contributors
+            </p>
+
+            <h2 className="mt-2 text-2xl font-black text-white">
+              Top Uploaders
+            </h2>
+          </div>
+
+          <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-red-500/20 bg-red-500/10 text-red-300">
+            <Users size={18} />
+          </div>
+        </div>
+
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+          {topUploaders.length === 0 ? (
+            <p className="text-sm text-white/45">No uploaders found.</p>
+          ) : (
+            topUploaders.map((uploader, index) => (
+              <div
+                key={`${uploader.email}-${index}`}
+                className="rounded-2xl border border-white/10 bg-white/[0.03] p-4"
+              >
+                <p className="text-xs font-black text-red-300">
+                  #{index + 1}
+                </p>
+
+                <h3 className="mt-2 line-clamp-1 text-sm font-black text-white">
+                  {uploader.name}
+                </h3>
+
+                <p className="mt-1 line-clamp-1 text-xs text-white/45">
+                  {uploader.email}
+                </p>
+
+                <p className="mt-4 text-2xl font-black text-white">
+                  {uploader.count}
+                </p>
+
+                <p className="text-xs text-white/40">uploads</p>
+              </div>
+            ))
+          )}
+        </div>
+      </section>
+
+      <section className="rounded-[2rem] border border-white/10 bg-white/[0.035] p-4 shadow-card"></section>
+      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <QuickActionCard
+          title="Review Pending"
+          text={`${stats.pending} notes waiting`}
+          icon={<Clock3 size={20} />}
+          onClick={() => setActiveTab("pending")}
+        />
+
+        <QuickActionCard
+          title="Check Reports"
+          text={`${stats.reports} active reports`}
+          icon={<AlertTriangle size={20} />}
+          onClick={() => setActiveTab("reported")}
+        />
+
+        <QuickActionCard
+          title="Manage Users"
+          text="Open user controls"
+          icon={<Users size={20} />}
+          onClick={() => router.push("/admin/users")}
+        />
+
+        <QuickActionCard
+          title="Refresh Data"
+          text="Reload dashboard"
+          icon={<RefreshCw size={20} />}
+          onClick={fetchAdminData}
+        />
+      </section>
+
       <section className="rounded-[2rem] border border-white/10 bg-white/[0.035] p-4 shadow-card">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
           <div className="flex flex-wrap gap-2">
@@ -426,10 +679,41 @@ export default function AdminPage() {
                 onApprove={() => approveNote(note.id)}
                 onReject={() => rejectNote(note.id)}
                 onDelete={() => deleteNote(note.id)}
+                setPreviewNote={setPreviewNote}
               />
             ))
           )}
         </section>
+            )}
+      {previewNote && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-3xl rounded-[2rem] border border-white/10 bg-[#0b0d12] p-6 shadow-2xl">
+            <button
+              type="button"
+              onClick={() => setPreviewNote(null)}
+              className="mb-4 rounded-2xl border border-white/10 bg-white/[0.05] px-4 py-2 text-sm font-black text-white"
+            >
+              Close
+            </button>
+
+            <h2 className="text-3xl font-black text-white">
+              {previewNote.title || "Untitled Note"}
+            </h2>
+
+            <p className="mt-4 text-sm leading-7 text-white/60">
+              {previewNote.description || "No description provided."}
+            </p>
+
+            <a
+              href={previewNote.pdfURL}
+              target="_blank"
+              rel="noreferrer"
+              className="admin-green-btn mt-6 inline-flex"
+            >
+              Open PDF
+            </a>
+          </div>
+        </div>
       )}
     </main>
   );
@@ -448,6 +732,42 @@ function AdminLoading() {
         </p>
       </section>
     </main>
+  );
+}
+
+function QuickActionCard({
+  title,
+  text,
+  icon,
+  onClick,
+}: {
+  title: string;
+  text: string;
+  icon: React.ReactNode;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="group rounded-[2rem] border border-white/10 bg-white/[0.035] p-5 text-left shadow-card transition hover:-translate-y-1 hover:border-red-500/25 hover:bg-red-500/10"
+    >
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h3 className="text-lg font-black text-white">
+            {title}
+          </h3>
+
+          <p className="mt-2 text-sm text-white/50">
+            {text}
+          </p>
+        </div>
+
+        <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-red-500/20 bg-red-500/10 text-red-300 transition group-hover:scale-105">
+          {icon}
+        </div>
+      </div>
+    </button>
   );
 }
 
@@ -506,12 +826,14 @@ function NoteCard({
   onApprove,
   onReject,
   onDelete,
+  setPreviewNote,
 }: {
   note: Note;
   busy: boolean;
   onApprove: () => void;
   onReject: () => void;
   onDelete: () => void;
+  setPreviewNote: (note: Note) => void;
 }) {
   return (
     <article className="rounded-[2rem] border border-white/10 bg-[#07090d] p-5 shadow-card md:p-6">
@@ -544,15 +866,14 @@ function NoteCard({
           </p>
 
           <div className="grid gap-3">
-            <a
-              href={note.pdfURL}
-              target="_blank"
-              rel="noreferrer"
-              className="flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/[0.06] px-4 py-3 text-sm font-black text-white transition hover:bg-white/[0.1]"
-            >
-              <ExternalLink size={16} />
-              Open PDF
-            </a>
+          <button
+            type="button"
+            onClick={() => setPreviewNote(note)}
+            className="flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/[0.06] px-4 py-3 text-sm font-black text-white transition hover:bg-white/[0.1]"
+          >
+            <ExternalLink size={16} />
+            Preview Note
+          </button>
 
             {note.status !== "approved" && (
               <button disabled={busy} onClick={onApprove} className="admin-green-btn">
