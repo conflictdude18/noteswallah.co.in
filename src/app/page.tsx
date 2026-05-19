@@ -712,7 +712,78 @@ function LoggedInHomePage() {
           })}
         </div>
       </section>
+      <section className="mx-auto my-12 max-w-6xl rounded-[2rem] border border-yellow-500/20 bg-gradient-to-br from-yellow-500/10 to-red-500/10 p-6 md:p-8">
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+          <div className="max-w-2xl">
+            <div className="inline-flex items-center gap-2 rounded-full border border-yellow-500/20 bg-yellow-500/10 px-4 py-2 text-xs font-black text-yellow-300">
+              <div className="relative h-4 w-4 overflow-hidden rounded-sm">
+                <Image
+                  src="/notique-white.png"
+                  alt="Notique AI"
+                  fill
+                  sizes="16px"
+                  className="object-cover"
+                />
+              </div>
+              POWERED BY NOTIQUE AI
+            </div>
 
+            <h2 className="mt-4 text-3xl font-black text-white md:text-5xl">
+              Turn Long Notes Into Smart Revision Summaries
+            </h2>
+
+            <p className="mt-4 text-sm leading-7 text-white/65 md:text-base">
+              Paste your own study notes or use uploaded notes from NotesWallah.
+              Notique AI instantly creates revision-focused summaries, key points,
+              and quick recall notes for exams.
+            </p>
+
+            <div className="mt-6 flex flex-wrap gap-3">
+              <Link
+                href="/ai-summary"
+                className="rounded-2xl bg-red-500 px-5 py-3 font-black text-white transition hover:bg-red-600"
+              >
+                Try Notique AI
+              </Link>
+
+              <Link
+                href="/premium"
+                className="rounded-2xl border border-white/10 bg-white/5 px-5 py-3 font-black text-white/80 transition hover:bg-white/10"
+              >
+                Unlock Premium
+              </Link>
+            </div>
+          </div>
+
+          <div className="rounded-[2rem] border border-white/10 bg-black/30 p-5 lg:max-w-md">
+            <div className="flex items-center gap-2">
+              <Sparkles className="text-yellow-300" />
+              <h3 className="font-black text-white">
+                Example Output
+              </h3>
+            </div>
+
+            <div className="mt-4 space-y-3 text-sm text-white/70">
+              <p>
+                Topic Overview:
+                Photosynthesis converts light energy into chemical energy.
+              </p>
+
+              <p>
+                Key Points:
+                • Chlorophyll absorbs sunlight
+                • Occurs in chloroplasts
+                • Produces oxygen and glucose
+              </p>
+
+              <p>
+                Quick Recall:
+                Plants use sunlight to make food.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
       <section className="mx-auto max-w-6xl px-5 pb-8 md:px-8">
         <div className="rounded-[2rem] border border-white/10 bg-gradient-to-br from-red-600 to-red-800 p-6 md:p-10">
           <h2 className="text-3xl font-black leading-tight">

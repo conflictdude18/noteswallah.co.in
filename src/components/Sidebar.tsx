@@ -25,6 +25,7 @@ import {
   PlusCircle,
   Shield,
   Sparkles,
+  BrainCircuit,
   User,
   Users,
 } from "lucide-react";
@@ -43,12 +44,12 @@ const baseLinks = [
   { href: "/upload", label: "Upload Notes", icon: PlusCircle },
   { href: "/saved-notes", label: "Saved Notes", icon: Heart },
   { href: "/my-notes", label: "My Notes", icon: FileText },
+  { href: "/ai-summary", label: "Notique AI", icon: BrainCircuit },
+  { href: "/premium", label: "Premium", icon: Sparkles },
   { href: "/notifications", label: "Notifications", icon: Bell },
   { href: "/following", label: "Following", icon: Users },
   { href: "/followers", label: "Followers", icon: Users },
   { href: "/feedback", label: "Feedback", icon: MessageSquare },
-  { href: "/premium", label: "Premium", icon: Sparkles },
-  { href: "/profile", label: "Profile", icon: User },
 ];
 
 export default function Sidebar() {
@@ -142,6 +143,46 @@ export default function Sidebar() {
           const active =
             pathname === item.href ||
             (item.href !== "/" && pathname.startsWith(`${item.href}/`));
+
+          if (item.href === "/ai-summary") {
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`group relative flex min-h-[58px] items-center gap-3 overflow-hidden rounded-2xl px-3.5 py-3 text-sm font-medium transition-colors duration-300 ${
+                  active
+                    ? "bg-[linear-gradient(135deg,#06b6d4,#2563eb,#7c3aed)] text-white shadow-[0_0_40px_rgba(34,211,238,0.45)]"
+                    : "bg-[linear-gradient(135deg,rgba(6,182,212,0.18),rgba(37,99,235,0.18),rgba(124,58,237,0.18))] text-cyan-100 hover:text-white hover:shadow-[0_0_35px_rgba(34,211,238,0.28)]"
+                }`}
+              >
+                <div className="pointer-events-none absolute inset-0 opacity-70 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.10),transparent_40%)]" />
+
+                <div className="relative flex items-center gap-3">
+                  <div className="relative z-10 flex h-10 w-10 items-center justify-center rounded-2xl bg-cyan-400/10 ring-1 ring-cyan-300/20">
+                    <div className="relative h-[26px] w-[26px] overflow-hidden rounded-md">
+                      <Image
+                        src="/notique-white.png"
+                        alt="Notique AI"
+                        fill
+                        sizes="26px"
+                        className="object-contain"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="relative z-10 flex flex-col">
+                    <span className="truncate font-black">
+                      {item.label}
+                    </span>
+
+                    <span className="mt-0.5 text-[9px] font-black uppercase tracking-[0.14em] text-cyan-200/80">
+                      Smart AI
+                    </span>
+                  </div>
+                </div>
+              </Link>
+            );
+          }
 
           if (item.href === "/admin") {
             return (

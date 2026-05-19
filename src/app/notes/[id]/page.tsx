@@ -1,5 +1,6 @@
 "use client";
 
+import AISummaryCard from "@/components/AISummaryCard";
 import { sendNotification } from "@/lib/sendNotification";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
@@ -57,6 +58,7 @@ export default function NoteDetailsPage() {
 
   const [note, setNote] = useState<Note | null>(null);
   const [loading, setLoading] = useState(true);
+  const [userData, setUserData] = useState<any>(null);
 
   const [bookmarkId, setBookmarkId] = useState<string | null>(null);
   const isBookmarked = Boolean(bookmarkId);
@@ -146,6 +148,24 @@ export default function NoteDetailsPage() {
 
       increaseViews();
     }, [id]);
+
+        useEffect(() => {
+      async function fetchUserData() {
+        if (!user) return;
+
+        try {
+          const userSnap = await getDoc(doc(db, "users", user.uid));
+
+          if (userSnap.exists()) {
+            setUserData(userSnap.data());
+          }
+        } catch (err) {
+          console.error("USER DATA ERROR:", err);
+        }
+      }
+
+      fetchUserData();
+    }, [user]);
 
   useEffect(() => {
     async function fetchUserActions() {
@@ -635,6 +655,11 @@ export default function NoteDetailsPage() {
               <p className="mt-4 text-sm leading-relaxed text-white/60">
                 {note.description || "No description provided."}
               </p>
+
+              <AISummaryCard
+                text={`${note.title || ""}\n\n${note.description || ""}`}
+                premium={userData?.premium === true}
+              />
 
               <div className="mt-6 grid grid-cols-2 gap-3">
                 <InfoBox label="Subject" value={note.subject || "N/A"} />

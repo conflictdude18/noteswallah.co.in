@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
@@ -26,6 +27,7 @@ import {
   Plus,
   Shield,
   Sparkles,
+  BrainCircuit,
   User,
   Users,
   X,
@@ -181,6 +183,11 @@ export default function BottomNav() {
           icon: Sparkles,
         },
         {
+          href: "/ai-summary",
+          label: "Notique AI",
+          icon: BrainCircuit,
+        },
+        {
           href: "/profile",
           label: "Profile",
           icon: User,
@@ -251,6 +258,8 @@ export default function BottomNav() {
                   item.href === "/admin" ||
                   item.href === "/admin/notifications";
 
+                const ai = item.href === "/ai-summary";
+
                 const badge =
                   "badge" in item &&
                   typeof item.badge === "number"
@@ -263,7 +272,9 @@ export default function BottomNav() {
                     href={item.href}
                     onClick={() => setOpen(false)}
                     className={
-                      admin
+                      ai
+                        ? "relative flex min-h-[112px] flex-col justify-between overflow-hidden rounded-3xl border border-cyan-400/40 bg-[radial-gradient(circle_at_top_right,rgba(34,211,238,0.35),transparent_45%),linear-gradient(135deg,#0f172a,#111827,#0b1120)] p-4 text-white shadow-[0_0_45px_rgba(34,211,238,0.35)]"
+                        : admin
                         ? "relative flex min-h-[112px] flex-col justify-between rounded-3xl border border-red-400/40 bg-gradient-to-br from-red-600 to-red-800 p-4 text-white shadow-[0_0_30px_rgba(239,68,68,0.25)]"
                         : `relative flex min-h-[112px] flex-col justify-between rounded-3xl border p-4 transition ${
                             active
@@ -279,12 +290,28 @@ export default function BottomNav() {
                     )}
 
                     <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/[0.08]">
-                      <Icon size={22} />
+                      <div className="relative h-[22px] w-[22px] overflow-hidden rounded-md">
+                        <Image
+                          src="/notique-white.png"
+                          alt="Notique AI"
+                          fill
+                          sizes="86px"
+                          className="object-contain"
+                        />
+                      </div>
                     </span>
 
-                    <span className="text-sm font-black">
-                      {item.label}
-                    </span>
+                    <div>
+                      <span className="block text-sm font-black">
+                        {item.label}
+                      </span>
+
+                      {ai && (
+                        <span className="mt-1 block text-[10px] font-bold uppercase tracking-wider text-cyan-300">
+                          Powered by AI
+                        </span>
+                      )}
+                    </div>
                   </Link>
                 );
               })}

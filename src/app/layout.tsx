@@ -19,83 +19,57 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://noteswallah.co.in"),
+  metadataBase: new URL("https://www.noteswallah.co.in"),
 
   title: {
-    default: "NotesWallah - Free Study Notes, PDFs & Student Resources",
+    default: "NotesWallah — Free Study Notes, PDFs, PYQs & Assignments",
     template: "%s | NotesWallah",
   },
 
   description:
-    "NotesWallah is a free student notes sharing platform where students can upload, browse, save and download study notes, PDFs, assignments, PYQs and revision material.",
+    "Upload, browse and download free study notes, PDFs, assignments, PYQs and revision material. Built for students to share resources and study smarter.",
 
   keywords: [
     "NotesWallah",
-    "study notes",
-    "free notes PDF",
-    "student notes",
-    "notes sharing platform",
-    "CBSE notes",
-    "Class 10 notes",
-    "Class 11 notes",
-    "Class 12 notes",
-    "JEE notes",
-    "NEET notes",
-    "PYQ PDF",
-    "revision notes",
-    "handwritten notes",
+    "free study notes",
+    "PDF notes",
+    "PYQs",
+    "assignments",
+    "revision material",
     "student resources",
+    "download notes",
+    "upload notes",
   ],
 
-  authors: [{ name: "NotesWallah Team" }],
-  creator: "NotesWallah",
-  publisher: "NotesWallah",
-
-  alternates: {
-    canonical: "/",
-  },
-
-  icons: {
-    icon: "/favicon.ico",
-    shortcut: "/favicon.ico",
-    apple: "/apple-touch-icon.png",
-  },
-
   openGraph: {
-    title: "NotesWallah - Free Study Notes & PDFs",
+    title: "NotesWallah — Free Study Notes, PDFs, PYQs & Assignments",
     description:
-      "Upload, browse, save and download free study notes, PDFs, assignments, PYQs and revision material shared by students.",
-    url: "/",
+      "Upload, browse and download free study notes, PDFs, assignments, PYQs and revision material. Built for students to share resources and study smarter.",
+    url: "https://www.noteswallah.co.in",
     siteName: "NotesWallah",
-    type: "website",
     images: [
       {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "NotesWallah - Free Study Notes and PDFs",
+        alt: "NotesWallah Study Notes Platform",
       },
     ],
+    locale: "en_IN",
+    type: "website",
   },
 
   twitter: {
     card: "summary_large_image",
-    title: "NotesWallah - Free Study Notes & PDFs",
+    title: "NotesWallah — Free Study Notes, PDFs, PYQs & Assignments",
     description:
-      "Upload, browse, save and download free study notes and PDFs shared by students.",
+      "Upload, browse and download free study notes, PDFs, assignments, PYQs and revision material.",
     images: ["/og-image.png"],
   },
 
   robots: {
     index: true,
     follow: true,
-    googleBot: {
-      index: true,
-      follow: true,
-      "max-image-preview": "large",
-      "max-snippet": -1,
-      "max-video-preview": -1,
-    },
   },
 };
 
