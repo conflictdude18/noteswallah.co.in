@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
@@ -61,8 +60,7 @@ export default function BottomNav() {
         const snap = await getDoc(doc(db, "users", user.uid));
 
         setIsAdmin(
-          snap.exists() &&
-            (snap.data() as UserDoc).role === "admin"
+          snap.exists() && (snap.data() as UserDoc).role === "admin"
         );
       } catch (err) {
         console.error("ADMIN CHECK ERROR:", err);
@@ -146,60 +144,24 @@ export default function BottomNav() {
 
   const moreLinks = user
     ? [
-        {
-          href: "/dashboard",
-          label: "Dashboard",
-          icon: LayoutDashboard,
-        },
-        {
-          href: "/my-notes",
-          label: "My Notes",
-          icon: FileText,
-        },
+        { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+        { href: "/my-notes", label: "My Notes", icon: FileText },
         {
           href: "/notifications",
           label: "Notifications",
           icon: Bell,
           badge: unreadCount,
         },
-        {
-          href: "/following",
-          label: "Following Feed",
-          icon: Users,
-        },
-        {
-          href: "/followers",
-          label: "Followers",
-          icon: Users,
-        },
-        {
-          href: "/feedback",
-          label: "Feedback",
-          icon: MessageSquare,
-        },
-        {
-          href: "/premium",
-          label: "Premium",
-          icon: Sparkles,
-        },
-        {
-          href: "/ai-summary",
-          label: "Notique AI",
-          icon: BrainCircuit,
-        },
-        {
-          href: "/profile",
-          label: "Profile",
-          icon: User,
-        },
+        { href: "/following", label: "Following Feed", icon: Users },
+        { href: "/followers", label: "Followers", icon: Users },
+        { href: "/feedback", label: "Feedback", icon: MessageSquare },
+        { href: "/premium", label: "Premium", icon: Sparkles },
+        { href: "/ai-summary", label: "Notique AI", icon: BrainCircuit },
+        { href: "/profile", label: "Profile", icon: User },
 
         ...(isAdmin
           ? [
-              {
-                href: "/admin",
-                label: "Admin",
-                icon: Shield,
-              },
+              { href: "/admin", label: "Admin", icon: Shield },
               {
                 href: "/admin/notifications",
                 label: "Admin Alerts",
@@ -210,16 +172,8 @@ export default function BottomNav() {
           : []),
       ]
     : [
-        {
-          href: "/signin",
-          label: "Sign In",
-          icon: User,
-        },
-        {
-          href: "/signup",
-          label: "Create Account",
-          icon: Sparkles,
-        },
+        { href: "/signin", label: "Sign In", icon: User },
+        { href: "/signup", label: "Create Account", icon: Sparkles },
       ];
 
   return (
@@ -230,7 +184,6 @@ export default function BottomNav() {
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-2xl font-black">More</h2>
-
                 <p className="mt-1 text-xs font-semibold text-white/45">
                   Account, activity and tools
                 </p>
@@ -251,7 +204,6 @@ export default function BottomNav() {
             <div className="grid grid-cols-2 gap-3">
               {moreLinks.map((item) => {
                 const Icon = item.icon;
-
                 const active = isActive(item.href);
 
                 const admin =
@@ -261,8 +213,7 @@ export default function BottomNav() {
                 const ai = item.href === "/ai-summary";
 
                 const badge =
-                  "badge" in item &&
-                  typeof item.badge === "number"
+                  "badge" in item && typeof item.badge === "number"
                     ? item.badge
                     : 0;
 
@@ -273,7 +224,7 @@ export default function BottomNav() {
                     onClick={() => setOpen(false)}
                     className={
                       ai
-                        ? "relative flex min-h-[112px] flex-col justify-between overflow-hidden rounded-3xl border border-cyan-400/40 bg-[radial-gradient(circle_at_top_right,rgba(34,211,238,0.35),transparent_45%),linear-gradient(135deg,#0f172a,#111827,#0b1120)] p-4 text-white shadow-[0_0_45px_rgba(34,211,238,0.35)]"
+                        ? "relative flex min-h-[118px] flex-col justify-between overflow-hidden rounded-3xl border border-cyan-400/30 bg-[radial-gradient(circle_at_top_right,rgba(34,211,238,0.22),transparent_42%),linear-gradient(135deg,#0b1220,#0f172a,#111827)] p-5 text-white shadow-[0_0_35px_rgba(34,211,238,0.22)]"
                         : admin
                         ? "relative flex min-h-[112px] flex-col justify-between rounded-3xl border border-red-400/40 bg-gradient-to-br from-red-600 to-red-800 p-4 text-white shadow-[0_0_30px_rgba(239,68,68,0.25)]"
                         : `relative flex min-h-[112px] flex-col justify-between rounded-3xl border p-4 transition ${
@@ -289,19 +240,19 @@ export default function BottomNav() {
                       </span>
                     )}
 
-                    <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/[0.08]">
-                      <div className="relative h-[22px] w-[22px] overflow-hidden rounded-md">
-                        <Image
-                          src="/notique-white.png"
-                          alt="Notique AI"
-                          fill
-                          sizes="86px"
-                          className="object-contain"
-                        />
-                      </div>
+                    <span
+                      className={
+                        ai
+                          ? "flex h-11 w-11 items-center justify-center rounded-2xl bg-cyan-400/15 text-cyan-200 ring-1 ring-cyan-300/25"
+                          : admin
+                          ? "flex h-11 w-11 items-center justify-center rounded-2xl bg-white/15 text-white"
+                          : "flex h-11 w-11 items-center justify-center rounded-2xl bg-white/[0.08] text-white/75"
+                      }
+                    >
+                      <Icon size={20} strokeWidth={2.2} />
                     </span>
 
-                    <div>
+                    <div className="relative z-10 mt-1">
                       <span className="block text-sm font-black">
                         {item.label}
                       </span>
@@ -336,7 +287,6 @@ export default function BottomNav() {
         <div className="grid grid-cols-5 items-end gap-1">
           {mainLinks.map((item) => {
             const Icon = item.icon;
-
             const active = !open && isActive(item.href);
 
             return (
@@ -355,14 +305,12 @@ export default function BottomNav() {
                       : "flex h-10 w-10 items-center justify-center rounded-2xl text-white/50"
                   }
                 >
-                  <Icon size={20} />
+                  <Icon size={20} strokeWidth={2.2} />
                 </span>
 
                 <span
                   className={`text-[10px] font-black ${
-                    active || item.special
-                      ? "text-white"
-                      : "text-white/45"
+                    active || item.special ? "text-white" : "text-white/45"
                   }`}
                 >
                   {item.label}
