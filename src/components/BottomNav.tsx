@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
@@ -26,7 +27,6 @@ import {
   Plus,
   Shield,
   Sparkles,
-  BrainCircuit,
   User,
   Users,
   X,
@@ -39,13 +39,23 @@ type UserDoc = {
   role?: string;
 };
 
+type NavItem = {
+  href: string;
+  label: string;
+  icon?: React.ElementType;
+  badge?: number;
+  special?: boolean;
+};
+
 export default function BottomNav() {
   const pathname = usePathname();
+  if (pathname.startsWith("/notique")) {
+  return null;
+}
   const { user } = useAuth();
 
   const [open, setOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
-
   const [unreadCount, setUnreadCount] = useState(0);
   const [adminNotificationCount, setAdminNotificationCount] = useState(0);
 
@@ -58,7 +68,6 @@ export default function BottomNav() {
 
       try {
         const snap = await getDoc(doc(db, "users", user.uid));
-
         setIsAdmin(
           snap.exists() && (snap.data() as UserDoc).role === "admin"
         );
@@ -126,7 +135,28 @@ export default function BottomNav() {
     return pathname === href || pathname.startsWith(`${href}/`);
   }
 
-  const mainLinks = [
+  function renderIcon(item: NavItem, size = 20) {
+    if (item.href === "/notique") {
+      return (
+        <div className="relative h-6 w-6 overflow-hidden rounded-md">
+          <Image
+            src="/notique-icon.png"
+            alt="Notique AI"
+            fill
+            sizes="24px"
+            className="object-contain"
+          />
+        </div>
+      );
+    }
+
+    const Icon = item.icon;
+    if (!Icon) return null;
+
+    return <Icon size={size} strokeWidth={2.2} />;
+  }
+
+  const mainLinks: NavItem[] = [
     { href: "/", label: "Home", icon: Home },
     { href: "/browse", label: "Browse", icon: BookOpen },
     {
@@ -142,7 +172,7 @@ export default function BottomNav() {
     },
   ];
 
-  const moreLinks = user
+  const moreLinks: NavItem[] = user
     ? [
         { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
         { href: "/my-notes", label: "My Notes", icon: FileText },
@@ -156,7 +186,7 @@ export default function BottomNav() {
         { href: "/followers", label: "Followers", icon: Users },
         { href: "/feedback", label: "Feedback", icon: MessageSquare },
         { href: "/premium", label: "Premium", icon: Sparkles },
-        { href: "/ai-summary", label: "Notique AI", icon: BrainCircuit },
+        { href: "/notique", label: "Notique AI" },
         { href: "/profile", label: "Profile", icon: User },
 
         ...(isAdmin
@@ -203,19 +233,16 @@ export default function BottomNav() {
           <div className="flex-1 overflow-y-auto px-4 py-5 pb-32">
             <div className="grid grid-cols-2 gap-3">
               {moreLinks.map((item) => {
-                const Icon = item.icon;
                 const active = isActive(item.href);
 
                 const admin =
                   item.href === "/admin" ||
                   item.href === "/admin/notifications";
 
-                const ai = item.href === "/ai-summary";
+                const ai = item.href === "/notique";
 
                 const badge =
-                  "badge" in item && typeof item.badge === "number"
-                    ? item.badge
-                    : 0;
+                  typeof item.badge === "number" ? item.badge : 0;
 
                 return (
                   <Link
@@ -226,15 +253,15 @@ export default function BottomNav() {
                       ai
                         ? "relative flex min-h-[118px] flex-col justify-between overflow-hidden rounded-3xl border border-cyan-400/30 bg-[radial-gradient(circle_at_top_right,rgba(34,211,238,0.22),transparent_42%),linear-gradient(135deg,#0b1220,#0f172a,#111827)] p-5 text-white shadow-[0_0_35px_rgba(34,211,238,0.22)]"
                         : admin
-                        ? "relative flex min-h-[112px] flex-col justify-between rounded-3xl border border-red-400/40 bg-gradient-to-br from-red-600 to-red-800 p-4 text-white shadow-[0_0_30px_rgba(239,68,68,0.25)]"
-                        : `relative flex min-h-[112px] flex-col justify-between rounded-3xl border p-4 transition ${
-                            active
-                              ? "border-white/15 bg-white/[0.09] text-white"
-                              : "border-white/10 bg-white/[0.04] text-white/75"
-                          }`
+                          ? "relative flex min-h-[112px] flex-col justify-between rounded-3xl border border-red-400/40 bg-gradient-to-br from-red-600 to-red-800 p-4 text-white shadow-[0_0_30px_rgba(239,68,68,0.25)]"
+                          : `relative flex min-h-[112px] flex-col justify-between rounded-3xl border p-4 transition ${
+                              active
+                                ? "border-white/15 bg-white/[0.09] text-white"
+                                : "border-white/10 bg-white/[0.04] text-white/75"
+                            }`
                     }
                   >
-                    {Boolean(badge) && badge > 0 && (
+                    {badge > 0 && (
                       <span className="absolute right-3 top-3 rounded-full bg-red-600 px-2 py-0.5 text-[10px] font-black text-white">
                         {badge > 9 ? "9+" : badge}
                       </span>
@@ -243,13 +270,13 @@ export default function BottomNav() {
                     <span
                       className={
                         ai
-                          ? "flex h-11 w-11 items-center justify-center rounded-2xl bg-cyan-400/15 text-cyan-200 ring-1 ring-cyan-300/25"
+                          ? "flex h-11 w-11 items-center justify-center rounded-2xl bg-cyan-400/15 ring-1 ring-cyan-300/25"
                           : admin
-                          ? "flex h-11 w-11 items-center justify-center rounded-2xl bg-white/15 text-white"
-                          : "flex h-11 w-11 items-center justify-center rounded-2xl bg-white/[0.08] text-white/75"
+                            ? "flex h-11 w-11 items-center justify-center rounded-2xl bg-white/15 text-white"
+                            : "flex h-11 w-11 items-center justify-center rounded-2xl bg-white/[0.08] text-white/75"
                       }
                     >
-                      <Icon size={20} strokeWidth={2.2} />
+                      {renderIcon(item)}
                     </span>
 
                     <div className="relative z-10 mt-1">
@@ -259,7 +286,7 @@ export default function BottomNav() {
 
                       {ai && (
                         <span className="mt-1 block text-[10px] font-bold uppercase tracking-wider text-cyan-300">
-                          Powered by AI
+                          Smart AI
                         </span>
                       )}
                     </div>
@@ -286,7 +313,6 @@ export default function BottomNav() {
       <nav className="fixed inset-x-0 bottom-0 z-[10000] border-t border-white/10 bg-[#050505]/95 px-2 pb-3 pt-2 text-white shadow-[0_-18px_50px_rgba(0,0,0,0.7)] backdrop-blur-xl lg:hidden">
         <div className="grid grid-cols-5 items-end gap-1">
           {mainLinks.map((item) => {
-            const Icon = item.icon;
             const active = !open && isActive(item.href);
 
             return (
@@ -301,11 +327,11 @@ export default function BottomNav() {
                     item.special
                       ? "flex h-10 w-10 items-center justify-center rounded-2xl bg-red-600 text-white shadow-lg shadow-red-600/35"
                       : active
-                      ? "flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-black"
-                      : "flex h-10 w-10 items-center justify-center rounded-2xl text-white/50"
+                        ? "flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-black"
+                        : "flex h-10 w-10 items-center justify-center rounded-2xl text-white/50"
                   }
                 >
-                  <Icon size={20} strokeWidth={2.2} />
+                  {renderIcon(item)}
                 </span>
 
                 <span
