@@ -293,7 +293,7 @@ function EmptyState({
   buttonText?: string;
 }) {
   return (
-    <section className="mt-5 rounded-[2rem] border border-white/10 bg-white/[0.04] p-8 text-center shadow-2xl shadow-black/20 sm:p-12">
+    <section className="mt-5 rounded-[2rem] border border-white/10 bg-[#0d0d0d] p-8 text-center sm:p-12">
       <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-[1.5rem] border border-red-500/20 bg-red-500/10 text-red-300">
         {icon}
       </div>
@@ -307,7 +307,7 @@ function EmptyState({
       {href && buttonText && (
         <Link
           href={href}
-          className="mt-8 inline-flex items-center justify-center gap-2 rounded-2xl bg-red-600 px-5 py-3 text-sm font-black text-white transition hover:bg-red-500"
+          className="btn-primary mt-8"
         >
           <Sparkles size={18} />
           {buttonText}

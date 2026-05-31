@@ -5,10 +5,10 @@ import { useRouter } from "next/navigation";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { updateProfile } from "firebase/auth";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
-import { ImagePlus, Save, User } from "lucide-react";
 import { toast } from "sonner";
+import { Save, User } from "lucide-react";
 
-import { auth, db, storage } from "@/firebase/firebase";
+import { db, storage } from "@/firebase/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 
 type UserDoc = {
@@ -124,8 +124,8 @@ export default function SettingsPage() {
   }
 
   return (
-    <main className="mx-auto max-w-3xl space-y-8 pb-6">
-      <section className="rounded-[1.5rem] border border-white/10 bg-[#111111] p-7">
+    <main className="mx-auto max-w-5xl space-y-6">
+      <section className="rounded-[2rem] border border-white/10 bg-[#0d0d0d] p-6 sm:p-8">
         <div className="flex items-center gap-4">
           <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-red-500/10 text-red-300">
             <User size={28} />
@@ -145,7 +145,7 @@ export default function SettingsPage() {
 
       <form
         onSubmit={handleSave}
-        className="rounded-[1.5rem] border border-white/10 bg-[#111111] p-7"
+        className="rounded-[2rem] border border-white/10 bg-[#0d0d0d] p-6 sm:p-8"
       >
         <div className="space-y-5">
           <div>
@@ -193,7 +193,7 @@ export default function SettingsPage() {
               Profile Image
             </label>
 
-            <div className="rounded-2xl border border-white/10 bg-black/20 p-5">
+            <div className="rounded-3xl border border-white/10 bg-black/30 p-6">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
                 {photoURL ? (
                   <img
@@ -231,11 +231,13 @@ export default function SettingsPage() {
               </div>
             </div>
           </div>
-
+          <div className="rounded-2xl border border-red-500/15 bg-red-500/5 p-4 text-sm text-white/60">
+            Complete your profile to help other students recognize and trust your uploads.
+          </div>
           <button
             type="submit"
             disabled={saving}
-            className="btn-primary w-full disabled:cursor-not-allowed disabled:opacity-60"
+            className="btn-primary w-full text-base"
           >
             <Save size={18} />
             {saving ? "Saving..." : "Save Profile"}

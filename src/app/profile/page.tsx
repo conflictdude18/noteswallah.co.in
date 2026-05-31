@@ -214,7 +214,7 @@ export default function ProfilePage() {
         : "New Creator";
 
   return (
-    <main className="min-h-screen overflow-x-hidden bg-[#050505] px-4 py-6 text-white sm:px-6 lg:px-8">
+    <main className="min-h-screen overflow-x-hidden bg-[#050505] px-4 py-4 text-white sm:px-6 sm:py-6 lg:px-8">
       <div className="mx-auto max-w-7xl pb-28 md:pb-10">
         <section className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-gradient-to-br from-white/10 via-white/[0.04] to-red-500/10 p-5 shadow-2xl shadow-black/30 sm:p-7 lg:p-9">
           <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-red-500/20 blur-3xl" />
@@ -256,7 +256,7 @@ export default function ProfilePage() {
               <div className="grid grid-cols-2 gap-3 sm:flex">
                 <Link
                   href="/settings/profile"
-                  className="inline-flex items-center justify-center gap-2 rounded-2xl bg-red-600 px-4 py-3 text-sm font-black text-white transition hover:bg-red-500"
+                  className="btn-primary"
                 >
                   <Settings size={17} />
                   Edit
@@ -264,7 +264,7 @@ export default function ProfilePage() {
 
                 <Link
                   href={`/profile/${user?.uid}`}
-                  className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/[0.05] px-4 py-3 text-sm font-black text-white/80 transition hover:bg-white/[0.08]"
+                  className="btn-secondary"
                 >
                   <UserRound size={17} />
                   Public
@@ -273,7 +273,8 @@ export default function ProfilePage() {
             </div>
 
             <p className="mt-5 rounded-[1.5rem] border border-white/10 bg-black/25 p-4 text-sm leading-7 text-white/65 lg:max-w-3xl">
-              {profile?.bio || "You have not added a bio yet."}
+              {profile?.bio ||
+                "Add a bio from Settings so students can learn more about you and your uploads."}
             </p>
 
             {topSubjects.length > 0 && (
@@ -412,7 +413,7 @@ function ProfileCard({
   return (
     <Link
       href={href}
-      className="rounded-[1.5rem] border border-white/10 bg-white/[0.04] p-4 shadow-2xl shadow-black/20 transition hover:border-red-500/30 hover:bg-white/[0.06]"
+      className="rounded-[1.5rem] border border-white/10 bg-[#0d0d0d] p-4 shadow-2xl shadow-black/20 transition hover:border-red-500/30 hover:bg-white/[0.06]"
     >
       <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-red-500/10 text-red-300">
         {icon}
@@ -437,7 +438,7 @@ function InfoCard({
   value: number;
 }) {
   return (
-    <div className="rounded-[1.5rem] border border-white/10 bg-white/[0.04] p-4 shadow-2xl shadow-black/20">
+    <div className="rounded-[1.5rem] border border-white/10 bg-[#0d0d0d] p-4 shadow-2xl shadow-black/20">
       <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-red-500/10 text-red-300">
         {icon}
       </div>

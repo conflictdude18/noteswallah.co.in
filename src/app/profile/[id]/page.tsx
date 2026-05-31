@@ -289,9 +289,9 @@ export default function PublicProfilePage() {
   }
 
   return (
-    <main className="min-h-screen overflow-x-hidden bg-[#050505] px-4 py-6 text-white sm:px-6 lg:px-8">
+    <main className="min-h-screen overflow-x-hidden bg-[#050505] px-4 py-4 text-white sm:px-6 sm:py-6 lg:px-8">
       <div className="mx-auto max-w-7xl pb-28 md:pb-10">
-        <section className="overflow-hidden rounded-[2rem] border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/30">
+        <section className="overflow-hidden rounded-[2rem] border border-white/10 bg-[#0d0d0d] shadow-2xl shadow-black/30">
           <div className="h-28 border-b border-white/10 bg-gradient-to-r from-red-600/35 via-red-500/10 to-zinc-950 md:h-36" />
 
           <div className="p-5 sm:p-7 lg:p-8">
@@ -346,10 +346,8 @@ export default function PublicProfilePage() {
                   <button
                     onClick={handleFollow}
                     disabled={followLoading}
-                    className={`col-span-2 inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-3 text-sm font-black transition disabled:cursor-not-allowed disabled:opacity-60 md:col-span-1 ${
-                      isFollowing
-                        ? "border border-white/10 bg-white/10 text-white hover:bg-white/15"
-                        : "bg-red-600 text-white hover:bg-red-500"
+                    className={`col-span-2 md:col-span-1 ${
+                      isFollowing ? "btn-secondary" : "btn-primary"
                     }`}
                   >
                     {followLoading && (

@@ -88,8 +88,8 @@ export default function SignUpPage() {
   }
 
   return (
-    <main className="min-h-screen overflow-x-hidden bg-[#050505] px-4 py-6 text-white sm:px-6 lg:px-8">
-      <div className="mx-auto grid max-w-6xl gap-5 pb-28 md:pb-10 lg:grid-cols-[0.95fr_1.05fr] lg:items-stretch">
+    <main className="min-h-screen overflow-x-hidden bg-[#050505] px-4 py-4 text-white sm:px-6 sm:py-6 lg:px-8">
+      <div className="mx-auto grid max-w-6xl gap-5 py-4 md:py-6 lg:min-h-[82vh] lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
         <section className="relative hidden overflow-hidden rounded-[2rem] border border-white/10 bg-gradient-to-br from-white/10 via-white/[0.04] to-red-500/10 p-8 shadow-2xl shadow-black/30 lg:block">
           <div className="absolute -right-10 -top-10 h-44 w-44 rounded-full bg-red-500/20 blur-3xl" />
 
@@ -119,7 +119,7 @@ export default function SignUpPage() {
           </div>
         </section>
 
-        <section className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-white/[0.04] p-5 shadow-2xl shadow-black/20 backdrop-blur-xl sm:p-7 lg:p-8">
+        <section className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-[#0d0d0d] p-5 shadow-2xl shadow-black/30 backdrop-blur-xl sm:p-7 lg:p-8">
           <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-red-500/10 blur-3xl" />
 
           <div className="relative">
@@ -186,8 +186,13 @@ export default function SignUpPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-red-600 px-5 py-4 text-sm font-black text-white transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50"
+                className="btn-primary w-full"
               >
+
+              <p className="text-center text-xs font-semibold text-white/35">
+                Free account • No payment required • Join thousands of students
+              </p>
+
                 {loading ? (
                   <>
                     <Loader2 size={18} className="animate-spin" />

@@ -998,9 +998,15 @@ function InfoRow({ label, value }: { label: string; value?: string }) {
 
 function EmptyState({ title, text }: { title: string; text: string }) {
   return (
-    <section className="rounded-[2rem] border border-white/10 bg-white/[0.035] p-10 text-center shadow-card">
-      <CheckCircle2 className="mx-auto text-green-300" size={48} />
-      <h2 className="mt-5 text-2xl font-black text-white">{title}</h2>
+    <section className="rounded-[2rem] border border-white/10 bg-[#0d0d0d] p-10 text-center">
+      <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-green-500/10 text-green-300">
+        <CheckCircle2 size={34} />
+      </div>
+
+      <h2 className="mt-5 text-2xl font-black text-white">
+        {title}
+      </h2>
+
       <p className="mx-auto mt-3 max-w-md text-sm leading-7 text-white/55">
         {text}
       </p>

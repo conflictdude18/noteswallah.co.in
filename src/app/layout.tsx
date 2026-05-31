@@ -70,14 +70,10 @@ export const metadata: Metadata = {
 
   openGraph: {
     title: "NotesWallah — Free Study Notes, PDFs, PYQs & Assignments",
-
     description:
       "India’s modern student platform to upload, browse and download free study notes, PDFs, assignments, PYQs and revision material.",
-
     url: "https://www.noteswallah.co.in",
-
     siteName: "NotesWallah",
-
     images: [
       {
         url: "/og-image.png",
@@ -86,21 +82,16 @@ export const metadata: Metadata = {
         alt: "NotesWallah Study Platform",
       },
     ],
-
     locale: "en_IN",
     type: "website",
   },
 
   twitter: {
     card: "summary_large_image",
-
     title: "NotesWallah — Free Study Notes, PDFs, PYQs & Assignments",
-
     description:
       "India’s modern student platform to upload, browse and download free study notes, PDFs, assignments, PYQs and revision material.",
-
     images: ["/og-image.png"],
-
     creator: "@noteswallah",
   },
 
@@ -120,8 +111,8 @@ export default function RootLayout({
     "@context": "https://schema.org",
     "@type": "Organization",
     name: "NotesWallah",
-    url: "https://noteswallah.co.in",
-    logo: "https://noteswallah.co.in/logo.png",
+    url: "https://www.noteswallah.co.in",
+    logo: "https://www.noteswallah.co.in/logo.png",
   };
 
   return (
@@ -130,7 +121,7 @@ export default function RootLayout({
       data-scroll-behavior="smooth"
       className={`${geistSans.variable} ${geistMono.variable} antialiased`}
     >
-      <body className="min-h-screen overflow-x-hidden bg-[#050607] pb-24 text-white selection:bg-red-500/30 selection:text-white lg:pb-0">
+      <body className="min-h-screen overflow-x-hidden bg-[#050505] text-white selection:bg-red-500/30 selection:text-white">
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
@@ -138,15 +129,21 @@ export default function RootLayout({
           }}
         />
 
-        <div className="fixed inset-0 -z-10 bg-[#050607]" />
-        <div className="fixed left-[-10%] top-[-10%] -z-10 h-[420px] w-[420px] rounded-full bg-red-500/10 blur-[140px]" />
-        <div className="fixed bottom-[-12%] right-[-10%] -z-10 h-[420px] w-[420px] rounded-full bg-red-700/10 blur-[150px]" />
-        <div className="fixed inset-0 -z-10 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.04),transparent_35%)]" />
-
         <AuthProvider>
           <LayoutClient>{children}</LayoutClient>
 
-          <Toaster richColors theme="dark" position="top-right" />
+          <Toaster
+            richColors
+            theme="dark"
+            position="top-right"
+            toastOptions={{
+              style: {
+                background: "#111111",
+                border: "1px solid rgba(255,255,255,0.1)",
+                color: "#ffffff",
+              },
+            }}
+          />
 
           <Analytics />
         </AuthProvider>
