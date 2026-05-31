@@ -55,10 +55,6 @@ export default function BottomNav() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [adminNotificationCount, setAdminNotificationCount] = useState(0);
-
-  if (pathname.startsWith("/notique")) {
-    return null;
-  }
   
   useEffect(() => {
     async function checkAdmin() {
@@ -206,10 +202,11 @@ export default function BottomNav() {
       ];
 
   const totalBadge = unreadCount + adminNotificationCount;
+  const hideBottomNav = pathname.startsWith("/notique");
 
   return (
     <>
-      {open && (
+      {!hideBottomNav && open && (
         <section className="fixed inset-0 z-[9999] flex flex-col overflow-hidden bg-[#050505] text-white lg:hidden">
           <header className="border-b border-white/10 px-4 py-4">
             <div className="flex items-center justify-between">
@@ -302,8 +299,8 @@ export default function BottomNav() {
           </div>
         </section>
       )}
-
-      <nav className="fixed inset-x-0 bottom-0 z-[10000] border-t border-white/10 bg-[#050505]/95 px-2 pb-2 pt-1.5 text-white backdrop-blur-xl lg:hidden">
+        {!hideBottomNav && (
+          <nav className="fixed inset-x-0 bottom-0 z-[10000] border-t border-white/10 bg-[#050505]/95 px-2 pb-2 pt-1.5 text-white backdrop-blur-xl lg:hidden">
         <div className="grid grid-cols-5 items-end gap-1">
           {mainLinks.map((item) => {
             const active = !open && isActive(item.href);
@@ -370,6 +367,7 @@ export default function BottomNav() {
           </button>
         </div>
       </nav>
-    </>
-  );
+    )}
+  </>
+);
 }

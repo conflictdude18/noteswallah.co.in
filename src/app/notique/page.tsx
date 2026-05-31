@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -16,7 +17,7 @@ import {
   serverTimestamp,
   setDoc,
 } from "firebase/firestore";
-import { Image as ImageIcon, Menu, Send, Upload } from "lucide-react";
+import { Home, Image as ImageIcon, Menu, Send, Upload } from "lucide-react";
 
 import NotiqueSidebar from "@/components/notique/NotiqueSidebar";
 import { useAuth } from "@/contexts/AuthContext";
@@ -37,6 +38,10 @@ type NotiqueChat = {
   id: string;
   title: string;
   lastMessage?: string;
+};
+
+type PdfTextItem = {
+  str: string;
 };
 
 const welcomeMessage: ChatMessage = {
@@ -194,6 +199,7 @@ export default function NotiquePage() {
       merge: true,
     });
   }
+
   async function handleNewChat() {
     setIsFreshChat(true);
     setActiveChatId(null);
@@ -252,7 +258,8 @@ export default function NotiquePage() {
         const content = await page.getTextContent();
 
         extractedText +=
-          content.items.map((item: any) => item.str).join(" ") + "\n";
+          content.items.map((item) => (item as PdfTextItem).str).join(" ") +
+          "\n";
       }
 
       setPdfText(extractedText);
@@ -438,13 +445,24 @@ ${pdfText.slice(0, 12000)}
 
       <main className="flex min-h-screen flex-1 flex-col">
         <div className="sticky top-0 z-20 border-b border-white/10 bg-black/80 backdrop-blur-xl">
-          <div className="flex w-full items-center justify-between px-4 py-4 lg:px-8">
-            <button
-              onClick={() => setSidebarOpen(true)}
-              className="rounded-xl border border-white/10 bg-white/5 p-2 text-zinc-300 lg:hidden"
-            >
-              <Menu className="h-5 w-5" />
-            </button>
+          <div className="flex w-full items-center justify-between gap-3 px-4 py-4 lg:px-8">
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setSidebarOpen(true)}
+                className="rounded-xl border border-white/10 bg-white/5 p-2 text-zinc-300 lg:hidden"
+                aria-label="Open chat sidebar"
+              >
+                <Menu className="h-5 w-5" />
+              </button>
+
+              <Link
+                href="/"
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.05] px-3 py-2 text-xs font-black text-white/70 transition hover:bg-white/[0.08] hover:text-white"
+              >
+                <Home size={16} />
+                Home
+              </Link>
+            </div>
 
             <div className="flex items-center gap-2">
               <button
@@ -454,7 +472,7 @@ ${pdfText.slice(0, 12000)}
                 New Chat
               </button>
 
-              <div className="rounded-full border border-green-500/20 bg-green-500/10 px-3 py-1 text-xs text-green-300">
+              <div className="hidden rounded-full border border-green-500/20 bg-green-500/10 px-3 py-1 text-xs text-green-300 sm:block">
                 Free Access
               </div>
             </div>

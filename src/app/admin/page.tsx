@@ -2,7 +2,7 @@
 
 import { createNotification } from "@/lib/createNotification";
 import type React from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   collection,
@@ -67,9 +67,10 @@ export default function AdminPage() {
   const [fetching, setFetching] = useState(true);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
 
-  const [activeTab, setActiveTab] = useState<AdminTab>("pending");
+  const [activeTab, setActiveTab] = useState<"pending" | "approved" | "rejected" | "reported">("pending");
   const [search, setSearch] = useState("");
   const [previewNote, setPreviewNote] = useState<Note | null>(null);
+  const reviewSectionRef = useRef<HTMLDivElement | null>(null);
 
   const recentNotes = useMemo(() => {
   return [...notes]
@@ -435,17 +436,8 @@ const topUploaders = useMemo(() => {
         </div>
       </section>
 
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-6">
-        <StatCard label="Total Notes" value={stats.total} icon={<FileText size={22} />} />
-        <StatCard label="Pending" value={stats.pending} icon={<Clock3 size={22} />} />
-        <StatCard label="Approved" value={stats.approved} icon={<CheckCircle2 size={22} />} />
-        <StatCard label="Rejected" value={stats.rejected} icon={<XCircle size={22} />} />
-        <StatCard label="Reports" value={stats.reports} icon={<AlertTriangle size={22} />} />
-        <StatCard label="Uploaders" value={stats.users} icon={<Users size={22} />} />
-      </section>
-
       <section className="grid gap-5 xl:grid-cols-[1.1fr_0.9fr]">
-        <div className="rounded-[2rem] border border-white/10 bg-white/[0.035] p-5 shadow-card">
+        <div className="min-w-0 overflow-hidden rounded-[2rem] border border-white/10 bg-white/[0.035] p-5 shadow-card">
           <div className="mb-5 flex items-center justify-between">
             <div>
               <p className="text-xs font-black uppercase tracking-[0.22em] text-white/35">
@@ -462,7 +454,7 @@ const topUploaders = useMemo(() => {
             </div>
           </div>
 
-          <div className="space-y-3">
+          <div className="min-w-0 space-y-3 overflow-hidden">
             {recentNotes.length === 0 ? (
               <p className="text-sm text-white/45">
                 No recent note activity found.
@@ -471,10 +463,10 @@ const topUploaders = useMemo(() => {
               recentNotes.map((note) => (
                 <div
                   key={note.id}
-                  className="flex items-center justify-between gap-4 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3"
+                  className="flex min-w-0 items-center justify-between gap-4 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3"
                 >
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-black text-white">
+                  <div className="min-w-0 flex-1 overflow-hidden">
+                    <p className="max-w-full truncate text-sm font-black text-white">
                       {note.title || "Untitled Note"}
                     </p>
 
@@ -591,7 +583,15 @@ const topUploaders = useMemo(() => {
           title="Review Pending"
           text={`${stats.pending} notes waiting`}
           icon={<Clock3 size={20} />}
-          onClick={() => setActiveTab("pending")}
+          onClick={() => {
+            setActiveTab("pending");
+            setTimeout(() => {
+              reviewSectionRef.current?.scrollIntoView({
+                behavior: "smooth",
+                block: "start",
+              });
+            }, 50);
+          }}
         />
 
         <QuickActionCard
@@ -645,6 +645,8 @@ const topUploaders = useMemo(() => {
         </div>
       </section>
 
+
+
       {fetching ? (
         <section className="glass-card rounded-[2rem] p-8">
           <div className="flex items-center gap-3 text-sm font-semibold text-white/60">
@@ -669,9 +671,21 @@ const topUploaders = useMemo(() => {
               />
             ))
           )}
+
+      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-6">
+        <StatCard label="Total Notes" value={stats.total} icon={<FileText size={22} />} />
+        <StatCard label="Pending" value={stats.pending} icon={<Clock3 size={22} />} />
+        <StatCard label="Approved" value={stats.approved} icon={<CheckCircle2 size={22} />} />
+        <StatCard label="Rejected" value={stats.rejected} icon={<XCircle size={22} />} />
+        <StatCard label="Reports" value={stats.reports} icon={<AlertTriangle size={22} />} />
+        <StatCard label="Uploaders" value={stats.users} icon={<Users size={22} />} />
+      </section>
+
         </section>
+
+        
       ) : (
-        <section className="space-y-5">
+        <section ref={reviewSectionRef} className="space-y-5 scroll-mt-24">
           {filteredNotes.length === 0 ? (
             <EmptyState
               title="No notes found"
