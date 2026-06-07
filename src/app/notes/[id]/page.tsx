@@ -421,30 +421,30 @@ export default function NoteDetailsPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-[#050505] px-4 py-8 text-white">
+      <div className="flex min-h-[70vh] items-center justify-center text-white">
         <div className="mx-auto flex min-h-[70vh] max-w-6xl items-center justify-center">
           <div className="text-center">
             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl border border-white/10 bg-white/5">
               <RefreshCw className="animate-spin text-red-500" size={30} />
             </div>
 
-            <h1 className="mt-5 text-xl font-black">Loading note</h1>
+            <h1 className="mt-4 text-xl font-black">Loading note</h1>
 
             <p className="mt-2 text-sm text-white/50">
               Opening PDF and note details...
             </p>
           </div>
         </div>
-      </main>
+      </div>
     );
   }
 
   if (!note) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-[#050505] px-4 text-white">
-        <div className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-8 text-center">
+        <div className="rounded-3xl border border-white/10  p-8 text-center">
           <FileText size={42} className="mx-auto text-red-400" />
-          <h1 className="mt-5 text-3xl font-black">Note Not Found</h1>
+          <h1 className="mt-4 text-3xl font-black">Note Not Found</h1>
 
           <button
             onClick={() => router.push("/browse")}
@@ -458,11 +458,11 @@ export default function NoteDetailsPage() {
   }
 
   return (
-    <main className="min-h-screen overflow-x-hidden bg-[#050505] px-4 py-6 text-white sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-7xl pb-32 lg:pb-10">
+    <div className="pb-28 text-white md:pb-10">
+      <div className="mx-auto max-w-7xl7xl pb-32 lg:pb-10">
         <button
           onClick={() => router.push("/browse")}
-          className="group inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-2.5 text-sm font-bold text-white/60 transition hover:text-white"
+          className="group inline-flex items-center gap-2 rounded-2xl border border-white/10  px-4 py-2.5 text-sm font-bold text-white/60 transition hover:text-white"
         >
           <ArrowLeft
             size={16}
@@ -471,9 +471,9 @@ export default function NoteDetailsPage() {
           Back
         </button>
 
-        <div className="mt-5 grid gap-5 lg:grid-cols-[1.5fr_0.75fr] lg:gap-8">
+        <div className="mt-4 grid gap-5 lg:grid-cols-[1.5fr_0.75fr] lg:gap-8">
           <div className="space-y-5 lg:space-y-6">
-            <div className="overflow-hidden rounded-[2rem] border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/30">
+            <div className="overflow-hidden rounded-3xl border border-white/10   shadow-black/30">
               <div className="flex items-center justify-between gap-3 border-b border-white/10 bg-black/30 px-4 py-3">
                 <div className="flex min-w-0 items-center gap-3">
                   <div className="rounded-2xl bg-red-500/10 p-2 text-red-300">
@@ -507,7 +507,7 @@ export default function NoteDetailsPage() {
                 className="h-[62vh] w-full bg-black md:h-[82vh]"
               />
             </div>
-            <section className="rounded-[2rem] border border-yellow-500/20 bg-yellow-500/5 p-4 md:p-5">
+            <section className="rounded-3xl border border-yellow-500/20 bg-yellow-500/5 p-4 md:p-5">
               {/* MOBILE DISCLAIMER */}
               <div className="flex items-center gap-2 md:hidden">
                 <div className="rounded-xl bg-yellow-500/10 p-2 text-yellow-400">
@@ -554,7 +554,7 @@ export default function NoteDetailsPage() {
               </div>
             </section>
 
-            <section className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-5 shadow-2xl shadow-black/20 sm:p-6">
+            <section className="rounded-3xl border border-white/10  p-5  sm:p-6">
               <div className="flex items-center gap-3">
                 <MessageCircle className="text-red-500" size={22} />
                 <h2 className="text-2xl font-black">
@@ -639,8 +639,8 @@ export default function NoteDetailsPage() {
             </section>
           </div>
 
-          <div className="order-first space-y-5 lg:order-last lg:space-y-6">
-            <div className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-5 shadow-2xl shadow-black/20 backdrop-blur-xl sm:p-6">
+          <div className="space-y-5 lg:order-last lg:space-y-6">
+            <div className="rounded-3xl border border-white/10  p-5  backdrop-blur-xl sm:p-6">
               <div className="mb-4 inline-flex rounded-full border border-red-500/20 bg-red-500/10 px-4 py-2 text-xs font-black text-red-400">
                 Verified Study Material
               </div>
@@ -735,7 +735,7 @@ export default function NoteDetailsPage() {
               </div>
             </div>
 
-            <div className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-5 shadow-2xl shadow-black/20 backdrop-blur-xl sm:p-6">
+            <div className="rounded-3xl border border-white/10  p-5  backdrop-blur-xl sm:p-6">
               <p className="text-xs font-bold uppercase tracking-widest text-white/40">
                 Uploaded By
               </p>
@@ -755,13 +755,13 @@ export default function NoteDetailsPage() {
 
               <button
                 onClick={() => router.push(`/profile/${note.uploaderId}`)}
-                className="mt-5 w-full rounded-2xl border border-white/10 bg-white/5 px-5 py-3 text-sm font-black text-white/70 transition hover:bg-white/10 hover:text-white"
+                className="mt-4 w-full rounded-2xl border border-white/10 bg-white/5 px-5 py-3 text-sm font-black text-white/70 transition hover:bg-white/10 hover:text-white"
               >
                 View Profile
               </button>
             </div>
 
-            <div className="rounded-[2rem] border border-green-500/20 bg-green-500/5 p-5">
+            <div className="rounded-3xl border border-green-500/20 bg-green-500/5 p-5">
               <p className="text-sm font-black text-green-400">
                 Safe Download
               </p>
@@ -814,7 +814,7 @@ export default function NoteDetailsPage() {
 
       {reportOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-lg rounded-[2rem] border border-white/10 bg-zinc-950 p-5 text-white shadow-2xl sm:p-6">
+          <div className="w-full max-w-lg rounded-3xl border border-white/10 bg-zinc-950 p-5 text-white  sm:p-6">
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-black">Report Note</h2>
 
@@ -891,7 +891,7 @@ export default function NoteDetailsPage() {
           </div>
         </div>
       )}
-    </main>
+    </div>
   );
 }
 

@@ -301,8 +301,7 @@ export default function UploadPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-[#050505] px-4 py-8 text-white">
-        <div className="mx-auto flex min-h-[70vh] max-w-5xl items-center justify-center">
+        <div className="flex min-h-[70vh] items-center justify-center text-white">
           <div className="text-center">
             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl border border-white/10 bg-white/5">
               <RefreshCw className="animate-spin text-red-500" size={30} />
@@ -313,14 +312,12 @@ export default function UploadPage() {
             </p>
           </div>
         </div>
-      </main>
     );
   }
 
   return (
-    <main className="min-h-screen overflow-x-hidden bg-[#050505] px-4 py-6 text-white sm:px-6 lg:px-8">
-      <section className="mx-auto max-w-6xl pb-28 md:pb-10">
-        <div className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-gradient-to-br from-white/10 via-white/[0.04] to-red-500/10 p-5 shadow-2xl shadow-black/30 sm:p-7 lg:p-9">
+      <div className="space-y-5 pb-28 text-white md:pb-10">
+        <div className="relative overflow-hidden">
           <div className="absolute -right-12 -top-12 h-44 w-44 rounded-full bg-red-500/20 blur-3xl" />
 
           <div className="relative grid gap-7 lg:grid-cols-[1fr_360px] lg:items-end">
@@ -533,8 +530,7 @@ export default function UploadPage() {
             </p>
           </div>
         </form>
-      </section>
-    </main>
+      </div>
   );
 }
 

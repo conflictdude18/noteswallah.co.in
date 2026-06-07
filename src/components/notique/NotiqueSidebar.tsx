@@ -175,9 +175,9 @@ export default function NotiqueSidebar({
         </div>
 
         <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.04] p-4">
-          <p className="text-sm font-bold text-white">Free Beta</p>
+          <p className="text-sm font-bold text-white">Notice :</p>
           <p className="mt-1 text-xs leading-5 text-white/45">
-            Notique is free for all students during beta.
+            Notique is free for all in testing mode.
           </p>
         </div>
       </aside>

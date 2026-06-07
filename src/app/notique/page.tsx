@@ -16,18 +16,8 @@ import {
   query,
   serverTimestamp,
   setDoc,
-  getDoc,
-  updateDoc,
 } from "firebase/firestore";
-import {
-  Crown,
-  Home,
-  Image as ImageIcon,
-  Lock,
-  Menu,
-  Send,
-  Upload,
-} from "lucide-react";
+import { Home, Image as ImageIcon, Menu, Send, Upload } from "lucide-react";
 
 import NotiqueSidebar from "@/components/notique/NotiqueSidebar";
 import { useAuth } from "@/contexts/AuthContext";
@@ -48,13 +38,6 @@ type NotiqueChat = {
   id: string;
   title: string;
   lastMessage?: string;
-};
-
-type PremiumState = {
-  premium: boolean;
-  trialActive: boolean;
-  trialEndsAt: string | null;
-  dailyMessages: number;
 };
 
 type PdfTextItem = {
@@ -85,12 +68,6 @@ export default function NotiquePage() {
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isFreshChat, setIsFreshChat] = useState(true);
-  const [premiumState, setPremiumState] = useState<PremiumState>({
-  premium: false,
-  trialActive: false,
-  trialEndsAt: null,
-  dailyMessages: 0,
-});
 
   const bottomRef = useRef<HTMLDivElement | null>(null);
 
@@ -102,56 +79,6 @@ export default function NotiquePage() {
     if (loading) return;
     if (!user) router.push("/signin");
   }, [user, loading, router]);
-
-  useEffect(() => {
-  async function loadPremiumState() {
-    if (!user) return;
-
-    const userRef = doc(db, "users", user.uid);
-    const userSnap = await getDoc(userRef);
-
-    if (!userSnap.exists()) return;
-
-    const userData = userSnap.data();
-
-    let freeTrialStartedAt = userData.freeTrialStartedAt || null;
-    let freeTrialEndsAt = userData.freeTrialEndsAt || null;
-
-    if (!freeTrialStartedAt || !freeTrialEndsAt) {
-      freeTrialStartedAt = new Date().toISOString();
-      freeTrialEndsAt = new Date(
-        Date.now() + 3 * 24 * 60 * 60 * 1000
-      ).toISOString();
-
-      await updateDoc(userRef, {
-        notiquePremium: Boolean(userData.notiquePremium),
-        premiumPlan: userData.premiumPlan || "free",
-        freeTrialStartedAt,
-        freeTrialEndsAt,
-        premiumStartedAt: userData.premiumStartedAt || null,
-        premiumExpiresAt: userData.premiumExpiresAt || null,
-      });
-    }
-
-    const todayKey = new Date().toISOString().slice(0, 10);
-    const notiqueUsage = userData.notiqueUsage || {};
-    const dailyMessages =
-      notiqueUsage.date === todayKey ? Number(notiqueUsage.messages || 0) : 0;
-
-    const premium = Boolean(userData.notiquePremium);
-    const trialActive =
-      !premium && new Date(freeTrialEndsAt).getTime() > Date.now();
-
-    setPremiumState({
-      premium,
-      trialActive,
-      trialEndsAt: freeTrialEndsAt,
-      dailyMessages,
-    });
-  }
-
-  loadPremiumState();
-}, [user]);
 
   useEffect(() => {
     if (!user) return;
@@ -257,11 +184,10 @@ export default function NotiquePage() {
                 .replace(/[^\w\s]/g, "")
                 .trim()
                 .split(/\s+/)
-                .slice(0, 2)
+                .slice(0, 4)
                 .join(" ") || "New Chat",
             lastMessage: content.slice(0, 90),
             updatedAt: serverTimestamp(),
-            createdAt: serverTimestamp(),
           }
         : {
             lastMessage: content.slice(0, 90),
@@ -376,45 +302,8 @@ export default function NotiquePage() {
     });
   }
 
-  const canUseNotique = premiumState.premium || premiumState.trialActive;
-const dailyLimitReached =
-  !premiumState.premium && premiumState.dailyMessages >= 20;
-
-async function updateDailyUsage() {
-  if (!user || premiumState.premium) return;
-
-  const todayKey = new Date().toISOString().slice(0, 10);
-  const nextCount = premiumState.dailyMessages + 1;
-
-  await setDoc(
-    doc(db, "users", user.uid),
-    {
-      notiqueUsage: {
-        date: todayKey,
-        messages: nextCount,
-      },
-    },
-    { merge: true }
-  );
-
-  setPremiumState((prev) => ({
-    ...prev,
-    dailyMessages: nextCount,
-  }));
-}
-
   async function handleSend() {
     if ((!message.trim() && !selectedPDF && !selectedImage) || sending || !user) {
-      return;
-    }
-
-    if (!canUseNotique) {
-  router.push("/notique-premium");
-  return;
-}
-
-    if (dailyLimitReached) {
-      router.push("/notique-premium");
       return;
     }
 
@@ -428,12 +317,14 @@ async function updateDailyUsage() {
         ? userMessage || "Describe this image."
         : userMessage;
 
+    const localImagePreview = selectedImage ? imagePreview : undefined;
+
     setMessages((prev) => [
       ...prev,
       {
         role: "user",
         content: userContent,
-        imagePreview: selectedImage ? imagePreview : undefined,
+        imagePreview: localImagePreview,
         attachments: selectedPDF
           ? [
               {
@@ -474,7 +365,6 @@ async function updateDailyUsage() {
       );
 
       await saveMessage(chatId, "user", userContent, uploadedAttachments);
-      await updateDailyUsage();
 
       const finalPrompt = selectedPDF
         ? `
@@ -559,6 +449,7 @@ ${pdfText.slice(0, 12000)}
           <div className="flex w-full items-center justify-between gap-3 px-4 py-4 lg:px-8">
             <div className="flex items-center gap-2">
               <button
+                type="button"
                 onClick={() => setSidebarOpen(true)}
                 className="rounded-xl border border-white/10 bg-white/5 p-2 text-zinc-300 lg:hidden"
                 aria-label="Open chat sidebar"
@@ -575,39 +466,13 @@ ${pdfText.slice(0, 12000)}
               </Link>
             </div>
 
-            <div className="flex items-center gap-2">
-              <button
-                onClick={handleNewChat}
-                className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-zinc-300 transition hover:bg-white/10 hover:text-white"
-              >
-                New Chat
-              </button>
-
-              <Link
-                href="/notique-premium"
-                className={`hidden items-center gap-1 rounded-full border px-3 py-1 text-xs font-bold sm:inline-flex ${
-                  premiumState.premium
-                    ? "border-yellow-500/20 bg-yellow-500/10 text-yellow-300"
-                    : premiumState.trialActive
-                      ? "border-green-500/20 bg-green-500/10 text-green-300"
-                      : "border-red-500/20 bg-red-500/10 text-red-300"
-                }`}
-              >
-                {premiumState.premium ? (
-                  <>
-                    <Crown size={13} />
-                    Premium
-                  </>
-                ) : premiumState.trialActive ? (
-                  <>Trial · {Math.max(0, 20 - premiumState.dailyMessages)} left</>
-                ) : (
-                  <>
-                    <Lock size={13} />
-                    Upgrade
-                  </>
-                )}
-              </Link>
-            </div>
+            <button
+              type="button"
+              onClick={handleNewChat}
+              className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-black text-zinc-300 transition hover:bg-white/10 hover:text-white"
+            >
+              New Chat
+            </button>
           </div>
         </div>
 
@@ -621,10 +486,10 @@ ${pdfText.slice(0, 12000)}
                 }`}
               >
                 <div
-                  className={`max-w-[92%] rounded-3xl px-4 py-3 text-sm leading-relaxed shadow-lg md:max-w-[75%] md:px-5 md:py-4 ${
+                  className={`max-w-[92%] rounded-3xl px-4 py-3 text-sm leading-relaxed md:max-w-[75%] md:px-5 md:py-4 ${
                     msg.role === "user"
-                      ? "bg-cyan-500 text-black"
-                      : "border border-white/10 bg-white/5 text-zinc-200"
+                      ? "bg-red-600 text-white"
+                      : "border border-white/10 bg-white/[0.045] text-zinc-200"
                   }`}
                 >
                   {msg.role === "user" ? (
@@ -651,7 +516,7 @@ ${pdfText.slice(0, 12000)}
                             href={file.url || "#"}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="block rounded-2xl border border-black/10 bg-black/10 px-4 py-3 text-sm"
+                            className="block rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm"
                           >
                             📄 {file.name}
                           </a>
@@ -661,9 +526,11 @@ ${pdfText.slice(0, 12000)}
                       <div className="whitespace-pre-wrap">{msg.content}</div>
                     </div>
                   ) : (
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                      {msg.content}
-                    </ReactMarkdown>
+                    <div className="prose prose-invert max-w-none prose-p:leading-7 prose-pre:bg-black/40 prose-pre:text-white prose-code:text-red-200">
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                        {msg.content}
+                      </ReactMarkdown>
+                    </div>
                   )}
                 </div>
               </div>
@@ -671,7 +538,7 @@ ${pdfText.slice(0, 12000)}
 
             {sending && (
               <div className="flex justify-start">
-                <div className="flex items-center gap-2 rounded-3xl border border-white/10 bg-white/5 px-5 py-4 text-sm text-zinc-400">
+                <div className="flex items-center gap-2 rounded-3xl border border-white/10 bg-white/[0.045] px-5 py-4 text-sm text-zinc-400">
                   <span>Notique is thinking</span>
                   <span className="flex gap-1">
                     <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-zinc-400" />
@@ -686,11 +553,12 @@ ${pdfText.slice(0, 12000)}
           </div>
 
           <div className="shrink-0 pb-3 pt-3">
-            <div className="rounded-[1.5rem] border border-white/10 bg-zinc-950/95 p-3 shadow-2xl backdrop-blur-xl lg:rounded-[2rem]">
+            <div className="rounded-3xl border border-white/10 bg-zinc-950/95 p-3 backdrop-blur-xl">
               {selectedPDF && (
                 <div className="mb-3 flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-zinc-300">
                   <span className="truncate">📄 {selectedPDF.name}</span>
                   <button
+                    type="button"
                     onClick={() => {
                       setSelectedPDF(null);
                       setPdfText("");
@@ -723,6 +591,7 @@ ${pdfText.slice(0, 12000)}
                     </div>
 
                     <button
+                      type="button"
                       onClick={clearSelectedImage}
                       className="text-sm text-zinc-400 hover:text-white"
                     >
@@ -733,13 +602,7 @@ ${pdfText.slice(0, 12000)}
               )}
 
               <div className="flex items-end gap-2">
-                <label
-                  className={`shrink-0 rounded-2xl p-3 transition ${
-                    canUseNotique && !dailyLimitReached
-                      ? "cursor-pointer text-zinc-400 hover:bg-white/10 hover:text-white"
-                      : "cursor-not-allowed text-zinc-700"
-                  }`}
-                >
+                <label className="shrink-0 cursor-pointer rounded-2xl p-3 text-zinc-400 transition hover:bg-white/10 hover:text-white">
                   <Upload className="h-5 w-5" />
                   <input
                     type="file"
@@ -749,13 +612,7 @@ ${pdfText.slice(0, 12000)}
                   />
                 </label>
 
-                <label
-                  className={`shrink-0 rounded-2xl p-3 transition ${
-                    canUseNotique && !dailyLimitReached
-                      ? "cursor-pointer text-zinc-400 hover:bg-white/10 hover:text-white"
-                      : "cursor-not-allowed text-zinc-700"
-                  }`}
-                >
+                <label className="shrink-0 cursor-pointer rounded-2xl p-3 text-zinc-400 transition hover:bg-white/10 hover:text-white">
                   <ImageIcon className="h-5 w-5" />
                   <input
                     type="file"
@@ -790,28 +647,19 @@ ${pdfText.slice(0, 12000)}
                 />
 
                 <button
+                  type="button"
                   onClick={handleSend}
-                disabled={
-                  sending ||
-                  !canUseNotique ||
-                  dailyLimitReached ||
-                  (!message.trim() && !selectedPDF && !selectedImage)
-                }
-                  className="shrink-0 rounded-2xl bg-cyan-500 p-3 text-black transition hover:scale-105 disabled:cursor-not-allowed disabled:opacity-40"
+                  disabled={
+                    sending || (!message.trim() && !selectedPDF && !selectedImage)
+                  }
+                  className="shrink-0 rounded-2xl bg-red-600 p-3 text-white transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   <Send className="h-5 w-5" />
                 </button>
               </div>
 
               <p className="mt-3 text-center text-[11px] leading-snug text-zinc-500">
-                {premiumState.premium
-                  ? "Notique Premium active. Always verify important answers."
-                  : premiumState.trialActive
-                    ? `Free trial active · ${Math.max(
-                        0,
-                        20 - premiumState.dailyMessages
-                      )} messages left today.`
-                  : "Free trial ended. Upgrade to continue using Notique."}
+                Notique is free for all students. Always verify important answers.
               </p>
             </div>
           </div>

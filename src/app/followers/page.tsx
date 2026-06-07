@@ -127,8 +127,7 @@ export default function FollowersPage() {
 
   if (loading || fetching) {
     return (
-      <main className="min-h-screen bg-[#050505] px-4 py-8 text-white">
-        <div className="mx-auto flex min-h-[70vh] max-w-5xl items-center justify-center">
+        <div className="flex min-h-[70vh] items-center justify-center text-white">
           <div className="text-center">
             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl border border-white/10 bg-white/5">
               <RefreshCw className="animate-spin text-red-500" size={30} />
@@ -141,14 +140,12 @@ export default function FollowersPage() {
             </p>
           </div>
         </div>
-      </main>
     );
   }
 
   return (
-    <main className="min-h-screen bg-[#050505] px-4 py-6 text-white sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-6xl">
-        <section className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-gradient-to-br from-white/10 via-white/[0.04] to-red-500/10 p-5 shadow-2xl shadow-black/30 sm:p-7 lg:p-9">
+      <div className="space-y-5 pb-28 text-white md:pb-10">
+        <section className="relative overflow-hidden">
           <div className="absolute -right-16 -top-16 h-44 w-44 rounded-full bg-red-500/20 blur-3xl" />
 
           <div className="relative flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
@@ -178,7 +175,7 @@ export default function FollowersPage() {
         </section>
 
         {followers.length > 0 && (
-          <section className="sticky top-0 z-30 -mx-4 mt-4 border-b border-white/10 bg-[#050505]/90 px-4 py-3 backdrop-blur-xl sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:px-0 sm:py-0">
+          <section className="sticky top-0 z-30 border-b border-white/10 bg-[#050505]/90 py-3 backdrop-blur-xl sm:static sm:border-0 sm:bg-transparent sm:py-0">
             <div className="rounded-[1.5rem] border border-white/10 bg-white/[0.045] p-3 sm:mt-5">
               <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-black/30 px-4 py-3.5">
                 <Search size={18} className="shrink-0 text-white/40" />
@@ -219,7 +216,7 @@ export default function FollowersPage() {
             text="Try searching with another name, email, or role."
           />
         ) : (
-          <section className="mt-5 grid gap-4 pb-24 md:grid-cols-2 xl:grid-cols-3">
+          <section className="grid gap-3 pb-24 md:grid-cols-2 xl:grid-cols-3">
             {filteredFollowers.map((person) => {
               const displayName = getDisplayName(person);
               const photoURL = person.photoURL || person.avatarUrl || "";
@@ -228,7 +225,7 @@ export default function FollowersPage() {
                 <Link
                   key={person.id}
                   href={`/profile/${person.id}`}
-                  className="group overflow-hidden rounded-[1.6rem] border border-white/10 bg-white/[0.04] p-4 shadow-2xl shadow-black/20 transition hover:border-red-500/30 hover:bg-white/[0.06] sm:p-5"
+                  className="group overflow-hidden rounded-3xl border border-white/10 bg-white/[0.035] p-4 transition hover:border-red-500/30 hover:bg-white/[0.055] sm:p-5"
                 >
                   <div className="flex items-center gap-4">
                     {photoURL ? (
@@ -275,7 +272,6 @@ export default function FollowersPage() {
           </section>
         )}
       </div>
-    </main>
   );
 }
 

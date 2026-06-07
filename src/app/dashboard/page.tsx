@@ -142,13 +142,18 @@ export default function DashboardPage() {
   }, [notes]);
 
   const recentNotes = useMemo(() => {
-    return [...notes].slice(0, 5);
+    return [...notes]
+      .sort((a: any, b: any) => {
+        const aTime = a.createdAt?.seconds || 0;
+        const bTime = b.createdAt?.seconds || 0;
+        return bTime - aTime;
+      })
+      .slice(0, 5);
   }, [notes]);
 
   if (loading || fetching) {
     return (
-      <main className="min-h-screen bg-[#050505] px-4 py-8 text-white">
-        <div className="mx-auto flex min-h-[70vh] max-w-7xl items-center justify-center">
+       <div className="flex min-h-[70vh] items-center justify-center text-white">
           <div className="text-center">
             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl border border-white/10 bg-white/5">
               <RefreshCw className="animate-spin text-red-500" size={30} />
@@ -161,14 +166,12 @@ export default function DashboardPage() {
             </p>
           </div>
         </div>
-      </main>
     );
   }
 
   return (
-    <main className="min-h-screen overflow-x-hidden bg-[#050505] px-4 py-6 text-white sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-7xl pb-28 md:pb-10">
-        <section className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-gradient-to-br from-white/10 via-white/[0.04] to-red-500/10 p-5 shadow-2xl shadow-black/30 sm:p-7 lg:p-9">
+      <div className="space-y-5 pb-28 text-white md:pb-10">
+        <section className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.035] p-5 sm:p-7 lg:p-8">
           <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-red-500/20 blur-3xl" />
 
           <div className="relative flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
@@ -474,7 +477,6 @@ export default function DashboardPage() {
           </aside>
         </section>
       </div>
-    </main>
   );
 }
 

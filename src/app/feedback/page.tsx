@@ -56,10 +56,8 @@ export default function FeedbackPage() {
   }
 
   return (
-    <main className="min-h-screen overflow-x-hidden bg-[#050505] px-4 py-6 text-white sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-7xl pb-28 md:pb-10">
-        <section className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-gradient-to-br from-white/10 via-white/[0.04] to-red-500/10 p-5 shadow-2xl shadow-black/30 sm:p-7 lg:p-9">
-          <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-red-500/20 blur-3xl" />
+    <div className="space-y-5 pb-28 text-white md:pb-10">
+        <section className="relative overflow-hidden">
 
           <div className="relative max-w-3xl">
             <div className="inline-flex items-center gap-2 rounded-full border border-red-500/20 bg-red-500/10 px-4 py-2 text-xs font-black text-red-300">
@@ -79,7 +77,7 @@ export default function FeedbackPage() {
         </section>
 
         <section className="mt-5 grid gap-5 xl:grid-cols-[1fr_0.75fr]">
-          <div className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-5 shadow-2xl shadow-black/20 backdrop-blur-xl sm:p-7 lg:p-8">
+          <div className="rounded-3xl border border-white/10 bg-white/[0.035] p-5 sm:p-7 lg:p-8">
             <div className="mb-7 flex items-start gap-4">
               <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-red-500/20 bg-red-500/10 text-red-300">
                 <MessageSquare size={26} />
@@ -199,7 +197,6 @@ export default function FeedbackPage() {
           </aside>
         </section>
       </div>
-    </main>
   );
 }
 
@@ -213,7 +210,7 @@ function InfoCard({
   description: string;
 }) {
   return (
-    <div className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-5 shadow-2xl shadow-black/20 sm:p-6">
+    <div className="rounded-3xl border border-white/10 bg-white/[0.035] p-5 sm:p-6">
       <div className="flex h-13 w-13 items-center justify-center rounded-2xl border border-red-500/20 bg-red-500/10 text-red-300">
         {icon}
       </div>

@@ -17,7 +17,7 @@ import {
 
 import {
   Bell,
-  BookOpen,
+  LibraryBig,
   FileText,
   Heart,
   Home,
@@ -56,7 +56,6 @@ export default function BottomNav() {
   const [open, setOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [adminNotificationCount, setAdminNotificationCount] = useState(0);
 
   useEffect(() => {
     async function checkAdmin() {
@@ -96,32 +95,6 @@ export default function BottomNav() {
     return () => unsubscribe();
   }, [user]);
 
-  useEffect(() => {
-    if (!user || !isAdmin) {
-      setAdminNotificationCount(0);
-      return;
-    }
-
-    const adminQuery = query(
-      collection(db, "adminNotifications"),
-      where("read", "==", false)
-    );
-
-    const unsubscribe = onSnapshot(adminQuery, (snap) => {
-      setAdminNotificationCount(snap.size);
-    });
-
-    return () => unsubscribe();
-  }, [user, isAdmin]);
-
-  useEffect(() => {
-    document.body.style.overflow = open ? "hidden" : "auto";
-
-    return () => {
-      document.body.style.overflow = "auto";
-    };
-  }, [open]);
-
   async function handleLogout() {
     await signOut(auth);
     window.location.href = "/";
@@ -132,15 +105,15 @@ export default function BottomNav() {
     return pathname === href || pathname.startsWith(`${href}/`);
   }
 
-  function renderIcon(item: NavItem, size = 20) {
+  function renderIcon(item: NavItem, size = 28) {
     if (item.href === "/notique") {
       return (
-        <div className="relative h-5 w-5 overflow-hidden rounded-md">
+        <div className="relative h-6 w-6 overflow-hidden rounded-md">
           <Image
             src="/notique-icon.png"
             alt="Notique AI"
             fill
-            sizes="20px"
+            sizes="24px"
             className="object-contain"
           />
         </div>
@@ -150,12 +123,12 @@ export default function BottomNav() {
     const Icon = item.icon;
     if (!Icon) return null;
 
-    return <Icon size={size} strokeWidth={2.1} />;
+    return <Icon size={size} strokeWidth={2.15} />;
   }
 
   const mainLinks: NavItem[] = [
     { href: "/", label: "Home", icon: Home },
-    { href: "/browse", label: "Browse", icon: BookOpen },
+    { href: "/browse", label: "Browse", icon: LibraryBig },
     {
       href: user ? "/upload" : "/signin",
       label: "Upload",
@@ -183,22 +156,15 @@ export default function BottomNav() {
         { href: "/following", label: "Following Feed", icon: Users },
         { href: "/followers", label: "Followers", icon: Users },
         { href: "/feedback", label: "Feedback", icon: MessageSquare },
-        { href: "/premium", label: "Premium", icon: Sparkles },
         { href: "/notique", label: "Notique AI" },
         { href: "/profile", label: "Profile", icon: User },
         ...(isAdmin
           ? [
               { href: "/admin", label: "Admin", icon: Shield },
               {
-                href: "/admin/notifications",
+                href: "/admin/alerts",
                 label: "Admin Alerts",
                 icon: Bell,
-                badge: adminNotificationCount,
-              },
-              {
-                href: "/admin/premium-waitlist",
-                label: "Premium Waitlist",
-                icon: Users,
               },
             ]
           : []),
@@ -209,7 +175,6 @@ export default function BottomNav() {
         { href: "/creators", label: "Creators", icon: Trophy },
       ];
 
-  const totalBadge = unreadCount + adminNotificationCount;
   const hideBottomNav = pathname.startsWith("/notique");
 
   return (
@@ -260,7 +225,7 @@ export default function BottomNav() {
                           : "bg-white/[0.06] text-white/60"
                       }`}
                     >
-                      {renderIcon(item)}
+                      {renderIcon(item, 22)}
                     </span>
 
                     <span className="min-w-0 flex-1 text-sm font-bold">
@@ -293,8 +258,8 @@ export default function BottomNav() {
       )}
 
       {!hideBottomNav && (
-        <nav className="fixed inset-x-0 bottom-0 z-[10000] border-t border-white/10 bg-[#050505]/95 px-2 pb-2 pt-1.5 text-white backdrop-blur-xl lg:hidden">
-          <div className="grid grid-cols-5 items-end gap-1">
+        <nav className="fixed bottom-0 left-0 right-0 z-[10000] border-t border-white/10 bg-[#050505]/95 px-2 pb-2 pt-2 text-white backdrop-blur-xl lg:hidden">
+          <div className="flex w-full items-end">
             {mainLinks.map((item) => {
               const active = !open && isActive(item.href);
 
@@ -303,23 +268,27 @@ export default function BottomNav() {
                   key={`${item.href}-${item.label}`}
                   href={item.href}
                   onClick={() => setOpen(false)}
-                  className="flex flex-col items-center justify-center gap-0.5 rounded-xl py-1"
+                  className="relative flex h-[58px] w-1/5 shrink-0 flex-col items-center justify-center gap-1 rounded-xl"
                 >
+                  {active && !item.special && (
+                    <span className="absolute top-0 h-1 w-8 rounded-full bg-red-500" />
+                  )}
+
                   <span
                     className={
                       item.special
-                        ? "flex h-9 w-9 items-center justify-center rounded-xl bg-red-600 text-white"
+                        ? "flex h-11 w-11 items-center justify-center rounded-2xl bg-red-600 text-white shadow-lg shadow-red-950/40"
                         : active
-                          ? "flex h-9 w-9 items-center justify-center rounded-xl bg-white text-black"
-                          : "flex h-9 w-9 items-center justify-center rounded-xl text-white/50"
+                          ? "flex h-8 w-8 items-center justify-center text-white"
+                          : "flex h-8 w-8 items-center justify-center text-white/45"
                     }
                   >
-                    {renderIcon(item, 19)}
+                    {renderIcon(item, item.special ? 28 : 25)}
                   </span>
 
                   <span
-                    className={`text-[10px] font-bold ${
-                      active || item.special ? "text-white" : "text-white/45"
+                    className={`text-[10px] font-black leading-none ${
+                      active || item.special ? "text-white" : "text-white/40"
                     }`}
                   >
                     {item.label}
@@ -332,27 +301,29 @@ export default function BottomNav() {
               type="button"
               aria-label="Open menu"
               onClick={() => setOpen((prev) => !prev)}
-              className="relative flex flex-col items-center justify-center gap-0.5 rounded-xl py-1"
+              className="relative flex h-[58px] w-1/5 shrink-0 flex-col items-center justify-center gap-1 rounded-xl"
             >
-              {totalBadge > 0 && !open && (
-                <span className="absolute right-5 top-0 z-10 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-600 px-1 text-[9px] font-black text-white">
-                  {totalBadge > 9 ? "9+" : totalBadge}
+              {unreadCount > 0 && !open && (
+                <span className="absolute right-5 top-1 z-10 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-600 px-1 text-[9px] font-black text-white">
+                  {unreadCount > 9 ? "9+" : unreadCount}
                 </span>
               )}
+
+              {open && <span className="absolute top-0 h-1 w-8 rounded-full bg-red-500" />}
 
               <span
                 className={
                   open
-                    ? "flex h-9 w-9 items-center justify-center rounded-xl bg-white text-black"
-                    : "flex h-9 w-9 items-center justify-center rounded-xl text-white/50"
+                    ? "flex h-8 w-8 items-center justify-center text-white"
+                    : "flex h-8 w-8 items-center justify-center text-white/45"
                 }
               >
-                <Menu size={21} />
+                <Menu size={25} strokeWidth={2.4} />
               </span>
 
               <span
-                className={`text-[10px] font-bold ${
-                  open ? "text-white" : "text-white/45"
+                className={`text-[10px] font-black leading-none ${
+                  open ? "text-white" : "text-white/40"
                 }`}
               >
                 More

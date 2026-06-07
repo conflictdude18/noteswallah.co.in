@@ -132,8 +132,7 @@ export default function MyNotesPage() {
 
   if (loading || fetching) {
     return (
-      <main className="min-h-screen bg-[#050505] px-4 py-8 text-white">
-        <div className="mx-auto flex min-h-[70vh] max-w-7xl items-center justify-center">
+        <div className="flex min-h-[70vh] items-center justify-center text-white">
           <div className="text-center">
             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl border border-white/10 bg-white/5">
               <RefreshCw className="animate-spin text-red-500" size={30} />
@@ -146,16 +145,12 @@ export default function MyNotesPage() {
             </p>
           </div>
         </div>
-      </main>
     );
   }
 
   return (
-    <main className="min-h-screen overflow-x-hidden bg-[#050505] px-4 py-6 text-white sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-7xl pb-28 md:pb-10">
-        <section className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-gradient-to-br from-white/10 via-white/[0.04] to-red-500/10 p-5 shadow-2xl shadow-black/30 sm:p-7 lg:p-9">
-          <div className="absolute -right-12 -top-12 h-44 w-44 rounded-full bg-red-500/20 blur-3xl" />
-
+    <div className="space-y-5 pb-28 text-white md:pb-10">
+        <section className="relative overflow-hidden">
           <div className="relative flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div>
               <div className="inline-flex items-center gap-2 rounded-full border border-red-500/20 bg-red-500/10 px-4 py-2 text-xs font-black text-red-300">
@@ -213,8 +208,8 @@ export default function MyNotesPage() {
             </Link>
           </section>
         ) : (
-          <section className="mt-5 rounded-[2rem] border border-white/10 bg-white/[0.035] p-4 shadow-2xl shadow-black/20 backdrop-blur-xl sm:p-5">
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <section>
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
               {notes.map((note) => (
                 <article
                   key={note.id}
@@ -283,7 +278,6 @@ export default function MyNotesPage() {
           </section>
         )}
       </div>
-    </main>
   );
 }
 

@@ -93,8 +93,7 @@ export default function FollowingFeedPage() {
 
   if (loading || pageLoading) {
     return (
-      <main className="min-h-screen bg-[#050505] px-4 py-8 text-white">
-        <div className="mx-auto flex min-h-[70vh] max-w-5xl items-center justify-center">
+        <div className="flex min-h-[70vh] items-center justify-center text-white">
           <div className="text-center">
             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl border border-white/10 bg-white/5">
               <RefreshCw className="animate-spin text-red-500" size={30} />
@@ -109,15 +108,12 @@ export default function FollowingFeedPage() {
             </p>
           </div>
         </div>
-      </main>
     );
   }
 
   return (
-    <main className="min-h-screen bg-[#050505] px-4 py-6 text-white sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-6xl">
-        <section className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-gradient-to-br from-white/10 via-white/[0.04] to-red-500/10 p-5 shadow-2xl shadow-black/30 sm:p-7 lg:p-9">
-          <div className="absolute -right-16 -top-16 h-44 w-44 rounded-full bg-red-500/20 blur-3xl" />
+     <div className="space-y-5 pb-28 text-white md:pb-10">
+        <section className="relative overflow-hidden">
 
           <div className="relative flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div>
@@ -181,12 +177,12 @@ export default function FollowingFeedPage() {
             </Link>
           </section>
         ) : (
-          <section className="mt-5 grid gap-4 pb-24 md:grid-cols-2 xl:grid-cols-3">
+          <section className="grid gap-3 pb-24 md:grid-cols-2 xl:grid-cols-3">
             {notes.map((note) => (
               <Link
                 key={note.id}
                 href={`/notes/${note.id}`}
-                className="group overflow-hidden rounded-[1.6rem] border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20 transition hover:border-red-500/30 hover:bg-white/[0.06]"
+                className="group overflow-hidden rounded-3xl border border-white/10 bg-white/[0.035] transition hover:border-red-500/30 hover:bg-white/[0.055]"
               >
                 <div className="relative h-44 overflow-hidden bg-zinc-950 sm:h-52">
                   {note.thumbnailUrl ? (
@@ -233,7 +229,6 @@ export default function FollowingFeedPage() {
           </section>
         )}
       </div>
-    </main>
   );
 }
 

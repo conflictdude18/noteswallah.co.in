@@ -58,7 +58,6 @@ const baseLinks: NavItem[] = [
   { href: "/my-notes", label: "My Notes", icon: FileText, section: "library" },
 
   { href: "/notique", label: "Notique AI", section: "tools" },
-  { href: "/premium", label: "Premium", icon: Sparkles, section: "tools" },
   
   {
   href: "/creators",
@@ -129,12 +128,6 @@ export default function Sidebar() {
       ? [
           ...baseLinks,
           { href: "/admin", label: "Admin", icon: Shield, section: "tools" as const },
-          {
-            href: "/admin/premium-waitlist",
-            label: "Premium Waitlist",
-            icon: Users,
-            section: "tools" as const,
-          },
         ]
       : baseLinks;
   }, [isAdmin]);

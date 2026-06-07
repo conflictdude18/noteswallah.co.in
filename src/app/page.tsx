@@ -99,7 +99,7 @@ export default function HomePage() {
   const latestNotes = useMemo(() => {
     return [...notes]
       .sort((a, b) => getCreatedTime(b.createdAt) - getCreatedTime(a.createdAt))
-      .slice(0, 3);
+      .slice(0, 4);
   }, [notes]);
 
   const subjectLinks = useMemo(() => {
@@ -119,262 +119,266 @@ export default function HomePage() {
 
     const subjects = Array.from(subjectMap.values())
       .sort((a, b) => b.count - a.count)
-      .slice(0, 8)
-      .map((item) => item.label);
+      .slice(0, 10);
 
     return subjects.length
       ? subjects
-      : ["Physics", "Chemistry", "Mathematics", "Biology", "JEE", "NEET"];
+      : [
+          { label: "Physics", count: 0 },
+          { label: "Chemistry", count: 0 },
+          { label: "Mathematics", count: 0 },
+          { label: "Biology", count: 0 },
+          { label: "JEE", count: 0 },
+          { label: "NEET", count: 0 },
+        ];
   }, [notes]);
 
   return (
-    <main className="min-h-screen overflow-x-hidden bg-[#050505] text-white">
+    <div
+      className={
+        user
+          ? "space-y-8 pb-24 text-white"
+          : "min-h-screen space-y-8 overflow-x-hidden bg-[#050505] px-3 py-4 text-white sm:px-5 lg:px-8"
+      }
+    >
       {!user && <GuestNav />}
 
-      <section className="relative overflow-hidden px-4 py-8 sm:px-6 lg:px-8">
-        <div className="absolute left-1/2 top-0 h-80 w-80 -translate-x-1/2 rounded-full bg-red-500/20 blur-[130px]" />
-        <div className="absolute right-0 top-40 h-72 w-72 rounded-full bg-red-900/20 blur-[130px]" />
+      <section className="relative overflow-hidden">
+        <div className="pointer-events-none absolute -left-20 -top-24 h-72 w-72 rounded-full bg-red-500/15 blur-[120px]" />
+        <div className="pointer-events-none absolute right-0 top-20 h-72 w-72 rounded-full bg-red-900/20 blur-[120px]" />
 
-        <div className="relative mx-auto max-w-7xl">
-          <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
-            <div className="rounded-[2rem] border border-white/10 bg-gradient-to-br from-white/10 via-white/[0.04] to-red-500/10 p-5 shadow-2xl shadow-black/30 sm:p-8 lg:p-10">
-              <div className="inline-flex items-center gap-2 rounded-full border border-red-500/20 bg-red-500/10 px-4 py-2 text-xs font-black text-red-300">
-                <Sparkles size={16} />
-                India’s Student Knowledge Network
-              </div>
-
-              <h1 className="mt-6 text-4xl font-black tracking-tight sm:text-6xl lg:text-7xl">
-                Study smarter with{" "}
-                <span className="text-red-400">NotesWallah</span>
-              </h1>
-
-              <p className="mt-5 max-w-2xl text-sm leading-7 text-white/60 sm:text-base">
-                Discover quality notes, upload study material, save resources,
-                follow creators, and use Notique AI to learn faster.
-              </p>
-
-              <Link
-                href={user ? "/browse" : "/signin"}
-                className="mt-7 flex items-center gap-3 rounded-2xl border border-white/10 bg-black/30 px-4 py-4 transition hover:border-red-500/30"
-              >
-                <Search size={20} className="text-white/40" />
-                <span className="text-sm font-semibold text-white/45">
-                  Search notes, subjects, chapters, exams...
-                </span>
-              </Link>
-
-              <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-                <Link
-                  href={user ? "/browse" : "/signin"}
-                  className="inline-flex items-center justify-center gap-2 rounded-2xl bg-red-600 px-6 py-4 text-sm font-black text-white transition hover:bg-red-500"
-                >
-                  Browse Notes
-                  <ArrowRight size={18} />
-                </Link>
-
-                <Link
-                  href={user ? "/upload" : "/signin"}
-                  className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/[0.05] px-6 py-4 text-sm font-black text-white/80 transition hover:bg-white/[0.08] hover:text-white"
-                >
-                  Upload Notes
-                  <UploadCloud size={18} />
-                </Link>
-              </div>
+        <div className="relative grid gap-6 lg:grid-cols-[1.1fr_0.9fr] lg:items-end">
+          <div className="min-w-0">
+            <div className="inline-flex items-center gap-2 rounded-full border border-red-500/20 bg-red-500/10 px-4 py-2 text-xs font-black text-red-300">
+              <Sparkles size={16} />
+              India’s Student Knowledge Network
             </div>
 
-            <div className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-5 shadow-2xl shadow-black/20 backdrop-blur-xl sm:p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-bold text-white/40">
-                    Platform Overview
-                  </p>
-                  <h2 className="mt-1 text-2xl font-black">Live Dashboard</h2>
-                </div>
+            <h1 className="mt-5 max-w-4xl text-4xl font-black tracking-tight sm:text-6xl lg:text-7xl">
+              Study smarter with{" "}
+              <span className="text-red-400">NotesWallah</span>
+            </h1>
 
-                <div className="rounded-full border border-green-500/20 bg-green-500/10 px-3 py-1 text-xs font-black text-green-300">
-                  Active
-                </div>
-              </div>
+            <p className="mt-4 max-w-2xl text-sm leading-7 text-white/58 sm:text-base">
+              Discover quality notes, upload study material, save resources,
+              follow creators, and use Notique AI to learn faster.
+            </p>
 
-              <div className="mt-5 grid grid-cols-2 gap-3">
-                <HeroStat label="Notes" value={stats.notes} />
-                <HeroStat label="Students" value={stats.users} />
-                <HeroStat label="Subjects" value={stats.subjects} />
-                <HeroStat label="Downloads" value={stats.downloads} />
-              </div>
+            <Link
+              href={user ? "/browse" : "/signin"}
+              className="mt-6 flex max-w-2xl items-center gap-3 rounded-3xl border border-white/10 bg-white/[0.04] px-4 py-4 transition hover:border-red-500/30 hover:bg-white/[0.06]"
+            >
+              <Search size={20} className="text-white/40" />
+              <span className="text-sm font-semibold text-white/45">
+                Search notes, subjects, chapters, exams...
+              </span>
+            </Link>
 
-              <div className="mt-5 rounded-3xl border border-red-500/20 bg-red-500/10 p-5">
-                <div className="flex items-start gap-4">
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-red-500/15 text-red-300">
-                    <Bot size={24} />
+            <div className="mt-4 grid grid-cols-2 gap-3 sm:flex">
+              <Link
+                href={user ? "/browse" : "/signin"}
+                className="inline-flex items-center justify-center gap-2 rounded-2xl bg-red-600 px-5 py-4 text-sm font-black text-white transition hover:bg-red-500"
+              >
+                Browse Notes
+                <ArrowRight size={18} />
+              </Link>
+
+              <Link
+                href={user ? "/upload" : "/signin"}
+                className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/[0.04] px-5 py-4 text-sm font-black text-white/80 transition hover:border-red-500/30 hover:text-white"
+              >
+                Upload Notes
+                <UploadCloud size={18} />
+              </Link>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <HeroStat label="Notes" value={stats.notes} />
+            <HeroStat label="Students" value={stats.users} />
+            <HeroStat label="Subjects" value={stats.subjects} />
+            <HeroStat label="Downloads" value={stats.downloads} />
+          </div>
+        </div>
+      </section>
+
+      <section className="grid gap-3 md:grid-cols-4">
+        <FeatureCard icon={<BookOpen />} title="Browse Notes" text="Find PDFs by class, subject, topic and exam." />
+        <FeatureCard icon={<UploadCloud />} title="Upload Material" text="Help students by sharing useful notes." />
+        <FeatureCard icon={<Heart />} title="Save Library" text="Bookmark important notes for revision." />
+        <FeatureCard icon={<ShieldCheck />} title="Moderated" text="Uploads are reviewed for better quality." />
+      </section>
+
+      <section>
+        <SectionHeader
+          icon={<TrendingUp size={16} />}
+          eyebrow="Trending Now"
+          title="Popular Notes"
+          description="Notes students are viewing, saving and downloading."
+          actionHref={user ? "/browse" : "/signin"}
+          actionLabel="View All"
+        />
+
+        {trendingNotes.length === 0 ? (
+          <EmptyNotes />
+        ) : (
+          <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+            {trendingNotes.map((note) => (
+              <NoteCard key={note.id} note={note} locked={!user} />
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section className="grid gap-7 lg:grid-cols-[1fr_390px]">
+        <div>
+          <SectionHeader
+            icon={<FileText size={16} />}
+            eyebrow="Fresh Uploads"
+            title="Latest Uploads"
+            description="Freshly approved notes from the community."
+          />
+
+          <div className="mt-5 divide-y divide-white/10 border-y border-white/10">
+            {latestNotes.length === 0 ? (
+              <EmptyBox text="Latest notes will appear here once students upload approved material." />
+            ) : (
+              latestNotes.map((note) => (
+                <Link
+                  key={note.id}
+                  href={user ? `/notes/${note.id}` : "/signin"}
+                  className="flex items-center gap-4 py-4 transition hover:bg-white/[0.025] sm:px-2"
+                >
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-red-500/10 text-red-300">
+                    <FileText size={22} />
                   </div>
 
-                  <div>
-                    <h3 className="font-black">Notique AI</h3>
-                    <p className="mt-2 text-sm leading-6 text-white/60">
-                      Summarize notes, understand concepts, and get study help
-                      inside NotesWallah.
+                  <div className="min-w-0 flex-1">
+                    <h3 className="line-clamp-1 font-black">
+                      {note.title || "Untitled Note"}
+                    </h3>
+                    <p className="mt-1 line-clamp-1 text-sm text-white/45">
+                      {note.subject || "Subject"} • Class {note.class || "N/A"}
                     </p>
-
-                    <Link
-                      href={user ? "/notique" : "/signin"}
-                      className="mt-4 inline-flex items-center gap-2 text-sm font-black text-red-300"
-                    >
-                      Open Notique
-                      <ArrowRight size={16} />
-                    </Link>
                   </div>
-                </div>
+
+                  <ArrowRight size={16} className="text-white/35" />
+                </Link>
+              ))
+            )}
+          </div>
+        </div>
+
+        <aside className="space-y-5">
+          <div className="rounded-3xl border border-red-500/20 bg-red-500/8 p-5">
+            <div className="flex items-start gap-4">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-red-500/15 text-red-300">
+                <Bot size={24} />
               </div>
 
-              <div className="mt-5 grid gap-3">
-                {subjectLinks.slice(0, 4).map((subject) => (
-                  <Link
-                    key={subject}
-                    href={user ? `/browse?search=${encodeURIComponent(subject)}` : "/signin"}
-                    className="flex items-center justify-between rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-sm font-bold text-white/70 transition hover:border-red-500/30 hover:text-white"
-                  >
-                    {subject}
-                    <ArrowRight size={15} />
-                  </Link>
-                ))}
+              <div>
+                <h3 className="font-black">Notique AI</h3>
+                <p className="mt-2 text-sm leading-6 text-white/60">
+                  Summarize notes, understand concepts, and get study help inside
+                  NotesWallah.
+                </p>
+
+                <Link
+                  href={user ? "/notique" : "/signin"}
+                  className="mt-4 inline-flex items-center gap-2 text-sm font-black text-red-300"
+                >
+                  Open Notique
+                  <ArrowRight size={16} />
+                </Link>
               </div>
             </div>
           </div>
 
-          <section className="mt-6 grid gap-3 md:grid-cols-4">
-            <FeatureCard icon={<BookOpen />} title="Browse Notes" text="Find PDFs by class, subject, topic and exam." />
-            <FeatureCard icon={<UploadCloud />} title="Upload Material" text="Help students by sharing useful notes." />
-            <FeatureCard icon={<Heart />} title="Save Library" text="Bookmark important notes for revision." />
-            <FeatureCard icon={<ShieldCheck />} title="Moderated" text="Uploads are reviewed for better quality." />
-          </section>
+          <div>
+            <SectionHeader
+              icon={<BookOpen size={16} />}
+              eyebrow="Subjects"
+              title="Popular Subjects"
+            />
 
-          <section className="mt-6 rounded-[2rem] border border-white/10 bg-white/[0.035] p-5 shadow-2xl shadow-black/20 sm:p-7">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-              <div>
-                <div className="inline-flex items-center gap-2 rounded-full border border-red-500/20 bg-red-500/10 px-4 py-2 text-xs font-black text-red-300">
-                  <TrendingUp size={16} />
-                  Trending Now
-                </div>
-                <h2 className="mt-4 text-2xl font-black sm:text-4xl">
-                  Popular Notes
-                </h2>
-                <p className="mt-2 text-sm text-white/50">
-                  Notes students are viewing, saving and downloading.
-                </p>
-              </div>
+            <div className="mt-4 grid gap-2">
+              {subjectLinks.slice(0, 6).map((subject) => (
+                <Link
+                  key={subject.label}
+                  href={
+                    user
+                      ? `/browse?search=${encodeURIComponent(subject.label)}`
+                      : "/signin"
+                  }
+                  className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.035] px-4 py-3 text-sm font-bold text-white/70 transition hover:border-red-500/30 hover:bg-white/[0.055] hover:text-white"
+                >
+                  <span>{subject.label}</span>
+                  <span className="flex items-center gap-2 text-xs text-white/35">
+                    {subject.count > 0 ? `${subject.count} notes` : "Explore"}
+                    <ArrowRight size={14} />
+                  </span>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </aside>
+      </section>
 
-              <Link
-                href={user ? "/browse" : "/signin"}
-                className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.05] px-4 py-3 text-sm font-black text-white/75 transition hover:bg-white/[0.08] hover:text-white"
-              >
-                View All
-                <ArrowRight size={16} />
-              </Link>
+      <section className="rounded-3xl border border-white/10 bg-white/[0.035] p-5 sm:p-7">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <div className="flex items-center gap-2 text-sm font-black text-red-300">
+              <Users size={18} />
+              Built by students, for students
             </div>
 
-            {trendingNotes.length === 0 ? (
-              <EmptyNotes />
-            ) : (
-              <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                {trendingNotes.map((note) => (
-                  <NoteCard key={note.id} note={note} locked={!user} />
-                ))}
-              </div>
-            )}
-          </section>
+            <h2 className="mt-3 text-2xl font-black sm:text-3xl">
+              Share notes and help the community grow.
+            </h2>
 
-          <section className="mt-6 grid gap-6 lg:grid-cols-[1fr_380px]">
-            <div className="rounded-[2rem] border border-white/10 bg-white/[0.035] p-5 shadow-2xl shadow-black/20 sm:p-7">
-              <h2 className="text-2xl font-black">Latest Uploads</h2>
-              <p className="mt-2 text-sm text-white/50">
-                Freshly approved notes from the community.
-              </p>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-white/55">
+              NotesWallah grows when students upload useful material, follow good
+              creators, and help each other learn better.
+            </p>
+          </div>
 
-              <div className="mt-5 grid gap-3">
-                {latestNotes.length === 0 ? (
-                  <EmptyBox text="Latest notes will appear here once students upload approved material." />
-                ) : (
-                  latestNotes.map((note) => (
-                    <Link
-                      key={note.id}
-                      href={user ? `/notes/${note.id}` : "/signin"}
-                      className="flex items-center gap-4 rounded-2xl border border-white/10 bg-black/25 p-4 transition hover:border-red-500/30 hover:bg-white/[0.05]"
-                    >
-                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-red-500/10 text-red-300">
-                        <FileText size={22} />
-                      </div>
-
-                      <div className="min-w-0 flex-1">
-                        <h3 className="line-clamp-1 font-black">
-                          {note.title || "Untitled Note"}
-                        </h3>
-                        <p className="mt-1 line-clamp-1 text-sm text-white/45">
-                          {note.subject || "Subject"} • Class{" "}
-                          {note.class || "N/A"}
-                        </p>
-                      </div>
-
-                      <ArrowRight size={16} className="text-white/35" />
-                    </Link>
-                  ))
-                )}
-              </div>
-            </div>
-
-            <div className="rounded-[2rem] border border-red-500/20 bg-red-500/5 p-5 shadow-2xl shadow-black/20 sm:p-7">
-              <div className="flex h-13 w-13 items-center justify-center rounded-2xl bg-red-500/10 text-red-300">
-                <Users size={26} />
-              </div>
-
-              <h2 className="mt-5 text-2xl font-black">
-                Built by students, for students
-              </h2>
-
-              <p className="mt-3 text-sm leading-7 text-white/60">
-                NotesWallah grows when students upload useful material, follow
-                good creators, and help each other learn better.
-              </p>
-
-              <Link
-                href={user ? "/upload" : "/signin"}
-                className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-red-600 px-5 py-4 text-sm font-black text-white transition hover:bg-red-500"
-              >
-                Start Contributing
-                <ArrowRight size={17} />
-              </Link>
-            </div>
-          </section>
-
-          {!user && (
-            <section className="mt-6 rounded-[2rem] border border-white/10 bg-gradient-to-br from-red-600 to-red-950 p-6 shadow-2xl shadow-black/30 sm:p-8 lg:p-10">
-              <h2 className="text-3xl font-black sm:text-5xl">
-                Unlock your study workspace
-              </h2>
-
-              <p className="mt-3 max-w-2xl text-sm leading-7 text-white/80">
-                Sign in to access notes, save resources, upload PDFs, follow
-                creators, and use Notique AI.
-              </p>
-
-              <Link
-                href="/signin"
-                className="mt-6 inline-flex items-center justify-center gap-2 rounded-2xl bg-white px-6 py-4 text-sm font-black text-black transition hover:bg-white/90"
-              >
-                <Lock size={17} />
-                Sign In / Sign Up
-              </Link>
-            </section>
-          )}
+          <Link
+            href={user ? "/upload" : "/signin"}
+            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-red-600 px-5 py-4 text-sm font-black text-white transition hover:bg-red-500"
+          >
+            Start Contributing
+            <ArrowRight size={17} />
+          </Link>
         </div>
       </section>
-    </main>
+
+      {!user && (
+        <section className="rounded-3xl border border-white/10 bg-gradient-to-br from-red-600 to-red-950 p-6 sm:p-8 lg:p-10">
+          <h2 className="text-3xl font-black sm:text-5xl">
+            Unlock your study workspace
+          </h2>
+
+          <p className="mt-3 max-w-2xl text-sm leading-7 text-white/80">
+            Sign in to access notes, save resources, upload PDFs, follow
+            creators, and use Notique AI.
+          </p>
+
+          <Link
+            href="/signin"
+            className="mt-6 inline-flex items-center justify-center gap-2 rounded-2xl bg-white px-6 py-4 text-sm font-black text-black transition hover:bg-white/90"
+          >
+            <Lock size={17} />
+            Sign In / Sign Up
+          </Link>
+        </section>
+      )}
+    </div>
   );
 }
 
 function GuestNav() {
   return (
-    <nav className="sticky top-4 z-50 mx-auto mt-4 flex max-w-7xl items-center justify-between rounded-3xl border border-white/10 bg-black/60 px-4 py-3 text-white shadow-2xl backdrop-blur-xl">
+    <nav className="sticky top-4 z-50 mx-auto flex max-w-[1760px] items-center justify-between rounded-3xl border border-white/10 bg-black/70 px-4 py-3 text-white backdrop-blur-xl">
       <div className="flex items-center gap-3">
         <Image
           src="/logo.png"
@@ -400,9 +404,52 @@ function GuestNav() {
   );
 }
 
+function SectionHeader({
+  icon,
+  eyebrow,
+  title,
+  description,
+  actionHref,
+  actionLabel,
+}: {
+  icon?: React.ReactNode;
+  eyebrow: string;
+  title: string;
+  description?: string;
+  actionHref?: string;
+  actionLabel?: string;
+}) {
+  return (
+    <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+      <div>
+        <p className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.22em] text-red-300">
+          {icon}
+          {eyebrow}
+        </p>
+
+        <h2 className="mt-2 text-2xl font-black sm:text-3xl">{title}</h2>
+
+        {description && (
+          <p className="mt-1 text-sm text-white/50">{description}</p>
+        )}
+      </div>
+
+      {actionHref && actionLabel && (
+        <Link
+          href={actionHref}
+          className="inline-flex w-fit items-center gap-2 rounded-full border border-white/10 px-4 py-2 text-sm font-black text-white/65 transition hover:border-red-500/30 hover:text-white"
+        >
+          {actionLabel}
+          <ArrowRight size={16} />
+        </Link>
+      )}
+    </div>
+  );
+}
+
 function HeroStat({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-black/25 p-4">
+    <div className="rounded-3xl border border-white/10 bg-white/[0.035] p-4">
       <p className="text-2xl font-black sm:text-3xl">{value}+</p>
       <p className="mt-1 text-xs font-bold text-white/45">{label}</p>
     </div>
@@ -419,7 +466,7 @@ function FeatureCard({
   text: string;
 }) {
   return (
-    <div className="rounded-[1.5rem] border border-white/10 bg-white/[0.035] p-5 shadow-2xl shadow-black/20">
+    <div className="rounded-3xl border border-white/10 bg-white/[0.035] p-5">
       <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-2xl bg-red-500/10 text-red-300">
         {icon}
       </div>
@@ -433,7 +480,7 @@ function NoteCard({ note, locked }: { note: HomeNote; locked: boolean }) {
   return (
     <Link
       href={locked ? "/signin" : `/notes/${note.id}`}
-      className="group overflow-hidden rounded-[1.5rem] border border-white/10 bg-black/25 transition hover:border-red-500/30 hover:bg-white/[0.05]"
+      className="group overflow-hidden rounded-3xl border border-white/10 bg-white/[0.035] transition hover:border-red-500/30 hover:bg-white/[0.055]"
     >
       <div className="relative h-36 border-b border-white/10 bg-black/30">
         {note.thumbnailUrl ? (
@@ -487,7 +534,7 @@ function NoteCard({ note, locked }: { note: HomeNote; locked: boolean }) {
 
 function EmptyNotes() {
   return (
-    <div className="mt-6 rounded-[1.5rem] border border-dashed border-white/10 bg-black/20 p-8 text-center">
+    <div className="mt-5 rounded-3xl border border-dashed border-white/10 bg-white/[0.025] p-8 text-center">
       <FileText className="mx-auto text-white/35" size={42} />
       <h3 className="mt-4 text-xl font-black">No approved notes yet</h3>
       <p className="mt-2 text-sm text-white/50">
@@ -498,11 +545,7 @@ function EmptyNotes() {
 }
 
 function EmptyBox({ text }: { text: string }) {
-  return (
-    <div className="rounded-2xl border border-white/10 bg-black/25 p-5 text-sm leading-6 text-white/45">
-      {text}
-    </div>
-  );
+  return <div className="py-5 text-sm leading-6 text-white/45">{text}</div>;
 }
 
 function getNumber(value: unknown) {

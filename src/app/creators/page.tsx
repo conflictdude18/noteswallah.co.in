@@ -214,8 +214,7 @@ export default function CreatorsPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-[#050505] px-4 py-8 text-white">
-        <div className="mx-auto flex min-h-[70vh] max-w-7xl items-center justify-center">
+      <div className="flex min-h-[70vh] items-center justify-center text-white">
           <div className="text-center">
             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl border border-white/10 bg-white/5">
               <RefreshCw className="animate-spin text-red-500" size={30} />
@@ -226,15 +225,12 @@ export default function CreatorsPage() {
             </p>
           </div>
         </div>
-      </main>
     );
   }
 
   return (
-    <main className="min-h-screen overflow-x-hidden bg-[#050505] px-4 py-6 text-white sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-7xl pb-28 md:pb-10">
-        <section className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-gradient-to-br from-white/10 via-white/[0.04] to-red-500/10 p-5 shadow-2xl shadow-black/30 sm:p-7 lg:p-9">
-          <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-red-500/20 blur-3xl" />
+    <div className="space-y-5 pb-28 text-white md:pb-10">
+        <section className="relative overflow-hidden">
 
           <div className="relative grid gap-7 lg:grid-cols-[1fr_360px] lg:items-end">
             <div>
@@ -261,8 +257,8 @@ export default function CreatorsPage() {
           </div>
         </section>
 
-        <section className="mt-5 grid gap-4 lg:grid-cols-[1fr_360px]">
-          <div className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-4 shadow-2xl shadow-black/20">
+        <section className="grid gap-3 lg:grid-cols-[1fr_360px]">
+          <div className="rounded-3xl border border-white/10 bg-white/[0.035] p-3">
             <div className="flex flex-col gap-3 md:flex-row md:items-center">
               <div className="relative flex-1">
                 <Search
@@ -313,7 +309,7 @@ export default function CreatorsPage() {
           {topCreator && (
             <Link
               href={`/profile/${topCreator.userId}`}
-              className="rounded-[2rem] border border-red-500/20 bg-red-500/10 p-5 shadow-2xl shadow-red-950/20 transition hover:bg-red-500/15"
+              className="rounded-3xl border border-red-500/20 bg-red-500/10 p-5 transition hover:bg-red-500/15"
             >
               <div className="flex items-center gap-3">
                 <div className="grid h-12 w-12 place-items-center rounded-2xl bg-red-600 text-white">
@@ -347,7 +343,7 @@ export default function CreatorsPage() {
             </p>
           </section>
         ) : (
-          <section className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             {filteredCreators.map((creator, index) => {
               const unlockedBadges = creator.badges.filter(
                 (badge) => badge.unlocked
@@ -357,7 +353,7 @@ export default function CreatorsPage() {
                 <Link
                   key={creator.userId}
                   href={`/profile/${creator.userId}`}
-                  className="group rounded-[1.6rem] border border-white/10 bg-white/[0.04] p-5 shadow-2xl shadow-black/20 transition hover:border-red-500/30 hover:bg-white/[0.06] sm:p-6"
+                  className="group rounded-3xl border border-white/10 bg-white/[0.035] p-4 transition hover:border-red-500/30 hover:bg-white/[0.055] sm:p-5"
                 >
                   <div className="flex items-start justify-between gap-4">
                     <UserAvatar
@@ -463,7 +459,6 @@ export default function CreatorsPage() {
           </section>
         )}
       </div>
-    </main>
   );
 }
 

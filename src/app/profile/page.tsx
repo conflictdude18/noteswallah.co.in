@@ -189,8 +189,7 @@ export default function ProfilePage() {
 
   if (loading || fetching) {
     return (
-      <main className="min-h-screen bg-[#050505] px-4 py-8 text-white">
-        <div className="mx-auto flex min-h-[70vh] max-w-6xl items-center justify-center">
+        <div className="flex min-h-[70vh] items-center justify-center text-white">
           <div className="text-center">
             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl border border-white/10 bg-white/5">
               <RefreshCw className="animate-spin text-red-500" size={30} />
@@ -203,7 +202,6 @@ export default function ProfilePage() {
             </p>
           </div>
         </div>
-      </main>
     );
   }
 
@@ -229,10 +227,8 @@ export default function ProfilePage() {
   const achievementStats = profile?.achievementStats || {};
 
   return (
-    <main className="min-h-screen overflow-x-hidden bg-[#050505] px-4 py-4 text-white sm:px-6 sm:py-6 lg:px-8">
-      <div className="mx-auto max-w-7xl pb-28 md:pb-10">
-        <section className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-gradient-to-br from-white/10 via-white/[0.04] to-red-500/10 p-5 shadow-2xl shadow-black/30 sm:p-7 lg:p-9">
-          <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-red-500/20 blur-3xl" />
+      <div className="space-y-5 pb-28 text-white md:pb-10">
+        <section className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.035] p-4 sm:p-6 lg:p-7">
 
           <div className="relative">
             <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
@@ -287,7 +283,7 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            <p className="mt-5 rounded-[1.5rem] border border-white/10 bg-black/25 p-4 text-sm leading-7 text-white/65 lg:max-w-3xl">
+            <p className="mt-5 rounded-2xl border border-white/10 bg-black/25 p-4 text-sm leading-7 text-white/65 lg:max-w-3xl">
               {profile?.bio ||
                 "Add a bio from Settings so students can learn more about you and your uploads."}
             </p>
@@ -328,7 +324,7 @@ export default function ProfilePage() {
           <InfoCard icon={<Eye size={22} />} label="Views" value={totalViews} />
         </section>
 
-        <section className="mt-5 rounded-[2rem] border border-white/10 bg-white/[0.04] p-5 shadow-2xl shadow-black/20 sm:p-6">
+        <section className="mt-5 rounded-3xl border border-white/10 bg-white/[0.04] p-5 sm:p-6">
           <div className="mb-4">
             <p className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.22em] text-red-300">
               <Award size={15} />
@@ -364,7 +360,7 @@ export default function ProfilePage() {
         </section>
 
         <section className="mt-5 grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
-          <div className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-5 shadow-2xl shadow-black/20 sm:p-6">
+          <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-5  sm:p-6">
             <div className="mb-5 flex items-center justify-between gap-3">
               <div>
                 <p className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.22em] text-red-300">
@@ -382,7 +378,7 @@ export default function ProfilePage() {
             )}
           </div>
 
-          <div className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-5 shadow-2xl shadow-black/20 sm:p-6">
+          <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-5  sm:p-6">
             <p className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.22em] text-red-300">
               <Mail size={15} />
               Account
@@ -408,7 +404,7 @@ export default function ProfilePage() {
           </div>
         </section>
 
-        <section className="mt-5 rounded-[2rem] border border-white/10 bg-white/[0.04] p-5 shadow-2xl shadow-black/20 sm:p-6">
+        <section className="mt-5 rounded-3xl border border-white/10 bg-white/[0.04] p-5  sm:p-6">
           <h2 className="text-xl font-black">Quick Actions</h2>
 
           <div className="mt-4 grid gap-3 md:grid-cols-3">
@@ -436,7 +432,6 @@ export default function ProfilePage() {
           />
         </section>
       </div>
-    </main>
   );
 }
 
@@ -463,7 +458,7 @@ function ProfileCard({
   return (
     <Link
       href={href}
-      className="rounded-[1.5rem] border border-white/10 bg-[#0d0d0d] p-4 shadow-2xl shadow-black/20 transition hover:border-red-500/30 hover:bg-white/[0.06]"
+      className="rounded-2xl border border-white/10 bg-[#0d0d0d] p-4  transition hover:border-red-500/30 hover:bg-white/[0.06]"
     >
       <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-red-500/10 text-red-300">
         {icon}
@@ -488,7 +483,7 @@ function InfoCard({
   value: number;
 }) {
   return (
-    <div className="rounded-[1.5rem] border border-white/10 bg-[#0d0d0d] p-4 shadow-2xl shadow-black/20">
+    <div className="rounded-2xl border border-white/10 bg-[#0d0d0d] p-4 ">
       <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-red-500/10 text-red-300">
         {icon}
       </div>
@@ -528,7 +523,7 @@ function NotesPanel({
   emptyText: string;
 }) {
   return (
-    <div className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-5 shadow-2xl shadow-black/20 sm:p-6">
+    <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-5  sm:p-6">
       <p className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.22em] text-red-300">
         {icon}
         Creator Notes
