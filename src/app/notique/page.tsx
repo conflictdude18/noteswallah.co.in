@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import * as pdfjsLib from "pdfjs-dist";
+import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf.mjs";
 import { useRouter } from "next/navigation";
 import {
   addDoc,
@@ -18,6 +18,7 @@ import {
   setDoc,
 } from "firebase/firestore";
 import { Home, Image as ImageIcon, Menu, Send, Upload } from "lucide-react";
+export const dynamic = "force-dynamic";
 
 import NotiqueSidebar from "@/components/notique/NotiqueSidebar";
 import { useAuth } from "@/contexts/AuthContext";
