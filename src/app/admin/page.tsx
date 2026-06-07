@@ -171,7 +171,9 @@ const recentReports = useMemo(() => {
         status: "approved",
       });
 
-      await updateUserAchievements(note.uploaderId);
+    if (selectedNote?.uploaderId) {
+      await updateUserAchievements(selectedNote.uploaderId);
+    }
       
       if (selectedNote?.uploaderId) {
         await createNotification({
