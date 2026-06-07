@@ -113,7 +113,7 @@ export async function updateCreatorStats(userId: string) {
 
   const profileCompletion = calculateProfileCompletion({
     displayName: userData.displayName || userData.name || "",
-    photoURL: userData.photoURL || "",
+    photoURL: userData.avatarUrl || userData.photoURL || "",
     bio: userData.bio || "",
     class: userData.class || userData.className || "",
     school: userData.school || "",
@@ -142,7 +142,12 @@ export async function updateCreatorStats(userId: string) {
         userData.name ||
         oldStats.displayName ||
         "NotesWallah Creator",
-      photoURL: userData.photoURL || oldStats.photoURL || "",
+      photoURL:
+        userData.avatarUrl ||
+        userData.photoURL ||
+        userData.avatarURL ||
+        oldStats.photoURL ||
+        "",
       uploads,
       approvedUploads,
       totalDownloads,

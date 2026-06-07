@@ -5,7 +5,14 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { collection, getDocs, query, where } from "firebase/firestore";
+import {
+  collection,
+  getDocs,
+  limit,
+  orderBy,
+  query,
+  where,
+} from "firebase/firestore";
 import {
   ArrowRight,
   BookOpen,
@@ -21,11 +28,21 @@ import {
   UploadCloud,
   User,
   XCircle,
+  BadgeCheck,
+  Trophy,
 } from "lucide-react";
 
 import { useAuth } from "@/contexts/AuthContext";
 import { db } from "@/firebase/firebase";
 import type { Note } from "@/types/note";
+
+type HallCreator = {
+  userId: string;
+  displayName: string;
+  photoURL?: string;
+  reputation: number;
+  verifiedCreator?: boolean;
+};
 
 export default function DashboardPage() {
   const { user, loading } = useAuth();
@@ -34,6 +51,7 @@ export default function DashboardPage() {
   const [notes, setNotes] = useState<Note[]>([]);
   const [savedCount, setSavedCount] = useState(0);
   const [fetching, setFetching] = useState(true);
+  const [topCreators, setTopCreators] = useState<HallCreator[]>([]);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -58,9 +76,16 @@ export default function DashboardPage() {
           where("userId", "==", user.uid)
         );
 
-        const [notesSnap, bookmarksSnap] = await Promise.all([
+        const topCreatorsQuery = query(
+          collection(db, "creatorStats"),
+          orderBy("reputation", "desc"),
+          limit(5)
+        );
+
+        const [notesSnap, bookmarksSnap, topCreatorsSnap] = await Promise.all([
           getDocs(notesQuery),
           getDocs(bookmarksQuery),
+          getDocs(topCreatorsQuery),
         ]);
 
         const data: Note[] = notesSnap.docs.map((d) => ({
@@ -70,6 +95,21 @@ export default function DashboardPage() {
 
         setNotes(data);
         setSavedCount(bookmarksSnap.size);
+
+        setTopCreators(
+          topCreatorsSnap.docs.map((docSnap) => {
+            const data = docSnap.data();
+
+            return {
+              userId: data.userId || docSnap.id,
+              displayName: data.displayName || "NotesWallah Creator",
+              photoURL: data.photoURL || "",
+              reputation: Number(data.reputation || 0),
+              verifiedCreator: Boolean(data.verifiedCreator),
+            };
+          })
+        );
+
       } catch (err) {
         console.error("DASHBOARD FETCH ERROR:", err);
       } finally {
@@ -288,6 +328,73 @@ export default function DashboardPage() {
           </div>
 
           <aside className="space-y-5">
+
+            <div className="rounded-[2rem] border border-yellow-500/20 bg-yellow-500/5 p-5 shadow-2xl shadow-black/20 backdrop-blur-xl sm:p-6">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <div className="flex items-center gap-2 text-sm font-black text-yellow-300">
+                    <Trophy size={18} />
+                    Hall of Fame
+                  </div>
+
+                  <p className="mt-1 text-xs text-white/45">Top creators by reputation.</p>
+                </div>
+
+                <Link
+                  href="/creators"
+                  className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs font-black text-white/60 transition hover:bg-white/[0.08] hover:text-white"
+                >
+                  View
+                </Link>
+              </div>
+
+              <div className="mt-5 grid gap-3">
+                {topCreators.length === 0 ? (
+                  <p className="rounded-2xl border border-white/10 bg-black/20 p-4 text-sm text-white/45">
+                    No ranked creators yet.
+                  </p>
+                ) : (
+                  topCreators.map((creator, index) => (
+                    <Link
+                      key={creator.userId}
+                      href={`/profile/${creator.userId}`}
+                      className="flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-black/20 p-3 transition hover:bg-white/[0.05]"
+                    >
+                      <div className="flex min-w-0 items-center gap-3">
+                        <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-yellow-500/10 text-sm font-black text-yellow-300">
+                          {index === 0
+                            ? "🥇"
+                            : index === 1
+                              ? "🥈"
+                              : index === 2
+                                ? "🥉"
+                                : `#${index + 1}`}
+                        </div>
+
+                        <div className="min-w-0">
+                          <div className="flex min-w-0 items-center gap-1.5">
+                            <p className="truncate text-sm font-black">
+                              {creator.displayName}
+                            </p>
+
+                            {creator.verifiedCreator && (
+                              <BadgeCheck size={14} className="shrink-0 text-blue-400" />
+                            )}
+                          </div>
+
+                          <p className="text-xs font-bold text-white/40">
+                            {creator.reputation} reputation
+                          </p>
+                        </div>
+                      </div>
+
+                      <ArrowRight size={15} className="shrink-0 text-white/30" />
+                    </Link>
+                  ))
+                )}
+              </div>
+            </div>
+
             <div className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-5 shadow-2xl shadow-black/20 backdrop-blur-xl sm:p-6">
               <div className="flex items-center gap-4">
                 <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-2xl border border-white/10 bg-red-500/15">

@@ -2,7 +2,16 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { collection, getDocs, orderBy, query } from "firebase/firestore";
+import {
+  collection,
+  doc,
+  getDocs,
+  orderBy,
+  query,
+  serverTimestamp,
+  setDoc,
+  where,
+} from "firebase/firestore";
 import {
   BadgeCheck,
   Download,
@@ -51,6 +60,67 @@ function getScore(creator: Creator) {
   return creator.reputation || 0;
 }
 
+async function rebuildCreatorStatsFromNotes() {
+  const approvedNotesQuery = query(
+    collection(db, "notes"),
+    where("status", "==", "approved")
+  );
+
+  const notesSnap = await getDocs(approvedNotesQuery);
+
+  const creatorsMap = new Map<string, Creator>();
+
+  notesSnap.docs.forEach((noteSnap) => {
+    const note = noteSnap.data();
+    const uploaderId = note.uploaderId;
+
+    if (!uploaderId) return;
+
+    const old = creatorsMap.get(uploaderId);
+
+    creatorsMap.set(uploaderId, {
+      userId: uploaderId,
+      displayName:
+        note.uploaderName ||
+        note.authorName ||
+        old?.displayName ||
+        "NotesWallah Creator",
+      photoURL: old?.photoURL || "",
+      uploads: (old?.uploads || 0) + 1,
+      approvedUploads: (old?.approvedUploads || 0) + 1,
+      totalDownloads:
+        (old?.totalDownloads || 0) + Number(note.downloadsCount || 0),
+      totalLikes: (old?.totalLikes || 0) + Number(note.likesCount || 0),
+      totalViews: (old?.totalViews || 0) + Number(note.viewsCount || 0),
+      uploadStreak: old?.uploadStreak || 0,
+      bestUploadStreak: old?.bestUploadStreak || 0,
+      profileCompletion: old?.profileCompletion || 0,
+      reputation: old?.reputation || 0,
+      monthlyReputation: old?.monthlyReputation || 0,
+      weeklyReputation: old?.weeklyReputation || 0,
+      verifiedCreator: old?.verifiedCreator || false,
+      badges: old?.badges || [],
+      creatorLevel: old?.creatorLevel || undefined,
+    });
+  });
+
+  await Promise.all(
+    Array.from(creatorsMap.values()).map((creator) =>
+      setDoc(
+        doc(db, "creatorStats", creator.userId),
+        {
+          ...creator,
+          reputation:
+            creator.reputation ||
+            creator.approvedUploads * 25 + creator.uploads * 10,
+          updatedAt: serverTimestamp(),
+        },
+        { merge: true }
+      )
+    )
+  );
+}
+
 export default function CreatorsPage() {
   const [creators, setCreators] = useState<Creator[]>([]);
   const [search, setSearch] = useState("");
@@ -65,7 +135,8 @@ export default function CreatorsPage() {
           orderBy("reputation", "desc")
         );
 
-        const snap = await getDocs(creatorStatsQuery);
+        let snap = await getDocs(creatorStatsQuery);
+        console.log("CREATOR DOCS:", snap.size);
 
         const data: Creator[] = snap.docs.map((docSnap) => {
           const data = docSnap.data();
@@ -93,7 +164,7 @@ export default function CreatorsPage() {
           };
         });
 
-        setCreators(data.filter((creator) => creator.uploads > 0));
+        setCreators(data);
       } catch (error) {
         console.error("CREATORS ERROR:", error);
       } finally {

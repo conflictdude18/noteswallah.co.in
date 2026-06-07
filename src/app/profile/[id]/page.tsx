@@ -782,11 +782,13 @@ function MiniCreatorStat({
   value,
 }: {
   label: string;
-  value: number;
+  value: number | string | undefined | null;
 }) {
   return (
     <div className="rounded-2xl border border-white/10 bg-black/25 p-4">
-      <p className="text-2xl font-black">{value}</p>
+      <p className="text-2xl font-black">
+        {Number.isFinite(Number(value)) ? Number(value) : 0}
+      </p>
       <p className="mt-1 text-xs font-bold text-white/45">{label}</p>
     </div>
   );
