@@ -37,11 +37,8 @@ import { db } from "@/firebase/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import UserAvatar from "@/components/UserAvatar";
 import type { Note } from "@/types/note";
-import dynamic from "next/dynamic";
 
-const PDFViewer = dynamic(() => import("@/components/PDFViewer"), {
-  ssr: false,
-});
+import PDFViewer from "@/components/PDFViewer";
 
 type Comment = {
   id: string;
