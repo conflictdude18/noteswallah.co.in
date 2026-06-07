@@ -277,7 +277,7 @@ export default function BottomNav() {
                   <span
                     className={
                       item.special
-                        ? "flex h-11 w-11 items-center justify-center rounded-2xl bg-red-600 text-white shadow-lg shadow-red-950/40"
+                        ? "flex h-12 w-12 items-center justify-center rounded-2xl bg-red-600 text-white shadow-lg shadow-red-950/40"
                         : active
                           ? "flex h-8 w-8 items-center justify-center text-white"
                           : "flex h-8 w-8 items-center justify-center text-white/45"
@@ -286,13 +286,15 @@ export default function BottomNav() {
                     {renderIcon(item, item.special ? 28 : 25)}
                   </span>
 
+                {!item.special && (
                   <span
                     className={`text-[10px] font-black leading-none ${
-                      active || item.special ? "text-white" : "text-white/40"
+                      active ? "text-white" : "text-white/40"
                     }`}
                   >
                     {item.label}
                   </span>
+                )}
                 </Link>
               );
             })}

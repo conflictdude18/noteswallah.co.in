@@ -37,6 +37,11 @@ import { db } from "@/firebase/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import UserAvatar from "@/components/UserAvatar";
 import type { Note } from "@/types/note";
+import dynamic from "next/dynamic";
+
+const PDFViewer = dynamic(() => import("@/components/PDFViewer"), {
+  ssr: false,
+});
 
 type Comment = {
   id: string;
@@ -489,23 +494,10 @@ export default function NoteDetailsPage() {
                     </p>
                   </div>
                 </div>
-
-                <a
-                  href={note.pdfURL}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="shrink-0 rounded-xl border border-white/10 bg-white/5 p-2 text-white/70 transition hover:bg-white/10 hover:text-white"
-                  title="Open Original PDF"
-                >
-                  <ExternalLink size={18} />
-                </a>
               </div>
 
-              <iframe
-                src={`${note.pdfURL}#toolbar=0`}
-                title={note.title}
-                className="h-[62vh] w-full bg-black md:h-[82vh]"
-              />
+          <PDFViewer file={note.pdfURL} />
+
             </div>
             <section className="rounded-3xl border border-yellow-500/20 bg-yellow-500/5 p-4 md:p-5">
               {/* MOBILE DISCLAIMER */}
