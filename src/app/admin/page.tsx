@@ -5,6 +5,7 @@ import type React from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { updateUserAchievements } from "@/lib/updateUserAchievements";
+import { awardReputation } from "@/lib/reputation";
 import {
   collection,
   deleteDoc,
@@ -170,6 +171,15 @@ const recentReports = useMemo(() => {
       await updateDoc(doc(db, "notes", noteId), {
         status: "approved",
       });
+
+    if (selectedNote?.uploaderId) {
+      await awardReputation({
+        userId: selectedNote.uploaderId,
+        reason: "note_approved",
+        noteId: selectedNote.id,
+        noteTitle: selectedNote.title,
+      });
+      }
 
     if (selectedNote?.uploaderId) {
       await updateUserAchievements(selectedNote.uploaderId);
