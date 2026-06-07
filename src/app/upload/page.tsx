@@ -21,6 +21,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { db, storage } from "@/firebase/firebase";
 import { sendFollowerUploadNotifications } from "@/lib/sendFollowerUploadNotifications";
+import { updateCreatorStats } from "@/lib/updateCreatorStats";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
   "pdfjs-dist/build/pdf.worker.min.mjs",
@@ -269,6 +270,12 @@ export default function UploadPage() {
         });
       } catch {
         console.warn("Follower notification failed.");
+      }
+
+      try {
+        await updateCreatorStats(user.uid);
+      } catch {
+        console.warn("Creator stats update failed.");
       }
 
       toast.success("Notes uploaded successfully. Waiting for approval.");

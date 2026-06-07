@@ -1,5 +1,6 @@
 "use client";
 
+import type React from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -27,6 +28,7 @@ import {
   Plus,
   Shield,
   Sparkles,
+  Trophy,
   User,
   Users,
   X,
@@ -55,7 +57,7 @@ export default function BottomNav() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [adminNotificationCount, setAdminNotificationCount] = useState(0);
-  
+
   useEffect(() => {
     async function checkAdmin() {
       if (!user) {
@@ -170,6 +172,7 @@ export default function BottomNav() {
   const moreLinks: NavItem[] = user
     ? [
         { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+        { href: "/creators", label: "Creators", icon: Trophy },
         { href: "/my-notes", label: "My Notes", icon: FileText },
         {
           href: "/notifications",
@@ -183,7 +186,6 @@ export default function BottomNav() {
         { href: "/premium", label: "Premium", icon: Sparkles },
         { href: "/notique", label: "Notique AI" },
         { href: "/profile", label: "Profile", icon: User },
-
         ...(isAdmin
           ? [
               { href: "/admin", label: "Admin", icon: Shield },
@@ -193,12 +195,18 @@ export default function BottomNav() {
                 icon: Bell,
                 badge: adminNotificationCount,
               },
+              {
+                href: "/admin/premium-waitlist",
+                label: "Premium Waitlist",
+                icon: Users,
+              },
             ]
           : []),
       ]
     : [
         { href: "/signin", label: "Sign In", icon: User },
         { href: "/signup", label: "Create Account", icon: Sparkles },
+        { href: "/creators", label: "Creators", icon: Trophy },
       ];
 
   const totalBadge = unreadCount + adminNotificationCount;
@@ -232,10 +240,6 @@ export default function BottomNav() {
             <div className="grid grid-cols-1 gap-2">
               {moreLinks.map((item) => {
                 const active = isActive(item.href);
-                const admin =
-                  item.href === "/admin" ||
-                  item.href === "/admin/notifications";
-                const ai = item.href === "/notique";
                 const badge = typeof item.badge === "number" ? item.badge : 0;
 
                 return (
@@ -244,36 +248,24 @@ export default function BottomNav() {
                     href={item.href}
                     onClick={() => setOpen(false)}
                     className={`relative flex min-h-[58px] items-center gap-3 rounded-xl border px-3 py-2.5 transition ${
-                      ai
-                        ? "border-red-500/30 bg-red-500/10 text-white"
-                        : admin
-                          ? "border-red-500/30 bg-red-500/10 text-white"
-                          : active
-                            ? "border-white/15 bg-white/[0.08] text-white"
-                            : "border-white/10 bg-[#0d0d0d] text-white/70"
+                      active
+                        ? "border-white/15 bg-white/[0.08] text-white"
+                        : "border-white/10 bg-[#0d0d0d] text-white/70"
                     }`}
                   >
                     <span
                       className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${
-                        ai || admin
-                          ? "bg-red-500/15 text-red-200"
-                          : active
-                            ? "bg-white text-black"
-                            : "bg-white/[0.06] text-white/60"
+                        active
+                          ? "bg-white text-black"
+                          : "bg-white/[0.06] text-white/60"
                       }`}
                     >
                       {renderIcon(item)}
                     </span>
 
-                    <span className="min-w-0 flex-1 text-sm font800 font-bold">
+                    <span className="min-w-0 flex-1 text-sm font-bold">
                       {item.label}
                     </span>
-
-                    {ai && (
-                      <span className="rounded-full border border-red-500/20 bg-red-500/10 px-2 py-1 text-[10px] font-black uppercase tracking-wide text-red-200">
-                        AI
-                      </span>
-                    )}
 
                     {badge > 0 && (
                       <span className="flex h-6 min-w-6 items-center justify-center rounded-full bg-red-600 px-2 text-[10px] font-black text-white">
@@ -299,75 +291,76 @@ export default function BottomNav() {
           </div>
         </section>
       )}
-        {!hideBottomNav && (
-          <nav className="fixed inset-x-0 bottom-0 z-[10000] border-t border-white/10 bg-[#050505]/95 px-2 pb-2 pt-1.5 text-white backdrop-blur-xl lg:hidden">
-        <div className="grid grid-cols-5 items-end gap-1">
-          {mainLinks.map((item) => {
-            const active = !open && isActive(item.href);
 
-            return (
-              <Link
-                key={`${item.href}-${item.label}`}
-                href={item.href}
-                onClick={() => setOpen(false)}
-                className="flex flex-col items-center justify-center gap-0.5 rounded-xl py-1"
+      {!hideBottomNav && (
+        <nav className="fixed inset-x-0 bottom-0 z-[10000] border-t border-white/10 bg-[#050505]/95 px-2 pb-2 pt-1.5 text-white backdrop-blur-xl lg:hidden">
+          <div className="grid grid-cols-5 items-end gap-1">
+            {mainLinks.map((item) => {
+              const active = !open && isActive(item.href);
+
+              return (
+                <Link
+                  key={`${item.href}-${item.label}`}
+                  href={item.href}
+                  onClick={() => setOpen(false)}
+                  className="flex flex-col items-center justify-center gap-0.5 rounded-xl py-1"
+                >
+                  <span
+                    className={
+                      item.special
+                        ? "flex h-9 w-9 items-center justify-center rounded-xl bg-red-600 text-white"
+                        : active
+                          ? "flex h-9 w-9 items-center justify-center rounded-xl bg-white text-black"
+                          : "flex h-9 w-9 items-center justify-center rounded-xl text-white/50"
+                    }
+                  >
+                    {renderIcon(item, 19)}
+                  </span>
+
+                  <span
+                    className={`text-[10px] font-bold ${
+                      active || item.special ? "text-white" : "text-white/45"
+                    }`}
+                  >
+                    {item.label}
+                  </span>
+                </Link>
+              );
+            })}
+
+            <button
+              type="button"
+              aria-label="Open menu"
+              onClick={() => setOpen((prev) => !prev)}
+              className="relative flex flex-col items-center justify-center gap-0.5 rounded-xl py-1"
+            >
+              {totalBadge > 0 && !open && (
+                <span className="absolute right-5 top-0 z-10 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-600 px-1 text-[9px] font-black text-white">
+                  {totalBadge > 9 ? "9+" : totalBadge}
+                </span>
+              )}
+
+              <span
+                className={
+                  open
+                    ? "flex h-9 w-9 items-center justify-center rounded-xl bg-white text-black"
+                    : "flex h-9 w-9 items-center justify-center rounded-xl text-white/50"
+                }
               >
-                <span
-                  className={
-                    item.special
-                      ? "flex h-9 w-9 items-center justify-center rounded-xl bg-red-600 text-white"
-                      : active
-                        ? "flex h-9 w-9 items-center justify-center rounded-xl bg-white text-black"
-                        : "flex h-9 w-9 items-center justify-center rounded-xl text-white/50"
-                  }
-                >
-                  {renderIcon(item, 19)}
-                </span>
-
-                <span
-                  className={`text-[10px] font-bold ${
-                    active || item.special ? "text-white" : "text-white/45"
-                  }`}
-                >
-                  {item.label}
-                </span>
-              </Link>
-            );
-          })}
-
-          <button
-            type="button"
-            aria-label="Open menu"
-            onClick={() => setOpen((prev) => !prev)}
-            className="relative flex flex-col items-center justify-center gap-0.5 rounded-xl py-1"
-          >
-            {totalBadge > 0 && !open && (
-              <span className="absolute right-5 top-0 z-10 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-600 px-1 text-[9px] font-black text-white">
-                {totalBadge > 9 ? "9+" : totalBadge}
+                <Menu size={21} />
               </span>
-            )}
 
-            <span
-              className={
-                open
-                  ? "flex h-9 w-9 items-center justify-center rounded-xl bg-white text-black"
-                  : "flex h-9 w-9 items-center justify-center rounded-xl text-white/50"
-              }
-            >
-              <Menu size={21} />
-            </span>
-
-            <span
-              className={`text-[10px] font-bold ${
-                open ? "text-white" : "text-white/45"
-              }`}
-            >
-              More
-            </span>
-          </button>
-        </div>
-      </nav>
-    )}
-  </>
-);
+              <span
+                className={`text-[10px] font-bold ${
+                  open ? "text-white" : "text-white/45"
+                }`}
+              >
+                More
+              </span>
+            </button>
+          </div>
+        </nav>
+      )}
+    </>
+  );
 }

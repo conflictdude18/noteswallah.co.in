@@ -16,8 +16,18 @@ import {
   query,
   serverTimestamp,
   setDoc,
+  getDoc,
+  updateDoc,
 } from "firebase/firestore";
-import { Home, Image as ImageIcon, Menu, Send, Upload } from "lucide-react";
+import {
+  Crown,
+  Home,
+  Image as ImageIcon,
+  Lock,
+  Menu,
+  Send,
+  Upload,
+} from "lucide-react";
 
 import NotiqueSidebar from "@/components/notique/NotiqueSidebar";
 import { useAuth } from "@/contexts/AuthContext";
@@ -38,6 +48,13 @@ type NotiqueChat = {
   id: string;
   title: string;
   lastMessage?: string;
+};
+
+type PremiumState = {
+  premium: boolean;
+  trialActive: boolean;
+  trialEndsAt: string | null;
+  dailyMessages: number;
 };
 
 type PdfTextItem = {
@@ -68,6 +85,12 @@ export default function NotiquePage() {
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isFreshChat, setIsFreshChat] = useState(true);
+  const [premiumState, setPremiumState] = useState<PremiumState>({
+  premium: false,
+  trialActive: false,
+  trialEndsAt: null,
+  dailyMessages: 0,
+});
 
   const bottomRef = useRef<HTMLDivElement | null>(null);
 
@@ -79,6 +102,56 @@ export default function NotiquePage() {
     if (loading) return;
     if (!user) router.push("/signin");
   }, [user, loading, router]);
+
+  useEffect(() => {
+  async function loadPremiumState() {
+    if (!user) return;
+
+    const userRef = doc(db, "users", user.uid);
+    const userSnap = await getDoc(userRef);
+
+    if (!userSnap.exists()) return;
+
+    const userData = userSnap.data();
+
+    let freeTrialStartedAt = userData.freeTrialStartedAt || null;
+    let freeTrialEndsAt = userData.freeTrialEndsAt || null;
+
+    if (!freeTrialStartedAt || !freeTrialEndsAt) {
+      freeTrialStartedAt = new Date().toISOString();
+      freeTrialEndsAt = new Date(
+        Date.now() + 3 * 24 * 60 * 60 * 1000
+      ).toISOString();
+
+      await updateDoc(userRef, {
+        notiquePremium: Boolean(userData.notiquePremium),
+        premiumPlan: userData.premiumPlan || "free",
+        freeTrialStartedAt,
+        freeTrialEndsAt,
+        premiumStartedAt: userData.premiumStartedAt || null,
+        premiumExpiresAt: userData.premiumExpiresAt || null,
+      });
+    }
+
+    const todayKey = new Date().toISOString().slice(0, 10);
+    const notiqueUsage = userData.notiqueUsage || {};
+    const dailyMessages =
+      notiqueUsage.date === todayKey ? Number(notiqueUsage.messages || 0) : 0;
+
+    const premium = Boolean(userData.notiquePremium);
+    const trialActive =
+      !premium && new Date(freeTrialEndsAt).getTime() > Date.now();
+
+    setPremiumState({
+      premium,
+      trialActive,
+      trialEndsAt: freeTrialEndsAt,
+      dailyMessages,
+    });
+  }
+
+  loadPremiumState();
+}, [user]);
 
   useEffect(() => {
     if (!user) return;
@@ -303,8 +376,45 @@ export default function NotiquePage() {
     });
   }
 
+  const canUseNotique = premiumState.premium || premiumState.trialActive;
+const dailyLimitReached =
+  !premiumState.premium && premiumState.dailyMessages >= 20;
+
+async function updateDailyUsage() {
+  if (!user || premiumState.premium) return;
+
+  const todayKey = new Date().toISOString().slice(0, 10);
+  const nextCount = premiumState.dailyMessages + 1;
+
+  await setDoc(
+    doc(db, "users", user.uid),
+    {
+      notiqueUsage: {
+        date: todayKey,
+        messages: nextCount,
+      },
+    },
+    { merge: true }
+  );
+
+  setPremiumState((prev) => ({
+    ...prev,
+    dailyMessages: nextCount,
+  }));
+}
+
   async function handleSend() {
     if ((!message.trim() && !selectedPDF && !selectedImage) || sending || !user) {
+      return;
+    }
+
+    if (!canUseNotique) {
+  router.push("/notique-premium");
+  return;
+}
+
+    if (dailyLimitReached) {
+      router.push("/notique-premium");
       return;
     }
 
@@ -364,6 +474,7 @@ export default function NotiquePage() {
       );
 
       await saveMessage(chatId, "user", userContent, uploadedAttachments);
+      await updateDailyUsage();
 
       const finalPrompt = selectedPDF
         ? `
@@ -472,9 +583,30 @@ ${pdfText.slice(0, 12000)}
                 New Chat
               </button>
 
-              <div className="hidden rounded-full border border-green-500/20 bg-green-500/10 px-3 py-1 text-xs text-green-300 sm:block">
-                Free Access
-              </div>
+              <Link
+                href="/notique-premium"
+                className={`hidden items-center gap-1 rounded-full border px-3 py-1 text-xs font-bold sm:inline-flex ${
+                  premiumState.premium
+                    ? "border-yellow-500/20 bg-yellow-500/10 text-yellow-300"
+                    : premiumState.trialActive
+                      ? "border-green-500/20 bg-green-500/10 text-green-300"
+                      : "border-red-500/20 bg-red-500/10 text-red-300"
+                }`}
+              >
+                {premiumState.premium ? (
+                  <>
+                    <Crown size={13} />
+                    Premium
+                  </>
+                ) : premiumState.trialActive ? (
+                  <>Trial · {Math.max(0, 20 - premiumState.dailyMessages)} left</>
+                ) : (
+                  <>
+                    <Lock size={13} />
+                    Upgrade
+                  </>
+                )}
+              </Link>
             </div>
           </div>
         </div>
@@ -601,7 +733,13 @@ ${pdfText.slice(0, 12000)}
               )}
 
               <div className="flex items-end gap-2">
-                <label className="shrink-0 cursor-pointer rounded-2xl p-3 text-zinc-400 transition hover:bg-white/10 hover:text-white">
+                <label
+                  className={`shrink-0 rounded-2xl p-3 transition ${
+                    canUseNotique && !dailyLimitReached
+                      ? "cursor-pointer text-zinc-400 hover:bg-white/10 hover:text-white"
+                      : "cursor-not-allowed text-zinc-700"
+                  }`}
+                >
                   <Upload className="h-5 w-5" />
                   <input
                     type="file"
@@ -611,7 +749,13 @@ ${pdfText.slice(0, 12000)}
                   />
                 </label>
 
-                <label className="shrink-0 cursor-pointer rounded-2xl p-3 text-zinc-400 transition hover:bg-white/10 hover:text-white">
+                <label
+                  className={`shrink-0 rounded-2xl p-3 transition ${
+                    canUseNotique && !dailyLimitReached
+                      ? "cursor-pointer text-zinc-400 hover:bg-white/10 hover:text-white"
+                      : "cursor-not-allowed text-zinc-700"
+                  }`}
+                >
                   <ImageIcon className="h-5 w-5" />
                   <input
                     type="file"
@@ -647,9 +791,12 @@ ${pdfText.slice(0, 12000)}
 
                 <button
                   onClick={handleSend}
-                  disabled={
-                    sending || (!message.trim() && !selectedPDF && !selectedImage)
-                  }
+                disabled={
+                  sending ||
+                  !canUseNotique ||
+                  dailyLimitReached ||
+                  (!message.trim() && !selectedPDF && !selectedImage)
+                }
                   className="shrink-0 rounded-2xl bg-cyan-500 p-3 text-black transition hover:scale-105 disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   <Send className="h-5 w-5" />
@@ -657,8 +804,14 @@ ${pdfText.slice(0, 12000)}
               </div>
 
               <p className="mt-3 text-center text-[11px] leading-snug text-zinc-500">
-                Notique can make mistakes. Always verify important answers with
-                your textbook or teacher.
+                {premiumState.premium
+                  ? "Notique Premium active. Always verify important answers."
+                  : premiumState.trialActive
+                    ? `Free trial active · ${Math.max(
+                        0,
+                        20 - premiumState.dailyMessages
+                      )} messages left today.`
+                  : "Free trial ended. Upgrade to continue using Notique."}
               </p>
             </div>
           </div>

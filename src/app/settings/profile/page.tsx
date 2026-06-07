@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
+import { updateCreatorStats } from "@/lib/updateCreatorStats";
 import {
   Camera,
   CheckCircle2,
@@ -155,6 +156,12 @@ export default function ProfileSettingsPage() {
         avatarUrl: finalAvatarUrl,
         photoURL: finalAvatarUrl,
       });
+
+      try {
+        await updateCreatorStats(user.uid);
+      } catch {
+        console.warn("Creator stats refresh failed.");
+      }
 
       toast.success("Profile updated successfully.");
       router.refresh();

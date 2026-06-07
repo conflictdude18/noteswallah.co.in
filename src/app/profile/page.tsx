@@ -4,6 +4,9 @@ import type React from "react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import AchievementBadge from "@/components/AchievementBadge";
+import { updateUserAchievements } from "@/lib/updateUserAchievements";
+import AchievementProgress from "@/components/AchievementProgress";
 import {
   Activity,
   ArrowRight,
@@ -50,7 +53,14 @@ type UserProfile = {
   imageUrl?: string;
   verified?: boolean;
   role?: string;
+  achievements?: string[];
   createdAt?: unknown;
+  achievementStats?: {
+  approvedNotes?: number;
+  totalDownloads?: number;
+  totalViews?: number;
+  totalLikes?: number;
+};
 };
 
 type CreatorNote = Note & {
@@ -85,6 +95,8 @@ export default function ProfilePage() {
   useEffect(() => {
     async function fetchProfile() {
       if (!user) return;
+
+      updateUserAchievements(user.uid).catch(console.error);
 
       try {
         const userSnap = await getDoc(doc(db, "users", user.uid));
@@ -213,6 +225,9 @@ export default function ProfilePage() {
         ? "Active Creator"
         : "New Creator";
 
+  const achievements = profile?.achievements || [];
+  const achievementStats = profile?.achievementStats || {};
+
   return (
     <main className="min-h-screen overflow-x-hidden bg-[#050505] px-4 py-4 text-white sm:px-6 sm:py-6 lg:px-8">
       <div className="mx-auto max-w-7xl pb-28 md:pb-10">
@@ -311,6 +326,41 @@ export default function ProfilePage() {
           <InfoCard icon={<Download size={22} />} label="Downloads" value={totalDownloads} />
           <InfoCard icon={<Heart size={22} />} label="Likes" value={totalLikes} />
           <InfoCard icon={<Eye size={22} />} label="Views" value={totalViews} />
+        </section>
+
+        <section className="mt-5 rounded-[2rem] border border-white/10 bg-white/[0.04] p-5 shadow-2xl shadow-black/20 sm:p-6">
+          <div className="mb-4">
+            <p className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.22em] text-red-300">
+              <Award size={15} />
+              Creator Achievements
+            </p>
+
+            <h2 className="mt-2 text-xl font-black">Unlocked Badges</h2>
+
+            <p className="mt-1 text-sm text-white/45">
+              Earn badges by uploading helpful notes and supporting students.
+            </p>
+          </div>
+
+        {achievements.length === 0 ? (
+          <EmptyBox text="No achievements unlocked yet. Upload approved notes to start earning badges." />
+        ) : (
+          <>
+            <div className="flex flex-wrap gap-3">
+              {achievements.map((id) => (
+                <AchievementBadge key={id} id={id} />
+              ))}
+            </div>
+
+            <Link
+              href="/profile/achievements"
+              className="mt-4 inline-flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-2 text-sm font-bold text-red-300 transition hover:bg-red-500/15"
+            >
+              View Progress
+              <ArrowRight size={16} />
+            </Link>
+          </>
+        )}
         </section>
 
         <section className="mt-5 grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">

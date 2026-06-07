@@ -1,5 +1,6 @@
 "use client";
 
+import type { CreatorStats } from "@/types/creator";
 import type React from "react";
 import Image from "next/image";
 import Link from "next/link";
@@ -31,6 +32,10 @@ import {
   UserRound,
 } from "lucide-react";
 import { toast } from "sonner";
+import {
+  getCreatorLevelProgress,
+  getNextCreatorLevel,
+} from "@/lib/creatorLevels";
 
 import { db } from "@/firebase/firebase";
 import { useAuth } from "@/contexts/AuthContext";
@@ -62,12 +67,14 @@ type PublicNote = Note & {
 };
 
 export default function PublicProfilePage() {
-  const { id } = useParams<{ id: string }>();
+  const params = useParams<{ id?: string; uid?: string }>();
+  const id = params.id || params.uid;
   const router = useRouter();
   const { user } = useAuth();
 
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [notes, setNotes] = useState<PublicNote[]>([]);
+  const [creatorStats, setCreatorStats] = useState<CreatorStats | null>(null);
   const [loading, setLoading] = useState(true);
 
   const [followersCount, setFollowersCount] = useState(0);
@@ -78,12 +85,23 @@ export default function PublicProfilePage() {
 
   useEffect(() => {
     async function fetchProfile() {
-      if (!id) return;
+      if (!id) {
+        setLoading(false);
+        return;
+      }
 
       try {
         setLoading(true);
 
         const userSnap = await getDoc(doc(db, "users", id));
+
+        const creatorStatsSnap = await getDoc(doc(db, "creatorStats", id));
+
+        if (creatorStatsSnap.exists()) {
+          setCreatorStats(creatorStatsSnap.data() as CreatorStats);
+        } else {
+          setCreatorStats(null);
+        }
 
         if (userSnap.exists()) {
           setProfile({
@@ -205,6 +223,30 @@ export default function PublicProfilePage() {
   }, [notes]);
 
   const bestNote = topNotes[0];
+  const currentCreatorLevel = creatorStats?.creatorLevel || {
+  level: 1,
+  title: "Starter",
+  minApprovedUploads: 1,
+};
+
+  const nextCreatorLevel = getNextCreatorLevel(
+    creatorStats?.approvedUploads || 0
+  );
+
+  const levelProgress = getCreatorLevelProgress(
+    creatorStats?.approvedUploads || 0
+  );
+
+  const unlockedBadges =
+  creatorStats?.badges?.filter((badge) => badge.unlocked) || [];
+
+  const creatorScore = creatorStats
+    ? creatorStats.approvedUploads * 10 +
+      creatorStats.totalDownloads * 2 +
+      creatorStats.totalLikes * 4 +
+      creatorStats.totalViews +
+      creatorStats.bestUploadStreak * 8
+    : 0;
 
   async function handleFollow() {
     if (!user) {
@@ -402,9 +444,127 @@ export default function PublicProfilePage() {
               <StatCard icon={<Eye size={22} />} value={totalViews} label="Views" />
 
               <StatCard
-                icon={<UserRound size={22} />}
-                value={profile.verified ? "Verified" : "Active"}
-                label="Status"
+                icon={<Flame size={22} />}
+                value={creatorStats?.bestUploadStreak || 0}
+                label="Best Streak"
+              />
+            </div>
+          </div>
+        </section>
+
+        <section className="mt-5 grid gap-5 lg:grid-cols-[1fr_360px]">
+          <div className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-5 shadow-2xl shadow-black/20 sm:p-6">
+            <p className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.22em] text-red-300">
+              <Award size={15} />
+              Creator Badges
+            </p>
+
+            <h2 className="mt-2 text-xl font-black">Achievements</h2>
+
+            {unlockedBadges.length > 0 ? (
+              <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                {unlockedBadges.map((badge) => (
+                  <div
+                    key={badge.id}
+                    className="rounded-2xl border border-red-500/20 bg-red-500/10 p-4"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="grid h-10 w-10 place-items-center rounded-xl bg-red-600 text-white">
+                        <Award size={19} />
+                      </div>
+
+                      <div>
+                        <h3 className="text-sm font-black">{badge.title}</h3>
+                        <p className="mt-1 text-xs leading-5 text-white/50">
+                          {badge.description}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <EmptyBox text="No creator badges unlocked yet." />
+            )}
+          </div>
+
+          <div className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-5 shadow-2xl shadow-black/20 sm:p-6">
+            <p className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.22em] text-red-300">
+              <Sparkles size={15} />
+              Creator Progress
+            </p>
+
+            <div className="mt-5 rounded-2xl border border-yellow-500/20 bg-yellow-500/10 p-4">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs font-black uppercase tracking-[0.18em] text-yellow-300">
+                    Creator Level
+                  </p>
+                  <h3 className="mt-1 text-xl font-black">
+                    Level {currentCreatorLevel.level} · {currentCreatorLevel.title}
+                  </h3>
+                </div>
+
+                <div className="rounded-2xl bg-yellow-500/15 px-4 py-2 text-sm font-black text-yellow-300">
+                  {creatorStats?.approvedUploads || 0} uploads
+                </div>
+              </div>
+
+              <div className="mt-4 h-3 overflow-hidden rounded-full bg-white/10">
+                <div
+                  className="h-full rounded-full bg-yellow-400"
+                  style={{ width: `${levelProgress}%` }}
+                />
+              </div>
+
+              <p className="mt-3 text-xs font-semibold text-white/45">
+                {nextCreatorLevel
+                  ? `Next: Level ${nextCreatorLevel.level} · ${nextCreatorLevel.title} at ${nextCreatorLevel.minApprovedUploads} approved uploads.`
+                  : "Maximum creator level reached."}
+              </p>
+            </div>
+
+            <h2 className="mt-2 text-xl font-black">Profile Strength</h2>
+
+            <div className="mt-5 rounded-2xl border border-white/10 bg-black/25 p-4">
+              <div className="flex items-center justify-between text-sm font-black">
+                <span>Profile Completion</span>
+                <span>{creatorStats?.profileCompletion || 0}%</span>
+              </div>
+
+              <div className="mt-3 h-3 overflow-hidden rounded-full bg-white/10">
+                <div
+                  className="h-full rounded-full bg-red-600"
+                  style={{ width: `${creatorStats?.profileCompletion || 0}%` }}
+                />
+              </div>
+            </div>
+
+            {(creatorStats?.profileCompletion || 0) >= 100 ? (
+              <div className="mt-4 rounded-2xl border border-green-500/20 bg-green-500/10 p-4">
+                <p className="text-sm font-black text-green-300">
+                  Complete Profile Badge Unlocked ✅
+                </p>
+                <p className="mt-1 text-xs leading-5 text-white/50">
+                  This creator completed their profile and unlocked the Complete Profile reward.
+                </p>
+              </div>
+            ) : (
+              <div className="mt-4 rounded-2xl border border-white/10 bg-black/25 p-4">
+                <p className="text-sm font-black text-white/70">
+                  Complete your profile to unlock a badge.
+                </p>
+                <p className="mt-1 text-xs leading-5 text-white/45">
+                  Add profile picture, display name, bio and occupation.
+                </p>
+              </div>
+            )}
+
+            <div className="mt-4 grid grid-cols-2 gap-3">
+              <MiniCreatorStat label="Creator Score" value={creatorScore} />
+              <MiniCreatorStat
+                label="Upload Streak"
+                value={creatorStats?.uploadStreak || 0}
               />
             </div>
           </div>
@@ -613,6 +773,21 @@ function EmptyBox({ text }: { text: string }) {
   return (
     <div className="rounded-2xl border border-white/10 bg-black/25 p-5 text-sm leading-6 text-white/45">
       {text}
+    </div>
+  );
+}
+
+function MiniCreatorStat({
+  label,
+  value,
+}: {
+  label: string;
+  value: number;
+}) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-black/25 p-4">
+      <p className="text-2xl font-black">{value}</p>
+      <p className="mt-1 text-xs font-bold text-white/45">{label}</p>
     </div>
   );
 }

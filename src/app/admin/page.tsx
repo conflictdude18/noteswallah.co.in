@@ -1,9 +1,10 @@
 "use client";
-
+import { updateCreatorStats } from "@/lib/updateCreatorStats";
 import { createNotification } from "@/lib/createNotification";
 import type React from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { updateUserAchievements } from "@/lib/updateUserAchievements";
 import {
   collection,
   deleteDoc,
@@ -170,6 +171,8 @@ const recentReports = useMemo(() => {
         status: "approved",
       });
 
+      await updateUserAchievements(note.uploaderId);
+      
       if (selectedNote?.uploaderId) {
         await createNotification({
           userId: selectedNote.uploaderId,
@@ -178,6 +181,12 @@ const recentReports = useMemo(() => {
           message: `Your note "${selectedNote.title || "Untitled Note"}" has been approved.`,
           link: `/notes/${noteId}`,
         });
+
+        try {
+          await updateCreatorStats(selectedNote.uploaderId);
+        } catch {
+          console.warn("Creator stats refresh failed.");
+        }
       }
 
       toast.success("Note approved.");
@@ -210,6 +219,12 @@ const recentReports = useMemo(() => {
           message: `Your note "${selectedNote.title || "Untitled Note"}" was rejected after review.`,
           link: "/my-notes",
         });
+
+        try {
+          await updateCreatorStats(selectedNote.uploaderId);
+        } catch {
+          console.warn("Creator stats refresh failed.");
+        }
       }
 
       toast.success("Note rejected.");

@@ -25,6 +25,7 @@ import {
   PlusCircle,
   Shield,
   Sparkles,
+  Trophy,
   Users,
 } from "lucide-react";
 
@@ -58,6 +59,13 @@ const baseLinks: NavItem[] = [
 
   { href: "/notique", label: "Notique AI", section: "tools" },
   { href: "/premium", label: "Premium", icon: Sparkles, section: "tools" },
+  
+  {
+  href: "/creators",
+  label: "Creators",
+  icon: Trophy,
+  section: "tools",
+},
 
   { href: "/notifications", label: "Notifications", icon: Bell, section: "account" },
   { href: "/following", label: "Following", icon: Users, section: "account" },
@@ -121,6 +129,12 @@ export default function Sidebar() {
       ? [
           ...baseLinks,
           { href: "/admin", label: "Admin", icon: Shield, section: "tools" as const },
+          {
+            href: "/admin/premium-waitlist",
+            label: "Premium Waitlist",
+            icon: Users,
+            section: "tools" as const,
+          },
         ]
       : baseLinks;
   }, [isAdmin]);
