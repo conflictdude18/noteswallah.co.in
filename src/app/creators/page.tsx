@@ -42,6 +42,7 @@ type Creator = {
   reputation: number;
   monthlyReputation: number;
   weeklyReputation: number;
+  verifiedCreator?: boolean;
 };
 
 type SortMode = "overall" | "uploads" | "downloads" | "streak";
@@ -85,6 +86,7 @@ export default function CreatorsPage() {
             reputation: Number(data.reputation || 0),
             monthlyReputation: Number(data.monthlyReputation || 0),
             weeklyReputation: Number(data.weeklyReputation || 0),
+            verifiedCreator: Boolean(data.verifiedCreator),
 
             badges: Array.isArray(data.badges) ? data.badges : [],
             creatorLevel: data.creatorLevel || undefined,
@@ -294,15 +296,30 @@ export default function CreatorsPage() {
                     />
 
                     <div className="rounded-full border border-red-500/20 bg-red-500/10 px-3 py-1 text-xs font-black text-red-400">
-                      #{index + 1}
+                    {index === 0
+                      ? "🥇"
+                      : index === 1
+                      ? "🥈"
+                      : index === 2
+                      ? "🥉"
+                      : `#${index + 1}`}
                     </div>
                   </div>
 
                   <div className="mt-5">
                     <div className="flex min-w-0 items-center gap-2">
-                      <h2 className="line-clamp-1 text-xl font-black">
-                        {creator.displayName}
-                      </h2>
+                      <div className="flex items-center gap-2">
+                        <h2 className="line-clamp-1 text-xl font-black">
+                          {creator.displayName}
+                        </h2>
+
+                        {creator.verifiedCreator && (
+                          <BadgeCheck
+                            size={18}
+                            className="text-blue-400 shrink-0"
+                          />
+                        )}
+                      </div>
 
                       {unlockedBadges.length >= 3 && (
                         <BadgeCheck

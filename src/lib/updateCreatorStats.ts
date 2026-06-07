@@ -129,6 +129,9 @@ export async function updateCreatorStats(userId: string) {
   });
 
   const creatorLevel = getCreatorLevel(approvedUploads);
+  const verifiedCreator =
+    (creatorLevel?.level || 0) >= 5 &&
+    Number(userData.reputation || 0) >= 1000;
 
   await setDoc(
     creatorStatsRef,
@@ -150,6 +153,7 @@ export async function updateCreatorStats(userId: string) {
       profileCompletion,
       badges,
       creatorLevel,
+      verifiedCreator,
       reputation: Number(userData.reputation || 0),
       monthlyReputation: Number(userData.monthlyReputation || 0),
       weeklyReputation: Number(userData.weeklyReputation || 0),
