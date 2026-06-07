@@ -101,6 +101,9 @@ export default function SettingsPage() {
           occupation: occupation.trim() || "Student",
           photoURL: finalPhotoURL,
           avatarUrl: finalPhotoURL,
+          reputation: 0,
+          weeklyReputation: 0,
+          monthlyReputation: 0,
         },
         { merge: true }
       );

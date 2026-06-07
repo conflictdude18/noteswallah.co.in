@@ -179,6 +179,7 @@ const recentReports = useMemo(() => {
         noteId: selectedNote.id,
         noteTitle: selectedNote.title,
       });
+      await updateCreatorStats(selectedNote.uploaderId);
       }
 
     if (selectedNote?.uploaderId) {

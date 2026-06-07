@@ -150,6 +150,9 @@ export async function updateCreatorStats(userId: string) {
       profileCompletion,
       badges,
       creatorLevel,
+      reputation: Number(userData.reputation || 0),
+      monthlyReputation: Number(userData.monthlyReputation || 0),
+      weeklyReputation: Number(userData.weeklyReputation || 0),
       updatedAt: serverTimestamp(),
     },
     { merge: true }
