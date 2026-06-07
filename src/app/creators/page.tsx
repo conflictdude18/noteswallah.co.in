@@ -39,18 +39,15 @@ type Creator = {
   profileCompletion: number;
   badges: CreatorBadge[];
   creatorLevel?: CreatorLevel;
+  reputation: number;
+  monthlyReputation: number;
+  weeklyReputation: number;
 };
 
 type SortMode = "overall" | "uploads" | "downloads" | "streak";
 
 function getScore(creator: Creator) {
-  return (
-    creator.approvedUploads * 10 +
-    creator.totalDownloads * 2 +
-    creator.totalLikes * 4 +
-    creator.totalViews +
-    creator.bestUploadStreak * 8
-  );
+  return creator.reputation || 0;
 }
 
 export default function CreatorsPage() {
@@ -64,7 +61,7 @@ export default function CreatorsPage() {
       try {
         const creatorStatsQuery = query(
           collection(db, "creatorStats"),
-          orderBy("approvedUploads", "desc")
+          orderBy("reputation", "desc")
         );
 
         const snap = await getDocs(creatorStatsQuery);
@@ -84,6 +81,11 @@ export default function CreatorsPage() {
             uploadStreak: Number(data.uploadStreak || 0),
             bestUploadStreak: Number(data.bestUploadStreak || 0),
             profileCompletion: Number(data.profileCompletion || 0),
+
+            reputation: Number(data.reputation || 0),
+            monthlyReputation: Number(data.monthlyReputation || 0),
+            weeklyReputation: Number(data.weeklyReputation || 0),
+
             badges: Array.isArray(data.badges) ? data.badges : [],
             creatorLevel: data.creatorLevel || undefined,
           };
@@ -317,7 +319,7 @@ export default function CreatorsPage() {
                     </span>
 
                     <span className="rounded-full border border-white/10 bg-black/25 px-3 py-1 text-xs font-bold text-white/45">
-                      Score: {getScore(creator)}
+                      Reputation: {creator.reputation || 0}
                     </span>
                   </div>
                   </div>
