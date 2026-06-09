@@ -644,7 +644,7 @@ export default function NoteDetailsPage() {
 
               <AISummaryCard
                 text={`${note.title || ""}\n\n${note.description || ""}`}
-                premium={userData?.premium === true}
+                premium={true}
               />
 
               <div className="mt-6 grid grid-cols-2 gap-3">

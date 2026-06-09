@@ -1,43 +1,26 @@
 "use client";
 
 import { useState } from "react";
-import {
-  Loader2,
-  Lock,
-  Sparkles,
-} from "lucide-react";
-
+import { Loader2, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
 type Props = {
   text: string;
-  premium: boolean;
 };
 
-export default function AISummaryCard({
-  text,
-  premium,
-}: Props) {
+export default function AISummaryCard({ text }: Props) {
   const [loading, setLoading] = useState(false);
-
   const [summary, setSummary] = useState("");
 
   async function generateSummary() {
-    if (!premium) {
-      toast.error("Premium required.");
-      return;
-    }
-
     try {
       setLoading(true);
 
       const res = await fetch("/api/ai-summary", {
         method: "POST",
-
         headers: {
           "Content-Type": "application/json",
         },
-
         body: JSON.stringify({
           text,
         }),
@@ -49,17 +32,22 @@ export default function AISummaryCard({
         ? JSON.parse(raw)
         : { error: "Empty response from AI API" };
 
-      if (!res.ok) {
-        throw new Error(data.error);
-      }
+    if (data.error) {
+      toast.error(data.error);
+      return;
+    }
+
+    if (!res.ok) {
+      toast.error(
+        data.error || "AI service unavailable. Please try again later."
+      );
+      return;
+    }
 
       setSummary(data.summary);
     } catch (error) {
       console.error(error);
-
-      toast.error(
-        "AI service unavailable. Please try again later."
-      );
+      toast.error("AI service unavailable. Please try again later.");
     } finally {
       setLoading(false);
     }
@@ -70,10 +58,7 @@ export default function AISummaryCard({
       <div className="flex items-start justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <Sparkles
-              className="text-yellow-400"
-              size={20}
-            />
+            <Sparkles className="text-yellow-400" size={20} />
 
             <h2 className="text-2xl font-black text-white">
               AI Summary
@@ -84,36 +69,22 @@ export default function AISummaryCard({
             Generate concise AI-powered revision notes.
           </p>
         </div>
-
-        {!premium && (
-          <div className="rounded-full border border-yellow-500/20 bg-yellow-500/10 px-3 py-1 text-xs font-bold text-yellow-300">
-            Premium
-          </div>
-        )}
       </div>
 
       <button
         onClick={generateSummary}
-        disabled={loading || !premium}
+        disabled={loading}
         className="mt-5 flex items-center gap-2 rounded-2xl bg-red-500 px-5 py-3 font-black text-white transition hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-60"
       >
         {loading ? (
           <>
-            <Loader2
-              className="animate-spin"
-              size={18}
-            />
+            <Loader2 className="animate-spin" size={18} />
             Generating...
-          </>
-        ) : premium ? (
-          <>
-            <Sparkles size={18} />
-            Generate Summary
           </>
         ) : (
           <>
-            <Lock size={18} />
-            Premium Required
+            <Sparkles size={18} />
+            Generate Summary
           </>
         )}
       </button>
